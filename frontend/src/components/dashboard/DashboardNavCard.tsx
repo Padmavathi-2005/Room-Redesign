@@ -13,7 +13,6 @@ import {
   Ruler,
   Sparkles,
   Zap,
-  LayoutGrid,
   CreditCard,
   Info,
   Mail,
@@ -22,6 +21,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import ThemeToggle from '@/components/layout/Header/ThemeToggle';
+import ProductsDropdown from '@/components/layout/Header/ProductsDropdown';
 
 interface UserData {
   name: string;
@@ -85,19 +85,19 @@ export default function DashboardNavCard() {
     window.location.href = '/';
   };
 
+  // Nav Items matching Home Page Header Topics + Workspace Links
   const navItems = [
     { label: 'Home', href: '/dashboard', icon: Home },
+    { label: 'Features', href: '/#features', icon: Sparkles },
+    { label: 'Pricing', href: '/dashboard#pricing', icon: CreditCard },
+    { label: 'About', href: '/about', icon: Info },
+    { label: 'Contact', href: '/contact', icon: Mail },
     { label: 'My Designs', href: '/history', icon: Folder },
     { label: 'Wishlist', href: '/dashboard/wishlist', icon: Heart },
     { label: 'Interior Design', href: '/generate?tool=interior-design', icon: Wand2 },
     { label: 'Exterior Design', href: '/generate?tool=exterior-design', icon: Building2 },
     { label: 'Floor Plan', href: '/generate?tool=floor-plan-generator', icon: Ruler },
     { label: 'Inspiration', href: '/dashboard/inspiration', icon: Sparkles },
-    { label: 'Features', href: '/#features', icon: Sparkles },
-    { label: 'Products', href: '/#products', icon: LayoutGrid },
-    { label: 'Pricing', href: '/dashboard#pricing', icon: CreditCard },
-    { label: 'About', href: '/about', icon: Info },
-    { label: 'Contact', href: '/contact', icon: Mail },
   ];
 
   const capitalizedName = capitalizeName(user.name);
@@ -114,7 +114,7 @@ export default function DashboardNavCard() {
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-800/80">
         
         {/* Brand Logo */}
-        <Link href="/dashboard" className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-extrabold shadow-md shadow-blue-500/20">
             <Sparkles className="w-5 h-5" />
           </div>
@@ -136,7 +136,7 @@ export default function DashboardNavCard() {
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="py-1.5 px-3.5 text-xs font-bold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5"
+              className="py-1.5 px-3.5 text-xs font-bold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 font-heading"
             >
               <Sparkles className="w-3 h-3 text-amber-300" />
               <span>Upgrade Now</span>
@@ -199,27 +199,83 @@ export default function DashboardNavCard() {
         </div>
       </div>
 
-      {/* HORIZONTAL NAV LIST CARD INSIDE THE PAGE */}
+      {/* HORIZONTAL NAV LIST CARD MATCHING HOME PAGE TOPICS & PRODUCTS */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+        {/* Home Link */}
+        <Link
+          href="/dashboard"
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all ${
+            pathname === '/dashboard'
+              ? 'bg-blue-600 text-white shadow-md font-bold'
+              : 'bg-slate-100/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/50'
+          }`}
+        >
+          <Home className="w-3.5 h-3.5" />
+          <span>Home</span>
+        </Link>
 
-          return (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
-                isActive
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 font-bold'
-                  : 'bg-slate-100/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200/60 dark:border-slate-800/80'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+        {/* Features Link */}
+        <Link
+          href="/#features"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 transition-all"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+          <span>Features</span>
+        </Link>
+
+        {/* Products Dropdown Component */}
+        <div className="inline-flex items-center">
+          <ProductsDropdown />
+        </div>
+
+        {/* Pricing Link */}
+        <Link
+          href="/dashboard#pricing"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 transition-all"
+        >
+          <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+          <span>Pricing</span>
+        </Link>
+
+        {/* About Link */}
+        <Link
+          href="/about"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 transition-all"
+        >
+          <Info className="w-3.5 h-3.5 text-slate-400" />
+          <span>About</span>
+        </Link>
+
+        {/* Contact Link */}
+        <Link
+          href="/contact"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 transition-all"
+        >
+          <Mail className="w-3.5 h-3.5 text-slate-400" />
+          <span>Contact</span>
+        </Link>
+
+        {/* My Designs Link */}
+        <Link
+          href="/history"
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all ${
+            pathname === '/history'
+              ? 'bg-blue-600 text-white shadow-md font-bold'
+              : 'bg-slate-100/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950/50'
+          }`}
+        >
+          <Folder className="w-3.5 h-3.5" />
+          <span>My Designs</span>
+        </Link>
+
+        {/* Wishlist Link */}
+        <Link
+          href="/dashboard/wishlist"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 transition-all"
+        >
+          <Heart className="w-3.5 h-3.5 text-rose-500" />
+          <span>Wishlist</span>
+        </Link>
       </div>
 
     </motion.div>
