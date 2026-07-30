@@ -1,12 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 export default function GetStartedButton() {
+  const [targetHref, setTargetHref] = useState('/signup');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('token')) {
+      setTargetHref('/dashboard');
+    }
+  }, []);
+
   return (
-    <Link href="/signup">
+    <Link href={targetHref}>
       <motion.button
         whileHover={{ scale: 1.04, y: -1 }}
         whileTap={{ scale: 0.96 }}

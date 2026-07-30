@@ -67,7 +67,7 @@ export default function CallToActionBanner() {
               viewport={{ once: true }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
             >
-              <Link href="/signup">
+              <Link href={typeof window !== 'undefined' && localStorage.getItem('token') ? '/dashboard' : '/signup'}>
                 <motion.button
                   whileHover={{ scale: 1.03, y: -1 }}
                   whileTap={{ scale: 0.97 }}

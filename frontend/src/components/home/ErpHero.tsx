@@ -60,7 +60,7 @@ export default function ErpHero() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="flex items-center gap-6 pt-2"
             >
-              <Link href="/signup">
+              <Link href={typeof window !== 'undefined' && localStorage.getItem('token') ? '/dashboard' : '/signup'}>
                 <motion.button
                   whileHover={{ scale: 1.03, y: -1 }}
                   whileTap={{ scale: 0.97 }}
