@@ -18,7 +18,17 @@ interface ProfileDropdownProps {
 }
 
 export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  // Automatically close dropdown on window scroll
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleScroll = () => {
+      setIsOpen(false);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isOpen]);
 
   // Helper to capitalize first letter of each word (e.g. "test" -> "Test", "alex morgan" -> "Alex Morgan")
   const capitalizeName = (str: string) => {

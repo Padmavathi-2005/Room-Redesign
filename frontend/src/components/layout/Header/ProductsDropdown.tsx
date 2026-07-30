@@ -64,6 +64,18 @@ export default function ProductsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [categories, setCategories] = useState(DEFAULT_PRODUCT_CATEGORIES);
 
+  // Automatically close mega dropdown on page scroll
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleScroll = () => {
+      setIsOpen(false);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isOpen]);
+
   // Fetch dynamic AI tools database from NestJS Backend API
   useEffect(() => {
     async function fetchDbProductTools() {

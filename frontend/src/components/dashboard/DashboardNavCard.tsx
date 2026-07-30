@@ -38,6 +38,18 @@ export default function DashboardNavCard() {
   });
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
+  // Automatically close profile menu on page scroll
+  useEffect(() => {
+    if (!isProfileMenuOpen) return;
+
+    const handleScroll = () => {
+      setIsProfileMenuOpen(false);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isProfileMenuOpen]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('user');
