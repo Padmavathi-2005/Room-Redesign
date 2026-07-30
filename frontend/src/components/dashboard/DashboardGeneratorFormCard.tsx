@@ -20,13 +20,26 @@ import {
 } from 'lucide-react';
 
 const ROOM_TYPES = [
-  { id: 'living-room', name: 'Living Room' },
+  { id: 'living-room', name: 'Living room' },
+  { id: 'open-kitchen-living', name: 'Open Kitchen Living Room' },
   { id: 'bedroom', name: 'Bedroom' },
-  { id: 'kitchen', name: 'Kitchen & Dining' },
   { id: 'bathroom', name: 'Bathroom' },
-  { id: 'office', name: 'Office Workspace' },
-  { id: 'exterior', name: 'Exterior Facade' },
-  { id: 'garden', name: 'Patio & Garden' },
+  { id: 'kitchen', name: 'Kitchen' },
+  { id: 'dining-room', name: 'Dining room' },
+  { id: 'attic', name: 'Attic' },
+  { id: 'study-room', name: 'Study room' },
+  { id: 'home-office', name: 'Home office' },
+  { id: 'family-room', name: 'Family Room' },
+  { id: 'formal-dining', name: 'Formal Dining Room' },
+  { id: 'kids-room', name: 'Kids Room' },
+  { id: 'balcony', name: 'Balcony' },
+  { id: 'gaming-room', name: 'Gaming room' },
+  { id: 'meeting-room', name: 'Meeting room' },
+  { id: 'workshop', name: 'Workshop' },
+  { id: 'fitness-gym', name: 'Fitness gym' },
+  { id: 'coffee-shop', name: 'Coffee shop' },
+  { id: 'clothing-store', name: 'Clothing store' },
+  { id: 'restaurant', name: 'Restaurant' },
 ];
 
 const PRODUCT_TYPES = [
