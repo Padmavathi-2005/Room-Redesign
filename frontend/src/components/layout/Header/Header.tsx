@@ -78,6 +78,19 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Handle Sign Out action
+  const handleSignOut = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
+    setUser(null);
+    window.location.href = '/';
+  };
+
+  const isLoggedIn = Boolean(user || propIsAuth);
+
   // Hide global floating landing header on Dashboard routes for dedicated dashboard sidebar layout
   if (
     pathname.startsWith('/dashboard') ||
