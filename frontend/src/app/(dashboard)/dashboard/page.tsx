@@ -7,18 +7,14 @@ import {
   Zap,
   Sparkles,
   CheckCircle2,
-  ArrowRight,
   ShieldCheck,
   CreditCard,
   Crown,
   Heart,
   Folder,
   Wand2,
-  Building2,
-  Ruler,
-  TrendingUp,
-  Clock,
 } from 'lucide-react';
+import DashboardGeneratorFormCard from '@/components/dashboard/DashboardGeneratorFormCard';
 
 interface UserSession {
   name: string;
@@ -129,7 +125,7 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-12 pb-16">
 
-      {/* CURRENT ACTIVE PLAN & CREDITS BANNER */}
+      {/* DASHBOARD TOP BANNER */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -151,11 +147,10 @@ export default function DashboardPage() {
             </h1>
 
             <p className="text-sm text-slate-300 max-w-xl">
-              You currently have <span className="font-extrabold text-amber-300">{user.credits} AI credits</span> available. Use them across all 20+ interior, exterior, and architectural AI tools.
+              You currently have <span className="font-extrabold text-amber-300">{user.credits} AI credits</span> available. Configure room redesigns below or upgrade your credit package anytime.
             </p>
           </div>
 
-          {/* Quick Credit Actions */}
           <div className="flex items-center gap-3">
             <a href="#pricing">
               <motion.button
@@ -167,185 +162,169 @@ export default function DashboardPage() {
                 <span>Buy More Credits</span>
               </motion.button>
             </a>
-
-            <Link href="/generate">
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-2 px-5 py-3 text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl backdrop-blur-md transition-all focus:outline-none font-heading"
-              >
-                <Wand2 className="w-4 h-4 text-blue-300" />
-                <span>Start Designing</span>
-              </motion.button>
-            </Link>
           </div>
         </div>
       </motion.div>
 
-      {/* CHOOSE YOUR CREDITS PRICING SECTION (MATCHING USER REFERENCE DESIGN) */}
-      <div id="pricing" className="space-y-8 pt-4">
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto space-y-3">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-xs"
-          >
-            <Crown className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Simple, Transparent Pricing</span>
-          </motion.div>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white font-heading"
-          >
-            Choose Your <span className="text-lime-600 dark:text-lime-400">Credits</span>
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium"
-          >
-            Pay once, use anytime. No subscriptions, no hidden fees. Get access to all 20+ AI design tools with every purchase.
-          </motion.p>
+      {/* DASHBOARD MAIN GRID: LEFT SIDE AI GENERATOR FORM CARD | RIGHT SIDE DESIGNS & PRICING */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* LEFT SIDE: AI ROOM REDESIGN GENERATOR FORM CARD (5/12 width) */}
+        <div className="lg:col-span-5 sticky top-6">
+          <DashboardGeneratorFormCard />
         </div>
 
-        {/* 3 PRICING CARDS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch pt-4">
-          {CREDIT_PRICING_PLANS.map((plan, index) => (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 25 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative flex flex-col justify-between p-8 rounded-3xl transition-all duration-300 ${
-                plan.popular
-                  ? 'bg-white dark:bg-slate-900 border-2 border-lime-500 dark:border-lime-500 shadow-2xl shadow-lime-500/15 scale-105 z-10'
-                  : 'bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-black/40 hover:shadow-2xl'
-              }`}
-            >
-              {/* Popular Badge */}
-              {plan.popular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-lime-500 text-slate-950 font-extrabold text-xs px-4 py-1 rounded-full shadow-md font-heading">
-                  Most Popular
-                </div>
-              )}
+        {/* RIGHT SIDE: DESIGNS, WISHLIST & CHOOSE YOUR CREDITS PRICING (7/12 width) */}
+        <div className="lg:col-span-7 space-y-8">
+          
+          {/* YOUR DESIGNS & WISHLIST QUICK SECTION */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              <div className="space-y-6">
-                <div className="text-center space-y-1 pt-2">
-                  <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white font-heading">
-                    {plan.name}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    {plan.tagline}
-                  </p>
+            {/* YOUR DESIGNS CARD */}
+            <div className="bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-lg shadow-slate-200/50 dark:shadow-black/40 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Folder className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white font-heading">Your Designs</h3>
                 </div>
-
-                {/* Price Display */}
-                <div className="text-center space-y-1">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white font-heading">
-                      {plan.price}
-                    </span>
-                    {plan.discountBadge && (
-                      <span className="bg-lime-500/20 text-lime-700 dark:text-lime-400 text-xs font-extrabold px-2.5 py-0.5 rounded-md border border-lime-500/30">
-                        {plan.discountBadge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm font-bold text-blue-600 dark:text-blue-400 flex items-center justify-center gap-1">
-                    <Zap className="w-4 h-4 fill-current text-amber-500" />
-                    <span>{plan.credits}</span>
-                  </p>
-                </div>
-
-                {/* Features List */}
-                <ul className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                  {plan.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-lime-600 dark:text-lime-400 flex-shrink-0 mt-0.5" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
+                <Link href="/history" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
+                  View All
+                </Link>
               </div>
 
-              {/* Buy Credits CTA Button */}
-              <div className="pt-8">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setSelectedPlan(plan.id)}
-                  className={`w-full py-3.5 px-6 rounded-2xl font-extrabold text-xs transition-all shadow-md flex items-center justify-center gap-2 font-heading ${
+              <div className="grid grid-cols-2 gap-3">
+                {RECENT_YOUR_DESIGNS.map((des) => (
+                  <div key={des.id} className="relative rounded-2xl overflow-hidden group border border-slate-100 dark:border-slate-800">
+                    <img src={des.image} alt={des.title} className="w-full h-24 object-cover group-hover:scale-105 transition-transform" />
+                    <div className="p-2 bg-white dark:bg-slate-900">
+                      <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate font-heading">{des.title}</p>
+                      <p className="text-[10px] text-slate-400">{des.style}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* WISHLIST FAVORITES CARD */}
+            <div className="bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-lg shadow-slate-200/50 dark:shadow-black/40 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-rose-500" />
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white font-heading">Wishlist</h3>
+                </div>
+                <span className="text-xs text-slate-400 font-semibold">3 Saved Items</span>
+              </div>
+
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl text-center space-y-2.5 border border-slate-100 dark:border-slate-800">
+                <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-500 mx-auto flex items-center justify-center">
+                  <Heart className="w-4 h-4 fill-current" />
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                  Save your favorite AI room styles to wishlist.
+                </p>
+                <Link href="/dashboard/wishlist" className="inline-block px-3.5 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 rounded-xl hover:bg-blue-100 transition-colors">
+                  View Saved Wishlist
+                </Link>
+              </div>
+            </div>
+
+          </div>
+
+          {/* CHOOSE YOUR CREDITS PRICING SECTION */}
+          <div id="pricing" className="space-y-6 pt-4">
+            <div className="text-center max-w-xl mx-auto space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                <Crown className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Simple, Transparent Pricing</span>
+              </div>
+
+              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-heading">
+                Choose Your <span className="text-lime-600 dark:text-lime-400">Credits</span>
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
+                Pay once, use anytime. No subscriptions or hidden fees.
+              </p>
+            </div>
+
+            {/* PRICING CARDS GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch pt-2">
+              {CREDIT_PRICING_PLANS.map((plan, index) => (
+                <motion.div
+                  key={plan.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className={`relative flex flex-col justify-between p-6 rounded-3xl transition-all duration-300 ${
                     plan.popular
-                      ? 'bg-lime-500 hover:bg-lime-600 text-slate-950 shadow-lime-500/30'
-                      : 'bg-slate-900 hover:bg-slate-800 text-white dark:bg-blue-600 dark:hover:bg-blue-700'
+                      ? 'bg-white dark:bg-slate-900 border-2 border-lime-500 dark:border-lime-500 shadow-2xl shadow-lime-500/15'
+                      : 'bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-lg'
                   }`}
                 >
-                  <CreditCard className="w-4 h-4" />
-                  <span>Buy {plan.credits}</span>
-                </motion.button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-lime-500 text-slate-950 font-extrabold text-[10px] px-3 py-0.5 rounded-full shadow-md font-heading">
+                      Most Popular
+                    </div>
+                  )}
 
-      {/* YOUR DESIGNS & WISHLIST QUICK SECTION */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6">
+                  <div className="space-y-4">
+                    <div className="text-center space-y-1">
+                      <h3 className="text-xl font-extrabold text-slate-900 dark:text-white font-heading">
+                        {plan.name}
+                      </h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {plan.tagline}
+                      </p>
+                    </div>
 
-        {/* YOUR DESIGNS CARD */}
-        <div className="bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-lg shadow-slate-200/50 dark:shadow-black/40 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Folder className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white font-heading">Your Designs</h3>
+                    <div className="text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-heading">
+                          {plan.price}
+                        </span>
+                        {plan.discountBadge && (
+                          <span className="bg-lime-500/20 text-lime-700 dark:text-lime-400 text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-lime-500/30">
+                            {plan.discountBadge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center justify-center gap-1">
+                        <Zap className="w-3.5 h-3.5 fill-current text-amber-500" />
+                        <span>{plan.credits}</span>
+                      </p>
+                    </div>
+
+                    <ul className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                      {plan.features.map((feat) => (
+                        <li key={feat} className="flex items-start gap-2 text-[11px] text-slate-700 dark:text-slate-300 font-medium">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-lime-600 dark:text-lime-400 flex-shrink-0 mt-0.5" />
+                          <span>{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="pt-6">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setSelectedPlan(plan.id)}
+                      className={`w-full py-3 px-4 rounded-2xl font-extrabold text-xs transition-all shadow-md flex items-center justify-center gap-1.5 font-heading ${
+                        plan.popular
+                          ? 'bg-lime-500 hover:bg-lime-600 text-slate-950 shadow-lime-500/30'
+                          : 'bg-slate-900 hover:bg-slate-800 text-white dark:bg-blue-600 dark:hover:bg-blue-700'
+                      }`}
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Buy {plan.credits}</span>
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-            <Link href="/history" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
-              View All
-            </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {RECENT_YOUR_DESIGNS.map((des) => (
-              <div key={des.id} className="relative rounded-2xl overflow-hidden group border border-slate-100 dark:border-slate-800">
-                <img src={des.image} alt={des.title} className="w-full h-28 object-cover group-hover:scale-105 transition-transform" />
-                <div className="p-2.5 bg-white dark:bg-slate-900">
-                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate font-heading">{des.title}</p>
-                  <p className="text-[10px] text-slate-400">{des.style}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* WISHLIST FAVORITES CARD */}
-        <div className="bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-lg shadow-slate-200/50 dark:shadow-black/40 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-rose-500" />
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white font-heading">Wishlist & Saved</h3>
-            </div>
-            <span className="text-xs text-slate-400 font-semibold">3 Saved Items</span>
-          </div>
-
-          <div className="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl text-center space-y-3 border border-slate-100 dark:border-slate-800">
-            <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-500 mx-auto flex items-center justify-center">
-              <Heart className="w-5 h-5 fill-current" />
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-              Save your favorite AI-generated room styles & inspiration to your wishlist.
-            </p>
-            <Link href="/generate" className="inline-block px-4 py-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 rounded-xl hover:bg-blue-100 transition-colors">
-              Explore & Save Styles
-            </Link>
-          </div>
         </div>
 
       </div>
