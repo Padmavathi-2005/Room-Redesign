@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Logo from './Logo';
@@ -10,32 +10,63 @@ import SearchModal from './SearchModal';
 import ThemeToggle from './ThemeToggle';
 import LoginButton from './LoginButton';
 import GetStartedButton from './GetStartedButton';
-import ProfileDropdown from './ProfileDropdown';
+import ProfileDropdown, { UserProfileData } from './ProfileDropdown';
 import MobileMenu from './MobileMenu';
 
 interface HeaderProps {
   isAuthenticated?: boolean;
 }
 
-export default function Header({ isAuthenticated = false }: HeaderProps) {
+export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [user, setUser] = useState<UserProfileData | null>(null);
+
+  // Check auth user from localStorage
+  const checkAuthUser = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+
+    if (token && storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        setUser({
+          name: parsed.name || 'Demo User',
+          email: parsed.email || 'user@roomai.com',
+          avatar: parsed.avatar,
+          credits: parsed.credits ?? 100,
+        });
+      } catch {
+        setUser({
+          name: 'Demo User',
+          email: 'user@roomai.com',
+          credits: 100,
+        });
+      }
+    } else {
+      setUser(null);
+    }
+  }, []);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
+    checkAuthUser();
+    // Listen for auth storage changes across tabs/components
+    window.addEventListener('storage', checkAuthUser);
+    return () => window.removeEventListener('storage', checkAuthUser);
+  }, [checkAuthUser, pathname]);
 
+  // Handle Scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Listen for Ctrl+K or Cmd+K
+  // Listen for Ctrl+K or Cmd+K shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -46,6 +77,18 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Handle Sign Out action
+  const handleSignOut = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+    setUser(null);
+    window.location.href = '/';
+  };
+
+  const isLoggedIn = Boolean(user || propIsAuth);
 
   return (
     <>
@@ -58,21 +101,19 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
             isScrolled ? 'h-[64px] sm:h-[68px] shadow-lg shadow-slate-900/10' : 'h-[72px] sm:h-[76px]'
           }`}
         >
-          {/* LEFT: RoomAI Brand Logo */}
-          <div className="flex items-center">
-            <Logo />
-          </div>
+          {/* LEFT: Brand Logo */}
+          <Logo />
 
-          {/* CENTER: Desktop Navigation */}
+          {/* CENTER: Navigation Links */}
           <DesktopMenu />
 
-          {/* RIGHT: Search Box, Circular Theme Toggle, Text Sign In, Gradient Get Started */}
-          <div className="hidden lg:flex items-center gap-6 xl:gap-7">
+          {/* RIGHT: Actions (Search, Theme, Profile / Auth Buttons) */}
+          <div className="hidden lg:flex items-center gap-5 xl:gap-6">
             <SearchButton onClick={() => setIsSearchOpen(true)} />
             <ThemeToggle />
 
-            {isAuthenticated ? (
-              <ProfileDropdown />
+            {isLoggedIn && user ? (
+              <ProfileDropdown user={user} onSignOut={handleSignOut} />
             ) : (
               <>
                 <LoginButton />
