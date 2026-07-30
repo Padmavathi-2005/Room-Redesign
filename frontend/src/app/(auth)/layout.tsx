@@ -10,7 +10,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen w-full mesh-bg overflow-hidden flex items-start justify-center pt-4 lg:pt-6 pb-12 selection:bg-indigo-500 selection:text-white">
+    <div className="relative min-h-screen w-full mesh-bg overflow-hidden flex items-start justify-center pt-28 lg:pt-32 pb-12 selection:bg-indigo-500 selection:text-white">
       {/* Subtle Noise Texture Overlay */}
       <div className="fixed inset-0 noise-overlay pointer-events-none z-0" />
 

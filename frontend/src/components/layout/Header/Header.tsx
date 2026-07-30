@@ -47,11 +47,6 @@ export default function Header({ isAuthenticated = false }: HeaderProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Hide global floating header on Auth pages for clean full-screen presentation
-  if (pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password') {
-    return null;
-  }
-
   return (
     <>
       <header className="fixed top-4 sm:top-6 left-0 right-0 z-50 w-full px-4 sm:px-6 lg:px-8 flex justify-center pointer-events-none">
