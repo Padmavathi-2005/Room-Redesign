@@ -125,35 +125,7 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-12 pb-16">
 
-      {/* COMPACT DASHBOARD TOP BANNER */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="relative bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl px-5 py-3 overflow-hidden shadow-md border border-white/10 flex flex-wrap items-center justify-between gap-3 mb-4"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-extrabold text-xs shadow-xs">
-            ✨
-          </div>
-          <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold">
-            <span className="font-extrabold font-heading text-white">Welcome back, {user.name}! 👋</span>
-            <span className="text-slate-400 hidden sm:inline">•</span>
-            <span className="text-slate-300 hidden sm:inline"><strong className="text-amber-300">{user.credits} Credits</strong> available</span>
-          </div>
-        </div>
 
-        <a href="#pricing">
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 rounded-xl shadow-xs transition-all font-heading"
-          >
-            <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
-            <span>Buy Credits</span>
-          </motion.button>
-        </a>
-      </motion.div>
 
       {/* DASHBOARD MAIN GRID: LEFT SIDE AI GENERATOR FORM CARD | RIGHT SIDE DESIGNS & PRICING */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
