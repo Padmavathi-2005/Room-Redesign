@@ -95,9 +95,10 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
     <>
       <header className="fixed top-4 sm:top-6 left-0 right-0 z-50 w-full px-4 sm:px-6 lg:px-8 flex justify-center pointer-events-none">
         <motion.div
+          layoutId="header-sidebar-morph"
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+          transition={{ type: 'spring', stiffness: 240, damping: 22 }}
           className={`pointer-events-auto relative w-full max-w-7xl px-4 sm:px-8 lg:px-10 flex items-center justify-between transition-all duration-300 rounded-3xl bg-white/95 dark:bg-slate-900/90 border border-slate-200/70 dark:border-slate-800 shadow-md shadow-slate-900/5 dark:shadow-slate-950/40 backdrop-blur-xl ${
             isScrolled ? 'h-[64px] sm:h-[68px] shadow-lg shadow-slate-900/10' : 'h-[72px] sm:h-[76px]'
           }`}
