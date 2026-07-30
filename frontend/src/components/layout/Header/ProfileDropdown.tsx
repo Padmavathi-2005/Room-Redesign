@@ -18,6 +18,8 @@ interface ProfileDropdownProps {
 }
 
 export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   // Automatically close dropdown on window scroll
   useEffect(() => {
     if (!isOpen) return;
