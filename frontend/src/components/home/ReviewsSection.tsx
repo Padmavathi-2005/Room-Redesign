@@ -73,7 +73,7 @@ const REVIEWS: Review[] = [
 
 export default function ReviewsSection() {
   return (
-    <section className="relative w-full py-20 bg-white text-slate-900 selection:bg-blue-600 selection:text-white border-none">
+    <section className="relative w-full py-20 bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-white selection:bg-blue-600 selection:text-white border-none">
       <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
 
         {/* Section Header */}
@@ -82,9 +82,9 @@ export default function ReviewsSection() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 border border-indigo-200 text-xs font-semibold text-indigo-800 shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold text-indigo-800 dark:text-indigo-300 shadow-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>Customer Stories</span>
           </motion.div>
 
@@ -92,7 +92,7 @@ export default function ReviewsSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 font-heading"
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-heading"
           >
             Loved by Designers, Builders & Homeowners
           </motion.h2>
@@ -101,27 +101,27 @@ export default function ReviewsSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-sm sm:text-base text-slate-600 font-medium"
+            className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium"
           >
             See how RoomAI is transforming real estate, architecture, and interior design workflows worldwide.
           </motion.p>
 
           {/* Aggregate Rating Banner */}
-          <div className="pt-2 flex items-center justify-center gap-6 text-xs font-bold text-slate-700">
+          <div className="pt-2 flex items-center justify-center gap-6 text-xs font-bold text-slate-700 dark:text-slate-300">
             <div className="flex items-center gap-1.5 text-amber-500">
-              <span className="text-sm font-extrabold text-slate-900">4.9/5</span>
+              <span className="text-sm font-extrabold text-slate-900 dark:text-white">4.9/5</span>
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="w-4 h-4 fill-current" />
               ))}
             </div>
             <span className="text-slate-400">•</span>
-            <span className="flex items-center gap-1 text-slate-800">
-              <Building2 className="w-3.5 h-3.5 text-indigo-600" />
+            <span className="flex items-center gap-1 text-slate-800 dark:text-slate-200">
+              <Building2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               500+ Companies
             </span>
             <span className="text-slate-400">•</span>
-            <span className="flex items-center gap-1 text-emerald-600 font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               99.4% On-Time Rate
             </span>
           </div>
@@ -136,7 +136,7 @@ export default function ReviewsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.08 }}
-              className="relative bg-white border border-indigo-100 rounded-3xl p-7 shadow-lg shadow-indigo-500/5 hover:shadow-xl hover:border-indigo-300 transition-all duration-300 flex flex-col justify-between"
+              className="relative bg-white dark:bg-slate-900/90 border border-indigo-100 dark:border-slate-800 rounded-3xl p-7 shadow-lg shadow-indigo-500/5 dark:shadow-black/40 hover:shadow-xl hover:border-indigo-300 dark:hover:border-slate-700 transition-all duration-300 flex flex-col justify-between"
             >
               <div className="space-y-4">
                 {/* Top Rating & Quote Icon */}

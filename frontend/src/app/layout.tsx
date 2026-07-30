@@ -21,7 +21,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className="h-full antialiased selection:bg-blue-600 selection:text-white relative bg-[#FCFCFD] min-h-screen">
+      <body className="h-full antialiased selection:bg-blue-600 selection:text-white relative bg-[#FCFCFD] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-300">
         <SettingsProvider>
           {/* Faint Blueprint Grid */}
           <div className="fixed inset-0 blueprint-grid pointer-events-none z-0" />
@@ -32,7 +32,7 @@ export default function RootLayout({
           {/* Main Page Content */}
           <div className="relative z-10">{children}</div>
 
-          {/* Light Theme Footer */}
+          {/* Light/Dark Theme Footer */}
           <Footer />
         </SettingsProvider>
       </body>

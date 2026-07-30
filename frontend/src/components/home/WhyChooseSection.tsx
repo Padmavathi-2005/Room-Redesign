@@ -7,7 +7,7 @@ import Link from 'next/link';
 
 export default function WhyChooseSection() {
   return (
-    <section className="relative w-full py-20 bg-white text-slate-900 selection:bg-blue-600 selection:text-white space-y-12 border-none">
+    <section className="relative w-full py-20 bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-white selection:bg-blue-600 selection:text-white space-y-12 border-none">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 space-y-12">
 
         {/* Section Header */}
@@ -16,9 +16,9 @@ export default function WhyChooseSection() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-xs font-semibold text-blue-700"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/80 border border-blue-100 dark:border-blue-800 text-xs font-semibold text-blue-700 dark:text-blue-300"
           >
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             <span>Why Choose RoomAI</span>
           </motion.div>
 
@@ -26,7 +26,7 @@ export default function WhyChooseSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 font-heading"
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-heading"
           >
             Why Choose RoomAI For Your Projects
           </motion.h2>
@@ -35,7 +35,7 @@ export default function WhyChooseSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-sm sm:text-base text-slate-600"
+            className="text-sm sm:text-base text-slate-600 dark:text-slate-300"
           >
             Everything you need to design, visualize, and execute interior, exterior, and 3D architectural projects with AI.
           </motion.p>

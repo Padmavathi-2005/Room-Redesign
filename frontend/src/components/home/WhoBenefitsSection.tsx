@@ -88,7 +88,7 @@ const BENEFIT_CARDS: BenefitCard[] = [
 
 export default function WhoBenefitsSection() {
   return (
-    <section className="relative w-full py-20 bg-[#4f46e5]/10 border-y border-[#4f46e5]/15 text-slate-900 selection:bg-indigo-600 selection:text-white">
+    <section className="relative w-full py-20 bg-[#4f46e5]/10 dark:bg-[#4f46e5]/20 border-y border-[#4f46e5]/15 dark:border-[#4f46e5]/30 text-slate-900 dark:text-white selection:bg-indigo-600 selection:text-white">
       <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
 
         {/* Section Header */}
@@ -97,9 +97,9 @@ export default function WhoBenefitsSection() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 border border-indigo-200 text-xs font-semibold text-indigo-800 shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold text-indigo-800 dark:text-indigo-300 shadow-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>RoomAI Users</span>
           </motion.div>
 
@@ -107,7 +107,7 @@ export default function WhoBenefitsSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 font-heading"
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-heading"
           >
             Who Benefits from RoomAI?
           </motion.h2>

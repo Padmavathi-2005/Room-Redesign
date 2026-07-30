@@ -70,7 +70,7 @@ export default function SubscriptionPlans() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   return (
-    <section className="relative w-full py-20 bg-[#4f46e5]/10 border-y border-[#4f46e5]/15 text-slate-900 selection:bg-indigo-600 selection:text-white">
+    <section className="relative w-full py-20 bg-[#4f46e5]/10 dark:bg-[#4f46e5]/20 border-y border-[#4f46e5]/15 dark:border-[#4f46e5]/30 text-slate-900 dark:text-white selection:bg-indigo-600 selection:text-white">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
 
         {/* Section Header */}
@@ -79,9 +79,9 @@ export default function SubscriptionPlans() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 border border-indigo-200 text-xs font-semibold text-indigo-800 shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold text-indigo-800 dark:text-indigo-300 shadow-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>Simple, Transparent Pricing</span>
           </motion.div>
 
@@ -89,7 +89,7 @@ export default function SubscriptionPlans() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 font-heading"
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-heading"
           >
             Flexible Subscription Plans
           </motion.h2>
@@ -98,7 +98,7 @@ export default function SubscriptionPlans() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-sm sm:text-base text-slate-600"
+            className="text-sm sm:text-base text-slate-600 dark:text-slate-300"
           >
             Choose the plan that best fits your construction team. Upgrade or cancel anytime.
           </motion.p>
@@ -115,8 +115,8 @@ export default function SubscriptionPlans() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className={`relative flex flex-col justify-between p-7 rounded-3xl transition-all duration-300 ${
                 plan.popular
-                  ? 'bg-white border-2 border-blue-600 shadow-2xl shadow-blue-500/15 scale-105 z-10'
-                  : 'bg-white/90 border border-slate-200/90 shadow-xl shadow-slate-200/50 hover:shadow-2xl'
+                  ? 'bg-white dark:bg-slate-900 border-2 border-blue-600 shadow-2xl shadow-blue-500/15 scale-105 z-10'
+                  : 'bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-black/40 hover:shadow-2xl'
               }`}
             >
               {/* Popular Badge */}

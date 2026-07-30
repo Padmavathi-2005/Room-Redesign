@@ -8,14 +8,14 @@ export default function VideoSection() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
-    <section className="relative w-full pt-28 pb-20 bg-[#4f46e5]/10 text-slate-900 selection:bg-indigo-600 selection:text-white border-none overflow-hidden">
+    <section className="relative w-full pt-28 pb-20 bg-[#4f46e5]/10 dark:bg-[#4f46e5]/20 text-slate-900 dark:text-white selection:bg-indigo-600 selection:text-white border-none overflow-hidden">
       
       {/* Top Deep Oval Curved Divider */}
       <div className="absolute top-0 left-0 right-0 w-full overflow-hidden leading-none pointer-events-none z-10">
         <svg
           viewBox="0 0 1200 120"
           preserveAspectRatio="none"
-          className="relative block w-full h-16 sm:h-24 text-[#FCFCFD] fill-current"
+          className="relative block w-full h-16 sm:h-24 text-[#FCFCFD] dark:text-[#0B0F17] fill-current"
         >
           <path d="M0,0 C300,95 900,95 1200,0 L1200,0 L0,0 Z"></path>
         </svg>
@@ -29,9 +29,9 @@ export default function VideoSection() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 border border-indigo-200 text-xs font-semibold text-indigo-800 shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold text-indigo-800 dark:text-indigo-300 shadow-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>Interactive Demo</span>
           </motion.div>
 
@@ -39,7 +39,7 @@ export default function VideoSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 font-heading"
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-heading"
           >
             See AI Design In Action
           </motion.h2>

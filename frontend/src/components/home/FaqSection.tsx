@@ -63,7 +63,7 @@ export default function FaqSection() {
   };
 
   return (
-    <section className="relative w-full py-20 bg-white text-slate-900 selection:bg-blue-600 selection:text-white border-none">
+    <section className="relative w-full py-20 bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-white selection:bg-blue-600 selection:text-white border-none">
       <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-10">
 
         {/* Section Header */}
@@ -72,9 +72,9 @@ export default function FaqSection() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/90 border border-blue-200 text-xs font-semibold text-blue-800 shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/90 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 text-xs font-semibold text-blue-800 dark:text-blue-300 shadow-xs"
           >
-            <HelpCircle className="w-3.5 h-3.5 text-blue-600" />
+            <HelpCircle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             <span>Got Questions?</span>
           </motion.div>
 
@@ -82,7 +82,7 @@ export default function FaqSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 font-heading"
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-heading"
           >
             Frequently Asked Questions
           </motion.h2>
@@ -91,7 +91,7 @@ export default function FaqSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-sm sm:text-base text-slate-600 font-medium"
+            className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium"
           >
             Everything you need to know about RoomAI's AI room redesign, construction ERP, credits, and subscription plans.
           </motion.p>
@@ -108,7 +108,7 @@ export default function FaqSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="bg-white border border-blue-100 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/5 hover:shadow-xl hover:border-blue-300 transition-all"
+                className="bg-white dark:bg-slate-900/90 border border-blue-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/5 dark:shadow-black/40 hover:shadow-xl hover:border-blue-300 dark:hover:border-slate-700 transition-all"
               >
                 <button
                   onClick={() => toggleFaq(faq.id)}

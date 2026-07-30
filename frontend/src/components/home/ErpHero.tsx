@@ -21,9 +21,9 @@ export default function ErpHero() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200/90 text-xs font-semibold text-blue-700 shadow-2xs"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-xs font-semibold text-blue-700 dark:text-blue-400 shadow-2xs"
             >
-              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 fill-blue-50" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 fill-blue-50 dark:fill-blue-950" />
               <span>Trusted Construction ERP</span>
             </motion.div>
 
@@ -32,11 +32,11 @@ export default function ErpHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-4xl sm:text-5xl lg:text-[52px] font-bold tracking-tight text-slate-900 font-heading leading-[1.12]"
+              className="text-4xl sm:text-5xl lg:text-[52px] font-bold tracking-tight text-slate-900 dark:text-white font-heading leading-[1.12]"
             >
               Build Better.
               <br />
-              <span className="bg-gradient-to-r from-[#1D4ED8] to-[#0D9488] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#1D4ED8] dark:from-blue-400 to-[#0D9488] dark:to-teal-400 bg-clip-text text-transparent">
                 Manage Smarter.
               </span>
               <br />
@@ -48,7 +48,7 @@ export default function ErpHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-sm sm:text-base text-slate-600 font-normal leading-relaxed max-w-md"
+              className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed max-w-md"
             >
               The only digital craftsmanship platform designed to unite your field and office. Seamlessly manage budgets, logistics, and labor in one high-performance interface.
             </motion.p>
