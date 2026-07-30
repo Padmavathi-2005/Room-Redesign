@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, Settings, CreditCard, LogOut, ChevronDown, Zap, Wand2 } from 'lucide-react';
