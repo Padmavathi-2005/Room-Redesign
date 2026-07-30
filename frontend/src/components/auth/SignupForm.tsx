@@ -23,10 +23,25 @@ export default function SignupForm() {
     }
     setIsLoading(true);
     setErrorMsg('');
+
+    // Save user auth session in localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', 'mock_jwt_token_roomai_' + Date.now());
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          name: fullName || email.split('@')[0] || 'Demo User',
+          email,
+          role: 'Architect',
+          credits: 100,
+        })
+      );
+    }
+
     setTimeout(() => {
       setIsLoading(false);
-      window.location.href = '/generate';
-    }, 1200);
+      window.location.href = '/dashboard';
+    }, 1000);
   };
 
   return (

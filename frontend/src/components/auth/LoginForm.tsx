@@ -26,14 +26,28 @@ export default function LoginForm() {
 
     setIsLoading(true);
 
-    // Simulate backend auth check
+    // Save user auth session in localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', 'mock_jwt_token_roomai_' + Date.now());
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          name: fullName || email.split('@')[0] || 'Demo User',
+          email,
+          role: 'Architect',
+          credits: 100,
+        })
+      );
+    }
+
+    // Simulate backend auth check and redirect to dashboard
     setTimeout(() => {
       setIsLoading(false);
       setIsSuccess(true);
       setTimeout(() => {
-        // Redirect or state change mock
-      }, 1500);
-    }, 1200);
+        window.location.href = '/dashboard';
+      }, 800);
+    }, 1000);
   };
 
   return (
