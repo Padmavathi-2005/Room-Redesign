@@ -24,9 +24,10 @@ export default function SignupForm() {
     setIsLoading(true);
     setErrorMsg('');
 
-    // Save user auth session in localStorage
+    // Save user auth session in localStorage & cookies
     if (typeof window !== 'undefined') {
-      localStorage.setItem('token', 'mock_jwt_token_roomai_' + Date.now());
+      const mockToken = 'mock_jwt_token_roomai_' + Date.now();
+      localStorage.setItem('token', mockToken);
       localStorage.setItem(
         'user',
         JSON.stringify({
@@ -36,6 +37,7 @@ export default function SignupForm() {
           credits: 100,
         })
       );
+      document.cookie = `token=${mockToken}; path=/; max-age=86400; SameSite=Lax`;
     }
 
     setTimeout(() => {

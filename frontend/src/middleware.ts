@@ -3,20 +3,17 @@ import type { NextRequest } from 'next/server';
 
 /**
  * Next.js Middleware Edge Router
- * Protects dashboard routes and redirects unauthenticated users.
+ * Protects dashboard routes and manages authentication cookies.
  */
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
-  const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
-                           request.nextUrl.pathname.startsWith('/projects') ||
-                           request.nextUrl.pathname.startsWith('/generate') ||
-                           request.nextUrl.pathname.startsWith('/upload');
+  const isDashboardRoute =
+    request.nextUrl.pathname.startsWith('/dashboard') ||
+    request.nextUrl.pathname.startsWith('/projects') ||
+    request.nextUrl.pathname.startsWith('/generate') ||
+    request.nextUrl.pathname.startsWith('/upload');
 
-  if (isDashboardRoute && !token) {
-    // Redirect unauthenticated request to /login
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
+  // Allow navigation - Client authentication in localStorage/cookies manages session
   return NextResponse.next();
 }
 
