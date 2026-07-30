@@ -125,45 +125,34 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-12 pb-16">
 
-      {/* DASHBOARD TOP BANNER */}
+      {/* COMPACT DASHBOARD TOP BANNER */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-8 sm:p-10 overflow-hidden shadow-2xl shadow-blue-950/20 border border-white/10"
+        transition={{ duration: 0.3 }}
+        className="relative bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl px-5 py-3 overflow-hidden shadow-md border border-white/10 flex flex-wrap items-center justify-between gap-3 mb-4"
       >
-        <div className="absolute -top-24 -left-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-xs font-bold text-emerald-300 backdrop-blur-md">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{user.plan}</span>
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-heading">
-              Welcome back, <span className="bg-gradient-to-r from-blue-300 via-cyan-200 to-purple-300 bg-clip-text text-transparent">{user.name}</span>!
-            </h1>
-
-            <p className="text-sm text-slate-300 max-w-xl">
-              You currently have <span className="font-extrabold text-amber-300">{user.credits} AI credits</span> available. Configure room redesigns below or upgrade your credit package anytime.
-            </p>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-extrabold text-xs shadow-xs">
+            ✨
           </div>
-
-          <div className="flex items-center gap-3">
-            <a href="#pricing">
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                className="inline-flex items-center gap-2 px-6 py-3 text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 rounded-2xl shadow-lg transition-all focus:outline-none font-heading"
-              >
-                <Zap className="w-4 h-4 text-amber-500 fill-current" />
-                <span>Buy More Credits</span>
-              </motion.button>
-            </a>
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold">
+            <span className="font-extrabold font-heading text-white">Welcome back, {user.name}! 👋</span>
+            <span className="text-slate-400 hidden sm:inline">•</span>
+            <span className="text-slate-300 hidden sm:inline"><strong className="text-amber-300">{user.credits} Credits</strong> available</span>
           </div>
         </div>
+
+        <a href="#pricing">
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 rounded-xl shadow-xs transition-all font-heading"
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
+            <span>Buy Credits</span>
+          </motion.button>
+        </a>
       </motion.div>
 
       {/* DASHBOARD MAIN GRID: LEFT SIDE AI GENERATOR FORM CARD | RIGHT SIDE DESIGNS & PRICING */}
