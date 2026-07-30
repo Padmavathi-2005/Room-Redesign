@@ -1,0 +1,29 @@
+# Production Dockerfile for Frontend (Next.js 16)
+FROM node:20-alpine AS base
+
+WORKDIR /app
+
+# Install dependencies based on lockfile
+COPY frontend/package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY frontend/ ./
+
+# Build application
+RUN npm run build
+
+# Runner Stage
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY --from=base /app/public ./public
+COPY --from=base /app/.next/standalone ./
+COPY --from=base /app/.next/static ./.next/static
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]

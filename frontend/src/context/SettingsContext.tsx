@@ -1,0 +1,144 @@
+'use client';
+
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+
+export interface AppSettings {
+  applicationName: string;
+  theme: 'light' | 'dark';
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  textColor: string;
+  borderRadius: number;
+  glassOpacity: number;
+  blurStrength: number;
+  logo?: string;
+  favicon?: string;
+  maintenanceMode: boolean;
+}
+
+const DEFAULT_SETTINGS: AppSettings = {
+  applicationName: 'RoomAI',
+  theme: 'light',
+  primaryColor: '#6366F1',
+  secondaryColor: '#8B5CF6',
+  accentColor: '#06B6D4',
+  backgroundColor: '#FFFFFF',
+  textColor: '#111827',
+  borderRadius: 16,
+  glassOpacity: 0.7,
+  blurStrength: 20,
+  maintenanceMode: false,
+};
+
+interface SettingsContextType {
+  settings: AppSettings;
+  isLoading: boolean;
+  toggleTheme: () => Promise<void>;
+  updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
+}
+
+const SettingsContext = createContext<SettingsContextType>({
+  settings: DEFAULT_SETTINGS,
+  isLoading: true,
+  toggleTheme: async () => {},
+  updateSettings: async () => {},
+});
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+export function SettingsProvider({ children }: { children: React.ReactNode }) {
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Apply CSS Variables to :root DOM element dynamically
+  const applyThemeToDOM = useCallback((currentSettings: AppSettings) => {
+    if (typeof window === 'undefined') return;
+
+    const root = document.documentElement;
+    const isDark = currentSettings.theme === 'dark';
+
+    if (isDark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+
+    // Dynamic CSS variables injected from Database
+    root.style.setProperty('--primary', currentSettings.primaryColor);
+    root.style.setProperty('--secondary', currentSettings.secondaryColor);
+    root.style.setProperty('--accent', currentSettings.accentColor);
+    root.style.setProperty(
+      '--background',
+      isDark ? '#0F172A' : currentSettings.backgroundColor
+    );
+    root.style.setProperty(
+      '--text',
+      isDark ? '#FFFFFF' : currentSettings.textColor
+    );
+    root.style.setProperty('--radius', `${currentSettings.borderRadius}px`);
+    root.style.setProperty('--glass-opacity', `${currentSettings.glassOpacity}`);
+    root.style.setProperty('--blur-strength', `${currentSettings.blurStrength}px`);
+  }, []);
+
+  // Fetch initial settings from DB API on startup
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/settings`, { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            const fetched = json.data as AppSettings;
+            setSettings(fetched);
+            applyThemeToDOM(fetched);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch DB settings, using defaults:', err);
+        applyThemeToDOM(DEFAULT_SETTINGS);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchSettings();
+  }, [applyThemeToDOM]);
+
+  // Update Settings API call
+  const updateSettings = async (newSettings: Partial<AppSettings>) => {
+    const updated = { ...settings, ...newSettings };
+    setSettings(updated);
+    applyThemeToDOM(updated);
+
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      await fetch(`${API_BASE_URL}/settings`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(newSettings),
+      });
+    } catch (err) {
+      console.error('Error persisting theme settings to DB:', err);
+    }
+  };
+
+  // Toggle Theme (Light <-> Dark)
+  const toggleTheme = async () => {
+    const nextTheme = settings.theme === 'light' ? 'dark' : 'light';
+    await updateSettings({ theme: nextTheme });
+  };
+
+  return (
+    <SettingsContext.Provider value={{ settings, isLoading, toggleTheme, updateSettings }}>
+      {children}
+    </SettingsContext.Provider>
+  );
+}
+
+export function useSettings() {
+  return useContext(SettingsContext);
+}

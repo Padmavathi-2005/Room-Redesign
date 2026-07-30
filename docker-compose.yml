@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # -------------------------------------------------------------
+  # DATABASE: MongoDB Database Service
+  # -------------------------------------------------------------
+  mongodb:
+    image: mongo:7.0
+    container_name: roomai-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: roomai
+    volumes:
+      - mongodb_data:/data/db
+
+  # -------------------------------------------------------------
+  # CACHE & QUEUE: Redis Store
+  # -------------------------------------------------------------
+  redis:
+    image: redis:7.2-alpine
+    container_name: roomai-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # -------------------------------------------------------------
+  # BACKEND SERVICE: NestJS Application
+  # -------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: roomai-backend
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongodb:27017/roomai
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - mongodb
+      - redis
+
+  # -------------------------------------------------------------
+  # FRONTEND SERVICE: Next.js Application
+  # -------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: roomai-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
+    depends_on:
+      - backend
+
+volumes:
+  mongodb_data:
+  redis_data:
