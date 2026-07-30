@@ -44,7 +44,7 @@ export default function LoginForm() {
       className="w-full max-w-md mx-auto"
     >
       {/* Glassmorphism Card Container */}
-      <div className="relative bg-white/95 rounded-[24px] p-6 sm:p-8 shadow-2xl border border-indigo-100/80 backdrop-blur-2xl overflow-hidden hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.18)] transition-all duration-500">
+      <div className="relative bg-white/95 rounded-[24px] p-6 sm:p-8 shadow-lg shadow-slate-900/5 border border-indigo-100/80 backdrop-blur-2xl overflow-hidden hover:shadow-xl transition-all duration-300">
         {/* Subtle Ambient Top Radial Light */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
