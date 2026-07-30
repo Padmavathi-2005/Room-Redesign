@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Heart } from 'lucide-react';
 import Logo from './Logo';
 import DesktopMenu from './DesktopMenu';
 import SearchButton from './SearchButton';
@@ -122,9 +124,23 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
           {/* CENTER: Navigation Links */}
           <DesktopMenu />
 
-          {/* RIGHT: Actions (Search, Theme, Profile / Auth Buttons) */}
+          {/* RIGHT: Actions (Wishlist Heart Icon, Theme, Profile / Auth Buttons) */}
           <div className="hidden lg:flex items-center gap-5 xl:gap-6">
-            <SearchButton onClick={() => setIsSearchOpen(true)} />
+            {/* Wishlist Heart Button */}
+            <Link href="/dashboard/wishlist">
+              <motion.button
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
+                aria-label="View Wishlist"
+                className="relative w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-[#E5E7EB] dark:border-slate-800 text-rose-500 hover:border-rose-400 shadow-2xs hover:shadow-md hover:shadow-rose-500/20 flex items-center justify-center focus:outline-none transition-all"
+              >
+                <Heart className="w-4 h-4 fill-rose-500/20 text-rose-500 hover:fill-rose-500 transition-colors" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-extrabold flex items-center justify-center border border-white dark:border-slate-900 shadow-xs">
+                  3
+                </span>
+              </motion.button>
+            </Link>
+
             <ThemeToggle />
 
             {isLoggedIn && user ? (
