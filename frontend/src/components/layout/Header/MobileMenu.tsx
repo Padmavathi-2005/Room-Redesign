@@ -4,24 +4,45 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Search, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
-import GetStartedButton from './GetStartedButton';
 
 interface MobileMenuProps {
   onOpenSearch: () => void;
 }
 
-const MOBILE_NAV_LINKS = [
+const PUBLIC_NAV_LINKS = [
   { label: 'Features', href: '/#features' },
-  { label: 'Products (AI Tools)', href: '/tools' },
+  { label: 'AI Models', href: '/tools' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ];
 
+
+const DASHBOARD_NAV_LINKS = [
+  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Projects', href: '/projects' },
+  { label: 'Generate', href: '/generate' },
+  { label: 'Subscription Plans', href: '/pricing' },
+  { label: 'Profile', href: '/settings' },
+];
+
 export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+
+  const isDashboardRoute =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/generate') ||
+    pathname.startsWith('/projects') ||
+    pathname.startsWith('/history') ||
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/billing') ||
+    pathname.startsWith('/upload');
+
+  const navLinks = isDashboardRoute ? DASHBOARD_NAV_LINKS : PUBLIC_NAV_LINKS;
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -32,7 +53,7 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
         whileTap={{ scale: 0.9 }}
         onClick={toggleMenu}
         aria-label="Toggle navigation menu"
-        className="p-2.5 rounded-full bg-white border border-[#E5E7EB] text-[#0F172A] hover:text-[#2563EB] focus:outline-none backdrop-blur-md shadow-2xs"
+        className="p-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:text-blue-600 focus:outline-none backdrop-blur-md shadow-2xs"
       >
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </motion.button>
@@ -56,15 +77,15 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm bg-white border-l border-slate-200 p-6 backdrop-blur-2xl flex flex-col justify-between shadow-2xl"
+              className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 p-6 backdrop-blur-2xl flex flex-col justify-between shadow-2xl"
             >
               {/* Top Drawer Header */}
               <div>
-                <div className="flex items-center justify-between pb-6 border-b border-slate-200">
+                <div className="flex items-center justify-between pb-6 border-b border-slate-200 dark:border-slate-800">
                   <Logo />
                   <button
                     onClick={toggleMenu}
-                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700"
+                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -76,25 +97,25 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
                     toggleMenu();
                     onOpenSearch();
                   }}
-                  className="w-full mt-4 flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-500 bg-slate-50 rounded-2xl border border-slate-200 shadow-2xs"
+                  className="w-full mt-4 flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-500 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xs"
                 >
                   <div className="flex items-center gap-2">
                     <Search className="w-4 h-4 text-blue-600" />
                     <span>Search RoomAI...</span>
                   </div>
-                  <kbd className="px-2 py-0.5 text-[10px] bg-white rounded-md border text-slate-400">
+                  <kbd className="px-2 py-0.5 text-[10px] bg-white dark:bg-slate-900 rounded-md border text-slate-400">
                     ⌘K
                   </kbd>
                 </button>
 
                 {/* Mobile Nav Links */}
                 <nav className="mt-6 space-y-1">
-                  {MOBILE_NAV_LINKS.map((link) => (
+                  {navLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
                       onClick={toggleMenu}
-                      className="flex items-center justify-between px-4 py-3 text-base font-medium text-slate-800 hover:text-[#2563EB] hover:bg-blue-50/60 rounded-2xl transition-colors"
+                      className="flex items-center justify-between px-4 py-3 text-base font-bold text-slate-800 dark:text-slate-100 hover:text-blue-600 hover:bg-blue-50/60 dark:hover:bg-blue-950/40 rounded-2xl transition-colors font-heading"
                     >
                       <span>{link.label}</span>
                       <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -103,23 +124,10 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
                 </nav>
               </div>
 
-              {/* Drawer Bottom Actions */}
-              <div className="pt-6 border-t border-slate-200 space-y-4">
-                <div className="flex items-center justify-between px-2">
-                  <span className="text-sm font-medium text-slate-500">Appearance</span>
-                  <ThemeToggle />
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 pt-2">
-                  <Link
-                    href="/login"
-                    onClick={toggleMenu}
-                    className="w-full text-center py-2.5 text-sm font-medium text-[#0F172A] hover:text-[#2563EB]"
-                  >
-                    Sign In
-                  </Link>
-                  <GetStartedButton />
-                </div>
+              {/* Bottom Theme & Auth Options */}
+              <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <ThemeToggle />
+                <span className="text-xs font-bold text-slate-500">RoomAI Studio</span>
               </div>
             </motion.div>
           </>

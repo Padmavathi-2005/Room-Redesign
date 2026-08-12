@@ -32,9 +32,9 @@ interface UserData {
 export default function DashboardNavCard() {
   const pathname = usePathname();
   const [user, setUser] = useState<UserData>({
-    name: 'Sangvish21',
-    email: 'sangvish21@gmail.com',
-    credits: 100,
+    name: 'User',
+    email: '',
+    credits: 40,
   });
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
@@ -51,24 +51,33 @@ export default function DashboardNavCard() {
   }, [isProfileMenuOpen]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('user');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setUser({
-            name: parsed.name
-              ? parsed.name.charAt(0).toUpperCase() + parsed.name.slice(1)
-              : 'Sangvish21',
-            email: parsed.email || 'sangvish21@gmail.com',
-            credits: parsed.credits ?? 100,
-          });
-        } catch {
-          // fallback
+    const loadUser = () => {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            setUser({
+              name: parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || 'User',
+              email: parsed.email || '',
+              credits: parsed.credits ?? 40,
+            });
+          } catch {
+            // fallback
+          }
         }
       }
-    }
+    };
+
+    loadUser();
+    window.addEventListener('storage', loadUser);
+    window.addEventListener('user-updated', loadUser);
+    return () => {
+      window.removeEventListener('storage', loadUser);
+      window.removeEventListener('user-updated', loadUser);
+    };
   }, []);
+
 
   const capitalizeName = (name: string) => {
     if (!name) return 'User';

@@ -29,27 +29,30 @@ export default function LoginForm() {
     // Save user auth session in localStorage & cookies
     if (typeof window !== 'undefined') {
       const mockToken = 'mock_jwt_token_roomai_' + Date.now();
+      const userRole = email.toLowerCase().includes('admin') ? 'admin' : 'Architect';
+      
       localStorage.setItem('token', mockToken);
       localStorage.setItem(
         'user',
         JSON.stringify({
           name: fullName || email.split('@')[0] || 'Demo User',
           email,
-          role: 'Architect',
+          role: userRole,
           credits: 100,
         })
       );
       document.cookie = `token=${mockToken}; path=/; max-age=86400; SameSite=Lax`;
-    }
 
-    // Simulate backend auth check and redirect to dashboard
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSuccess(true);
+      // Simulate backend auth check and redirect to dashboard
+      const targetPath = userRole === 'admin' ? '/admin/dashboard' : '/dashboard';
       setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 800);
-    }, 1000);
+        setIsLoading(false);
+        setIsSuccess(true);
+        setTimeout(() => {
+          window.location.href = targetPath;
+        }, 800);
+      }, 1000);
+    }
   };
 
   return (

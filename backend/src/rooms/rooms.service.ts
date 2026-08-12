@@ -1,11 +1,13 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, GatewayTimeoutException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RoomGeneration, RoomDocument } from './schemas/room.schema';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { PromptBuilderService } from '../modules/prompt/prompt-builder.service';
 import { UploadsService } from '../modules/uploads/uploads.service';
-import axios from 'axios';
+import { ProviderManagerService } from '../modules/provider-manager/provider-manager.service';
+
+import { ProjectsService } from '../modules/projects/projects.service';
+import { User, UserDocument } from '../modules/users/schemas/user.schema';
 
 @Injectable()
 export class RoomsService {
@@ -28,86 +30,192 @@ export class RoomsService {
   constructor(
     @InjectModel(RoomGeneration.name)
     private readonly roomModel: Model<RoomDocument>,
-    private readonly promptBuilderService: PromptBuilderService,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
     private readonly uploadsService: UploadsService,
+    private readonly providerManagerService: ProviderManagerService,
+    private readonly projectsService: ProjectsService,
   ) {}
 
   /**
-   * Triggers room redesign generation
+   * Triggers room redesign generation by enqueuing a background job
+   * and synchronously waiting for the background QueueWorker to finish processing it.
    */
   async generateRoomRedesign(dto: CreateRoomDto): Promise<any> {
-    const { originalImage, roomType, theme, userPrompt, designStyle, colorPalette, lighting, customInstructions, toolSlug } = dto;
-    
-    // 1. Build optimized prompt using PromptBuilderService
-    const { finalPrompt, negativePrompt } = this.promptBuilderService.buildPrompt({
-      roomType,
-      theme,
-      designStyle,
-      colorPalette,
-      lighting,
-      customInstructions: customInstructions || userPrompt,
-      toolSlug,
-    });
+    const { 
+      originalImage, roomType, theme, userPrompt, designStyle, colorPalette, 
+      lighting, customInstructions, toolSlug, houseAngle, cameraAngle, 
+      perspective, buildingType, roofType, environment, timeOfDay,
+      projectId, manusChatId, userId, creditsCost
+    } = dto;
 
-    // 2. Register original input file metadata in local filesystem & DB
+    // Credit Verification & Deduction Logic
+    const cost = Math.max(1, creditsCost || 1);
+    let targetUser: UserDocument | null = null;
+
+    if (userId && userId.length === 24) {
+      targetUser = await this.userModel.findById(userId).exec();
+    }
+    if (!targetUser) {
+      targetUser = await this.userModel.findOne({ email: 'test@yopmail.com' }).exec()
+        || await this.userModel.findOne().exec();
+    }
+
+    if (targetUser) {
+      const userCredits = targetUser.credits ?? 0;
+      if (userCredits < cost) {
+        throw new BadRequestException(
+          `Insufficient credits! You have ${userCredits} credits remaining, but this generation requires ${cost} credit(s). Please top up your account or upgrade your plan.`
+        );
+      }
+      targetUser.credits = Math.max(0, userCredits - cost);
+      await targetUser.save();
+      this.logger.log(`Deducted ${cost} credit(s) from user "${targetUser.email}". Remaining credits: ${targetUser.credits}`);
+    }
+
+    let targetTheme = designStyle || theme;
+    let targetColorPalette = colorPalette || '';
+    let targetLighting = lighting || '';
+    let targetChatId = manusChatId || '';
+    let activeProject: any = null;
+
+    if (projectId) {
+      try {
+        activeProject = await this.projectsService.findOne(projectId);
+        if (activeProject) {
+          this.logger.log(`Locked generation to Project "${activeProject.name}" (ID: ${projectId}) with Theme: ${activeProject.theme}`);
+          if (activeProject.theme) targetTheme = activeProject.theme;
+          if (activeProject.colorPalette) targetColorPalette = activeProject.colorPalette;
+          if (activeProject.lighting) targetLighting = activeProject.lighting;
+          if (activeProject.manusChatId) targetChatId = activeProject.manusChatId;
+        }
+      } catch (err: any) {
+        this.logger.warn(`Could not resolve Project ${projectId}: ${err.message}`);
+      }
+    }
+
+    this.logger.log(`Enqueuing redesign job for ${targetTheme} ${roomType}...`);
+
+    const resolvedOriginalImage = this.resolveDirectImageUrl(originalImage);
+
+    // 1. Upload and preprocess the original input image via UploadsService
     const inputMediaFile = await this.uploadsService.registerUploadedFile({
       originalName: `input_${Date.now()}.jpg`,
       type: 'original_input',
-      externalUrl: originalImage,
+      externalUrl: resolvedOriginalImage,
     });
 
-    const apiKey = process.env.REPLICATE_API_TOKEN;
-    let generatedImageUrl = '';
-
-    if (apiKey && apiKey.trim() !== '') {
-      this.logger.log(`Calling Replicate ControlNet AI for ${theme} ${roomType}`);
-      try {
-        generatedImageUrl = await this.callReplicateAI(originalImage, finalPrompt, negativePrompt);
-      } catch (err) {
-        this.logger.error(`Replicate AI Error: ${err.message}. Falling back to sample design.`);
-        generatedImageUrl = this.getThemeFallbackImage(theme, roomType);
-      }
-    } else {
-      this.logger.log(`Replicate API Key not set. Using sample design fallback for ${theme} ${roomType}.`);
-      generatedImageUrl = this.getThemeFallbackImage(theme, roomType);
-    }
-
-    // 3. Register output generated file metadata
-    const outputMediaFile = await this.uploadsService.registerUploadedFile({
-      originalName: `output_${Date.now()}.jpg`,
-      type: 'ai_generated',
-      externalUrl: generatedImageUrl,
-    });
-
-    const roomRecord = {
-      originalImage,
-      generatedImage: generatedImageUrl,
+    // 2. Insert the pending room generation document to act as our queue job payload
+    const roomRecord: Record<string, any> = {
+      originalImage: inputMediaFile.url,
+      generatedImage: '',
       originalImageId: (inputMediaFile as any)._id,
-      generatedImageId: (outputMediaFile as any)._id,
       toolSlug: toolSlug || 'interior-design',
       roomType,
-      theme: designStyle || theme,
-      colorPalette,
-      lighting,
-      customInstructions: customInstructions || userPrompt,
-      prompt: finalPrompt,
-      negativePrompt,
-      creditsUsed: 4,
-      status: 'completed',
+      buildingType: buildingType || 'House',
+      roofType: roofType || '',
+      environment: environment || '',
+      timeOfDay: timeOfDay || '',
+      houseAngle: houseAngle || '',
+      cameraAngle: cameraAngle || '',
+      perspective: perspective || '',
+      theme: targetTheme,
+      colorPalette: targetColorPalette,
+      lighting: targetLighting,
+      customInstructions: customInstructions || userPrompt || '',
+      prompt: '',
+      negativePrompt: '',
+      creditsUsed: cost,
+      status: 'pending',
       createdAt: new Date(),
     };
 
+    if (targetUser) roomRecord.userId = targetUser._id;
+    if (projectId) roomRecord.projectId = projectId;
+    if (targetChatId) roomRecord.manusChatId = targetChatId;
+
+    let createdRoom: RoomDocument;
     try {
-      const createdRoom = new this.roomModel(roomRecord);
-      return await createdRoom.save();
-    } catch (e) {
-      this.logger.warn(`MongoDB save bypassed (${e.message}). Saving to memory array.`);
+      createdRoom = new this.roomModel(roomRecord);
+      await createdRoom.save();
+      if (projectId) {
+        await this.projectsService.addRoomToProject(projectId, createdRoom._id);
+      }
+    } catch (e: any) {
+      // Memory store fallback
       const memoryItem = {
-        _id: 'm_' + Date.now(),
+        _id: `gen-${Date.now()}`,
         ...roomRecord,
+        remainingCredits: targetUser ? targetUser.credits : 0,
       };
       this.inMemoryRooms.unshift(memoryItem);
+      if (projectId) {
+        await this.projectsService.addRoomToProject(projectId, memoryItem._id);
+      }
       return memoryItem;
+    }
+
+    // 3. Blocking Wait: Poll the database for worker completion
+    const startTime = Date.now();
+    const timeoutMs = 70000; // 70 seconds limit for Replicate / OpenAI API operations
+    const pollIntervalMs = 1500;
+
+    this.logger.log(`Job enqueued (ID: ${createdRoom._id}). Waiting for QueueWorker...`);
+
+    while (Date.now() - startTime < timeoutMs) {
+      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+      const currentRoom = await this.roomModel.findById(createdRoom._id).exec();
+      
+      if (currentRoom) {
+        if (currentRoom.status === 'completed') {
+          this.logger.log(`Job completed (ID: ${createdRoom._id}). Returning result.`);
+          const resultObj: any = currentRoom.toObject ? currentRoom.toObject() : { ...currentRoom };
+          if (targetUser) {
+            resultObj.remainingCredits = targetUser.credits;
+          }
+          return resultObj;
+        }
+        if (currentRoom.status === 'failed') {
+          this.logger.error(`Job failed (ID: ${createdRoom._id}). Error: ${currentRoom.error}`);
+          throw new BadRequestException(`Image generation failed: ${currentRoom.error || 'Unknown error'}`);
+        }
+      }
+    }
+
+    // Mark as failed in DB on timeout
+    await this.roomModel.findByIdAndUpdate(createdRoom._id, {
+      $set: { status: 'failed', error: 'Generation timed out' },
+    });
+
+    throw new GatewayTimeoutException('Image generation request timed out. Please try again.');
+  }
+
+  /**
+   * Direct Flux-only generation that does not upload or save files or save DB entries.
+   */
+  async generateRoomRedesign2(body: { imageUrl: string; prompt: string }): Promise<any> {
+    const { imageUrl, prompt } = body;
+    const resolvedUrl = this.resolveDirectImageUrl(imageUrl);
+    this.logger.log(`Direct redesign request. Prompt: "${prompt.slice(0, 50)}...", Image URL: ${resolvedUrl}`);
+
+    if (!prompt) {
+      throw new BadRequestException('Prompt is required.');
+    }
+
+    try {
+      const result = await this.providerManagerService.generateImage({
+        prompt: prompt,
+        imageUrl: resolvedUrl,
+        negativePrompt: '',
+      });
+
+      return {
+        success: true,
+        imageUrl: result.imageUrl,
+      };
+    } catch (err: any) {
+      this.logger.error(`Direct redesign failed. Error: ${err.message}`);
+      throw new BadRequestException(`Redesign failed: ${err.message}`);
     }
   }
 
@@ -120,7 +228,7 @@ export class RoomsService {
       if (mongoRooms && mongoRooms.length > 0) {
         return mongoRooms;
       }
-    } catch (e) {
+    } catch (e: any) {
       this.logger.warn(`MongoDB fetch fallback: ${e.message}`);
     }
     return this.inMemoryRooms;
@@ -162,53 +270,22 @@ export class RoomsService {
   }
 
   /**
-   * High Precision ControlNet API Call enforcing 1:1 pixel alignment of walls, pillars, and camera angle
+   * Helper to parse and resolve direct Unsplash image downloads from photo page links
    */
-  private async callReplicateAI(imageUrl: string, prompt: string, negativePrompt?: string): Promise<string> {
-    const response = await axios.post(
-      'https://api.replicate.com/v1/predictions',
-      {
-        version: '854e8727697a056c525cd2e77d2156a61018194ab7d74f67a9a1ac26e7d44919',
-        input: {
-          image: imageUrl,
-          prompt: prompt,
-          a_prompt: 'best quality, extremely detailed, photo, 8k, exact 1:1 pixel alignment with original photo, lock camera perspective angle, preserve left wall pillar position',
-          n_prompt: negativePrompt || 'lowres, bad anatomy, bad hands, cropped, worst quality, shifted camera angle, moved wall pillar, scale mismatch',
-          num_samples: '1',
-          image_resolution: '768',
-          controlnet_conditioning_scale: 0.95,
-        },
-      },
-      {
-        headers: {
-          Authorization: `Token ${process.env.REPLICATE_API_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+  private resolveDirectImageUrl(url: string): string {
+    if (!url) return url;
 
-    return response.data.output?.[0] || response.data.urls?.get || '';
-  }
+    // Matches Unsplash photo page patterns
+    // e.g. https://unsplash.com/photos/hWwP4LTGEQA or https://unsplash.com/photos/some-slug-hWwP4LTGEQA
+    const unsplashMatch = url.match(/unsplash\.com\/photos\/([a-zA-Z0-9_-]+)$/);
+    if (unsplashMatch) {
+      const segment = unsplashMatch[1];
+      const id = segment.includes('-') ? segment.split('-').pop() : segment;
+      const downloadUrl = `https://unsplash.com/photos/${id}/download`;
+      this.logger.log(`Auto-resolved Unsplash page link to direct download: ${downloadUrl}`);
+      return downloadUrl;
+    }
 
-  private getThemeFallbackImage(theme: string, roomType: string): string {
-    const t = theme.toLowerCase();
-    const r = roomType.toLowerCase();
-
-    if (t.includes('cyberpunk')) {
-      return 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1200&auto=format&fit=crop';
-    }
-    if (t.includes('scandinavian') || t.includes('minimalist') || t.includes('japandi')) {
-      return 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200&auto=format&fit=crop';
-    }
-    if (t.includes('vintage') || t.includes('industrial')) {
-      return 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200&auto=format&fit=crop';
-    }
-    if (r.includes('bedroom')) {
-      return 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=1200&auto=format&fit=crop';
-    }
-    if (r.includes('kitchen')) {
-      return 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1200&auto=format&fit=crop';
-    }
-    return 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1200&auto=format&fit=crop';
+    return url;
   }
 }

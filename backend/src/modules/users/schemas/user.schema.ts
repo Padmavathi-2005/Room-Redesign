@@ -33,7 +33,7 @@ export class User {
   @Prop({ required: true, unique: true, lowercase: true, trim: true, index: true })
   email: string;
 
-  @Prop({ trim: true, unique: true, sparse: true, default: null })
+  @Prop({ trim: true, required: false })
   phone?: string;
 
   @Prop({ select: false })
@@ -51,11 +51,20 @@ export class User {
   @Prop({ type: String, enum: SubscriptionPlan, default: SubscriptionPlan.FREE, index: true })
   plan: SubscriptionPlan;
 
+  @Prop({ default: 'FREE' })
+  subscriptionTier?: string;
+
   @Prop({ default: 40 })
   credits: number;
 
   @Prop({ default: null })
   stripeCustomerId?: string;
+
+  @Prop({ default: null })
+  stripeSubscriptionId?: string;
+
+  @Prop({ default: null })
+  subscriptionPeriodEnd?: Date;
 
   @Prop({ default: 'active' })
   subscriptionStatus: string;

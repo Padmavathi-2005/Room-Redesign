@@ -5,8 +5,8 @@
 @tailwind utilities;
 
 :root {
-  --font-inter: 'Inter', sans-serif;
-  --font-outfit: 'Outfit', sans-serif;
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-outfit: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Dynamic DB Theme Variables */
   --primary: #2563eb;
@@ -19,15 +19,11 @@
   --blur-strength: 20px;
 }
 
-body {
+body, button, input, select, textarea {
   font-family: var(--font-inter);
-  color: var(--text);
-  background-color: var(--background);
-  overflow-x: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-h1, h2, h3, h4, .font-heading {
+h1, h2, h3, h4, h5, h6, .font-heading {
   font-family: var(--font-outfit);
 }
 
@@ -132,4 +128,55 @@ h1, h2, h3, h4, .font-heading {
 
 @keyframes rotateGlow {
   100% { transform: rotate(360deg); }
+}
+
+/* Sleek Rounded Modal Scrollbar */
+.custom-modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.25) transparent;
+}
+
+.custom-modal-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.custom-modal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(147, 51, 234, 0.3);
+  border-radius: 9999px;
+}
+
+.custom-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(147, 51, 234, 0.6);
+}
+
+/* Force hide global header & footer navigation when any modal/popup is open */
+html[data-modal-open="true"] header,
+body[data-modal-open="true"] header,
+body.modal-open header,
+[data-modal-open="true"] header,
+html[data-modal-open="true"] footer,
+body[data-modal-open="true"] footer,
+body.modal-open footer,
+[data-modal-open="true"] footer {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Disable native browser password reveal icons (Edge, Chrome, Safari) to prevent duplicate eye icons */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
 }

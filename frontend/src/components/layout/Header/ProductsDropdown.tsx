@@ -58,7 +58,12 @@ const DEFAULT_PRODUCT_CATEGORIES = [
   },
 ];
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+  const cleanUrl = envUrl.replace(/\/$/, '');
+  return cleanUrl.endsWith('/api/v1') ? cleanUrl : `${cleanUrl}/api/v1`;
+};
+const API_BASE_URL = getApiBaseUrl();
 
 export default function ProductsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -130,19 +135,20 @@ export default function ProductsDropdown() {
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
     >
-      {/* Products Trigger Button */}
+      {/* AI Models Dropdown Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 py-1 text-sm font-medium text-[#0F172A] dark:text-slate-200 hover:text-[#2563EB] dark:hover:text-blue-400 transition-colors focus:outline-none rounded-md group"
       >
         <LayoutGrid className="w-4 h-4 text-slate-500 dark:text-slate-400 group-hover:text-[#2563EB] dark:group-hover:text-blue-400 transition-colors" />
-        <span>Products</span>
+        <span>AI Models</span>
         <ChevronDown
           className={`w-3.5 h-3.5 transition-transform duration-200 ${
             isOpen ? 'rotate-180 text-[#2563EB] dark:text-blue-400' : 'text-slate-400'
           }`}
         />
       </button>
+
 
       {/* Mega Menu Dropdown Window - Positioned mt-5 sm:mt-6 for clearance */}
       <AnimatePresence>

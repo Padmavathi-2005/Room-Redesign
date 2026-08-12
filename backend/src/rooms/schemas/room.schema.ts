@@ -23,6 +23,27 @@ export class RoomGeneration {
   @Prop({ required: true, default: 'Living Room' })
   roomType: string;
 
+  @Prop({ required: false, default: 'House' })
+  buildingType?: string;
+
+  @Prop({ required: false, default: '' })
+  roofType?: string;
+
+  @Prop({ required: false, default: '' })
+  environment?: string;
+
+  @Prop({ required: false, default: '' })
+  timeOfDay?: string;
+
+  @Prop({ required: false, default: '' })
+  houseAngle?: string;
+
+  @Prop({ required: false, default: '' })
+  cameraAngle?: string;
+
+  @Prop({ required: false, default: '' })
+  perspective?: string;
+
   @Prop({ required: true, default: 'Modern' })
   theme: string; // Design Style (e.g. Modern, Japandi, Scandinavian)
 
@@ -40,6 +61,15 @@ export class RoomGeneration {
 
   @Prop({ required: false, default: '' })
   negativePrompt?: string;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: false })
+  userId?: MongooseSchema.Types.ObjectId;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Project', required: false })
+  projectId?: MongooseSchema.Types.ObjectId;
+
+  @Prop({ required: false, default: '' })
+  manusChatId?: string;
 
   @Prop({ required: true, default: 4 })
   creditsUsed: number;

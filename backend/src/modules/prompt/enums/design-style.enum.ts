@@ -1,0 +1,17 @@
+export enum DesignStyleEnum {
+  MODERN = 'Modern',
+  LUXURY = 'Luxury',
+  MINIMALIST = 'Minimalist',
+  SCANDINAVIAN = 'Scandinavian',
+  JAPANDI = 'Japandi',
+  INDUSTRIAL = 'Industrial',
+  TRADITIONAL = 'Traditional',
+  FARMHOUSE = 'Farmhouse',
+  MEDITERRANEAN = 'Mediterranean',
+  CONTEMPORARY = 'Contemporary',
+  BOHEMIAN = 'Bohemian',
+  COASTAL = 'Coastal',
+  MID_CENTURY_MODERN = 'Mid-Century Modern',
+  ART_DECO = 'Art Deco',
+  RUSTIC = 'Rustic',
+}

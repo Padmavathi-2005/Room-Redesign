@@ -20,3 +20,11 @@ All API routes are prefixed with `/api/v1`.
 | `POST /api/v1/payment/checkout` | Initialize Stripe checkout session | Yes |
 | `POST /api/v1/payment/webhook` | Listen for Stripe events | Webhook Signature |
 | `GET /api/v1/admin/analytics` | Platform metrics & usage stats | Admin Guard |
+| `GET /api/v1/marketplace` | List published projects by tool slug/room type (Sanitized preview) | Optional |
+| `GET /api/v1/marketplace/:id` | Fetch project details (Full access if buyer/author, else 1 sample + metadata) | Optional |
+| `POST /api/v1/marketplace/publish` | Publish generated project to Marketplace with price & 1 sample image | Yes |
+| `POST /api/v1/marketplace/:id/purchase` | Unlock published project (80% credited to seller, 20% platform fee) | Yes |
+| `POST /api/v1/wishlist/toggle/:id` | Add/remove project from user wishlist | Yes |
+| `GET /api/v1/wishlist` | Fetch active user wishlisted projects | Yes |
+| `GET /api/v1/users/earnings` | Fetch seller payout balance & transaction logs | Yes |
+

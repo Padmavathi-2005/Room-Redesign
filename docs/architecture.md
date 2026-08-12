@@ -29,3 +29,8 @@
 - `subscriptions`: Active user membership statuses and plan details.
 - `payments`: Processed transaction records and invoice receipts.
 - `notifications`: User alert feeds.
+- `published_projects`: Publicly listed community projects (sample image, price, tool slug, room type, metadata).
+- `project_purchases`: Transaction history connecting buyers and sellers with revenue split amounts.
+- `wishlists`: Bookmarked projects per user.
+- `user_wallets`: Redeemable cash balance, total earnings, and Stripe Express Connect accounts for creators.
+

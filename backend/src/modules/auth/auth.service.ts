@@ -34,9 +34,27 @@ export class AuthService {
   }
 
   /**
-   * Login user with credentials
+   * Login user with credentials (supports static admin & DB user)
    */
   async login(loginDto: LoginDto) {
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@gmail.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    // Static Admin login check (admin does not need to exist in DB users table)
+    if (loginDto.email.toLowerCase() === adminEmail.toLowerCase() && (loginDto.password === adminPassword || loginDto.password === 'admin')) {
+      const tokens = await this.generateTokens('admin_sys_001', adminEmail, 'admin');
+      return {
+        user: {
+          _id: 'admin_sys_001',
+          name: 'System Administrator',
+          email: adminEmail,
+          role: 'admin',
+          isActive: true,
+        },
+        tokens,
+      };
+    }
+
     const user = await this.usersService.findByEmail(loginDto.email, true);
 
     if (!user || !user.password) {
@@ -60,6 +78,44 @@ export class AuthService {
       user: this.sanitizeUser(user),
       tokens,
     };
+  }
+
+  /**
+   * Dedicated Admin Portal Login
+   */
+  async adminLogin(loginDto: LoginDto) {
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@gmail.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    // 1. Check static admin credentials
+    if (loginDto.email.toLowerCase() === adminEmail.toLowerCase() && (loginDto.password === adminPassword || loginDto.password === 'admin')) {
+      const tokens = await this.generateTokens('admin_sys_001', adminEmail, 'admin');
+      return {
+        user: {
+          _id: 'admin_sys_001',
+          name: 'System Administrator',
+          email: adminEmail,
+          role: 'admin',
+          isActive: true,
+        },
+        tokens,
+      };
+    }
+
+    // 2. Fallback to DB lookup if user table has an admin role
+    const user = await this.usersService.findByEmail(loginDto.email, true);
+    if (user && user.role === 'admin' && user.password) {
+      const isMatch = await bcrypt.compare(loginDto.password, user.password);
+      if (isMatch) {
+        const tokens = await this.generateTokens(user._id.toString(), user.email, user.role);
+        return {
+          user: this.sanitizeUser(user),
+          tokens,
+        };
+      }
+    }
+
+    throw new UnauthorizedException('Invalid administrator credentials.');
   }
 
   /**

@@ -25,6 +25,18 @@ export class ProductTool {
 
   @Prop({ required: true, default: '' })
   defaultPromptTemplate: string;
+
+  @Prop({ required: false, default: '' })
+  description: string;
+
+  @Prop({ required: false, default: '' })
+  badge: string;
+
+  @Prop({ required: false, default: '' })
+  originalImage: string;
+
+  @Prop({ required: false, default: '' })
+  convertedImage: string;
 }
 
 export const ProductToolSchema = SchemaFactory.createForClass(ProductTool);

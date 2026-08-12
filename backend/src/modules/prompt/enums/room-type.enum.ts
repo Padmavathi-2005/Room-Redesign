@@ -1,0 +1,17 @@
+export enum RoomTypeEnum {
+  LIVING_ROOM = 'Living Room',
+  BEDROOM = 'Bedroom',
+  KIDS_ROOM = 'Kids Room',
+  NURSERY = 'Nursery',
+  KITCHEN = 'Kitchen',
+  BATHROOM = 'Bathroom',
+  DINING_ROOM = 'Dining Room',
+  HOME_OFFICE = 'Home Office',
+  BALCONY = 'Balcony',
+  PATIO = 'Patio',
+  ATTIC = 'Attic',
+  GARDEN = 'Garden',
+  EXTERIOR = 'Exterior House Facade',
+  COMMERCIAL_SPACE = 'Commercial Space',
+  COMMERCIAL_OFFICE = 'Commercial Office',
+}

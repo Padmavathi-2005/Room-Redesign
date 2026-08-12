@@ -34,31 +34,40 @@ export default function DashboardSidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [user, setUser] = useState<UserData>({
-    name: 'Sangvish21',
-    email: 'sangvish21@gmail.com',
-    credits: 100,
+    name: 'User',
+    email: '',
+    credits: 40,
   });
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('user');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setUser({
-            name: parsed.name
-              ? parsed.name.charAt(0).toUpperCase() + parsed.name.slice(1)
-              : 'Sangvish21',
-            email: parsed.email || 'sangvish21@gmail.com',
-            credits: parsed.credits ?? 100,
-          });
-        } catch {
-          // fallback
+    const loadUser = () => {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            setUser({
+              name: parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || 'User',
+              email: parsed.email || '',
+              credits: parsed.credits ?? 40,
+            });
+          } catch {
+            // fallback
+          }
         }
       }
-    }
+    };
+
+    loadUser();
+    window.addEventListener('storage', loadUser);
+    window.addEventListener('user-updated', loadUser);
+    return () => {
+      window.removeEventListener('storage', loadUser);
+      window.removeEventListener('user-updated', loadUser);
+    };
   }, []);
+
 
   const capitalizeName = (name: string) => {
     if (!name) return 'User';
@@ -84,13 +93,14 @@ export default function DashboardSidebar() {
       localStorage.removeItem('user');
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
-    window.location.href = '/';
+    window.location.href = '/login';
   };
 
   // Main Workspace Navigation Items
   const mainNavItems = [
     { label: 'Home', href: '/dashboard', icon: Home },
-    { label: 'My Designs', href: '/history', icon: Folder },
+    { label: 'Projects Workspace', href: '/projects', icon: Folder },
+    { label: 'My Designs', href: '/history', icon: LayoutGrid },
     { label: 'Wishlist', href: '/dashboard/wishlist', icon: Heart },
     { label: 'Interior Design', href: '/generate?tool=interior-design', icon: Wand2 },
     { label: 'Exterior Design', href: '/generate?tool=exterior-design', icon: Building2 },

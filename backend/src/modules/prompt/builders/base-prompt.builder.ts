@@ -1,15 +1,7 @@
-export interface PromptInputOptions {
-  roomType: string;
-  theme?: string;
-  designStyle?: string;
-  roomSize?: string;
-  colorPalette?: string;
-  lighting?: string;
-  customInstructions?: string;
-  customRequirements?: string;
-  preserveStructure?: boolean;
-  toolSlug?: string;
-}
+import { RoomAnalysisResult } from '../../room-analysis/dto/room-analysis.dto';
+import { PromptInputOptions } from '../interfaces/prompt-input.interface';
+
+export { PromptInputOptions };
 
 export interface PromptOutputResult {
   finalPrompt: string;

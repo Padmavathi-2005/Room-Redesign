@@ -1,11 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CallToActionBanner() {
+  const [targetHref, setTargetHref] = useState('/signup');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('token')) {
+      setTargetHref('/dashboard');
+    }
+  }, []);
+
   return (
     <section className="relative w-full py-16 bg-transparent text-slate-900 selection:bg-blue-600 selection:text-white">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
@@ -67,7 +75,7 @@ export default function CallToActionBanner() {
               viewport={{ once: true }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
             >
-              <Link href={typeof window !== 'undefined' && localStorage.getItem('token') ? '/dashboard' : '/signup'}>
+              <Link href={targetHref}>
                 <motion.button
                   whileHover={{ scale: 1.03, y: -1 }}
                   whileTap={{ scale: 0.97 }}

@@ -50,20 +50,69 @@ const CATEGORIES: ProjectCategory[] = [
   },
 ];
 
+// Slow, Buttery-Smooth Directional Circular Arc Rotation (100% GPU Accelerated)
+const cardVariants = {
+  enter: (direction: number) => ({
+    rotate: direction > 0 ? -14 : 14,
+    x: direction > 0 ? '-16%' : '16%',
+    y: '5%',
+    scale: 0.91,
+    opacity: 0,
+    transformOrigin: '50% 130%',
+  }),
+  center: {
+    rotate: 0,
+    x: '0%',
+    y: '0%',
+    scale: 1,
+    opacity: 1,
+    transformOrigin: '50% 130%',
+    transition: {
+      duration: 1.6, // Slow, silky smooth transition
+      ease: [0.16, 1, 0.3, 1], // Premium Apple-style gentle deceleration
+    },
+  },
+  exit: (direction: number) => ({
+    rotate: direction > 0 ? 16 : -16,
+    x: direction > 0 ? '18%' : '-18%',
+    y: '5%',
+    scale: 0.91,
+    opacity: 0,
+    transformOrigin: '50% 130%',
+    transition: {
+      duration: 1.4,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  }),
+};
+
 export default function BeforeAfterShowcase() {
-  const [categoryIndex, setCategoryIndex] = useState<number>(0);
+  const [[categoryIndex, direction], setCategoryState] = useState<[number, number]>([0, 1]);
+  const [prevCategoryIndex, setPrevCategoryIndex] = useState<number>(0);
   const [sliderPosition, setSliderPosition] = useState<number>(50); // percentage (0 - 100)
   const [isInteracting, setIsInteracting] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 1. Auto Carousel Category Rotation every 4.5 seconds (Pauses when user drags/hovers)
+  const selectCategory = (newIndex: number) => {
+    if (newIndex === categoryIndex) return;
+    const dir = newIndex > categoryIndex ? 1 : -1;
+    setPrevCategoryIndex(categoryIndex);
+    setCategoryState([newIndex, dir]);
+    setSliderPosition(50);
+  };
+
+  // 1. Auto Carousel Category Rotation every 6 seconds (Slow & relaxing rhythm)
   useEffect(() => {
     if (isInteracting) return;
 
     const categoryTimer = setInterval(() => {
-      setCategoryIndex((prev) => (prev + 1) % CATEGORIES.length);
-      setSliderPosition(50); // Reset slider to center on slide change
-    }, 4500);
+      setCategoryState(([prevIdx]) => {
+        const nextIdx = (prevIdx + 1) % CATEGORIES.length;
+        setPrevCategoryIndex(prevIdx);
+        return [nextIdx, 1];
+      });
+      setSliderPosition(50);
+    }, 6000);
 
     return () => clearInterval(categoryTimer);
   }, [isInteracting]);
@@ -77,7 +126,7 @@ export default function BeforeAfterShowcase() {
       setSliderPosition((prev) => {
         if (prev >= 72) dir = -1;
         if (prev <= 28) dir = 1;
-        return prev + dir * 0.4;
+        return prev + dir * 0.35;
       });
     }, 35);
 
@@ -107,6 +156,7 @@ export default function BeforeAfterShowcase() {
   };
 
   const activeProject = CATEGORIES[categoryIndex];
+  const prevProject = CATEGORIES[prevCategoryIndex];
 
   return (
     <div
@@ -120,7 +170,7 @@ export default function BeforeAfterShowcase() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="relative space-y-4"
       >
-        {/* COMPARISON CONTAINER WITH SMOOTH ANIMATED SLIDER */}
+        {/* COMPARISON CONTAINER WITH SLOW SILKY CIRCULAR ROTATION */}
         <div
           ref={containerRef}
           onMouseDown={() => setIsInteracting(true)}
@@ -129,16 +179,46 @@ export default function BeforeAfterShowcase() {
           onTouchStart={() => setIsInteracting(true)}
           onTouchEnd={() => setIsInteracting(false)}
           onTouchMove={handleTouchMove}
-          className="relative aspect-[16/9] w-full rounded-3xl overflow-hidden bg-slate-200 border border-slate-200/80 shadow-xl cursor-ew-resize select-none"
+          className="relative aspect-[16/9] w-full rounded-3xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-2xl cursor-ew-resize select-none"
         >
-          <AnimatePresence mode="wait">
+          {/* PREVIOUS PROJECT UNDERNEATH (Prevents any blank gap) */}
+          {prevProject && (
+            <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
+              <div className="absolute inset-0 w-full h-full">
+                <img
+                  src={prevProject.afterImg}
+                  alt="After View"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div
+                className="absolute inset-y-0 left-0 overflow-hidden"
+                style={{ width: `${sliderPosition}%` }}
+              >
+                <div
+                  className="relative h-full"
+                  style={{ width: containerRef.current?.offsetWidth || '100%' }}
+                >
+                  <img
+                    src={prevProject.beforeImg}
+                    alt="Before View"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ACTIVE PROJECT LAYER (GPU-ACCELERATED SLOW SILKY ROTATION) */}
+          <AnimatePresence initial={false} custom={direction}>
             <motion.div
               key={activeProject.id}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.03 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 w-full h-full"
+              custom={direction}
+              variants={cardVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="absolute inset-0 w-full h-full z-10 will-change-transform"
             >
               {/* AFTER IMAGE (FULL UNDERNEATH LAYER) */}
               <div className="absolute inset-0 w-full h-full">
@@ -174,9 +254,30 @@ export default function BeforeAfterShowcase() {
             </motion.div>
           </AnimatePresence>
 
+          {/* VISIBLE CIRCULAR EXPANDING RIPPLE RING DURING TRANSITION */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`ring-${activeProject.id}`}
+              initial={{
+                scale: 0.05,
+                opacity: 0.85,
+                left: direction > 0 ? '15%' : '85%',
+              }}
+              animate={{
+                scale: 5,
+                opacity: 0,
+              }}
+              transition={{
+                duration: 1.6,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-44 h-44 rounded-full border-2 border-blue-400 bg-blue-500/20 backdrop-blur-xs pointer-events-none z-20 will-change-transform"
+            />
+          </AnimatePresence>
+
           {/* DRAGGABLE VERTICAL SLIDER HANDLE */}
           <div
-            className="absolute top-0 bottom-0 w-1 bg-white shadow-xl z-20 flex items-center justify-center -ml-0.5"
+            className="absolute top-0 bottom-0 w-1 bg-white shadow-xl z-30 flex items-center justify-center -ml-0.5"
             style={{ left: `${sliderPosition}%` }}
           >
             <div className="w-8 h-8 rounded-full bg-white text-slate-800 border border-slate-200 shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform">
@@ -193,10 +294,7 @@ export default function BeforeAfterShowcase() {
               return (
                 <button
                   key={cat.id}
-                  onClick={() => {
-                    setCategoryIndex(idx);
-                    setSliderPosition(50);
-                  }}
+                  onClick={() => selectCategory(idx)}
                   className={`relative flex-1 min-w-[75px] py-2 px-3 text-xs font-semibold rounded-xl transition-colors duration-200 text-center z-10 ${
                     isActive ? 'text-white font-bold' : 'text-slate-700 hover:text-slate-900'
                   }`}
@@ -221,10 +319,7 @@ export default function BeforeAfterShowcase() {
           {CATEGORIES.map((cat, idx) => (
             <button
               key={cat.id}
-              onClick={() => {
-                setCategoryIndex(idx);
-                setSliderPosition(50);
-              }}
+              onClick={() => selectCategory(idx)}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 idx === categoryIndex ? 'w-5 bg-[#1D4ED8]' : 'w-1.5 bg-slate-300'
               }`}

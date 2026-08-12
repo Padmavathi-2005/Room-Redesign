@@ -1,12 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
 import BeforeAfterShowcase from './BeforeAfterShowcase';
 
 export default function ErpHero() {
+  const [targetHref, setTargetHref] = useState('/signup');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('token')) {
+      setTargetHref('/dashboard');
+    }
+  }, []);
+
   return (
     <section className="relative w-full pt-4 pb-4 flex flex-col justify-between bg-transparent selection:bg-blue-600 selection:text-white">
       {/* MAIN TWO-COLUMN CONTAINER */}
@@ -60,7 +68,7 @@ export default function ErpHero() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="flex items-center gap-6 pt-2"
             >
-              <Link href={typeof window !== 'undefined' && localStorage.getItem('token') ? '/dashboard' : '/signup'}>
+              <Link href={targetHref}>
                 <motion.button
                   whileHover={{ scale: 1.03, y: -1 }}
                   whileTap={{ scale: 0.97 }}

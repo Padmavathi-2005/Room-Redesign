@@ -21,15 +21,21 @@ const QUICK_SEARCH_ITEMS = [
 export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
 
-  // Listen for Escape key
+  // Listen for Escape key & set data-modal-open
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     if (isOpen) {
       window.addEventListener('keydown', handleKeyDown);
+      document.body.setAttribute('data-modal-open', 'true');
+    } else {
+      document.body.removeAttribute('data-modal-open');
     }
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.removeAttribute('data-modal-open');
+    };
   }, [isOpen, onClose]);
 
   const filteredItems = QUICK_SEARCH_ITEMS.filter((item) =>

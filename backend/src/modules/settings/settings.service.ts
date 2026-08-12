@@ -31,12 +31,13 @@ export class SettingsService implements OnModuleInit {
           glassOpacity: 0.7,
           blurStrength: 20,
           maintenanceMode: false,
+          creditsPerGeneration: 1,
         });
         this.logger.log('✅ Default Settings Created with Primary #2563eb & Secondary #4f46e5');
       } else {
         await this.settingModel.updateOne(
           {},
-          { $set: { primaryColor: '#2563eb', secondaryColor: '#4f46e5' } },
+          { $set: { primaryColor: '#2563eb', secondaryColor: '#4f46e5', creditsPerGeneration: 1 } },
         );
         this.logger.log('✅ Settings Updated with Primary #2563eb & Secondary #4f46e5');
       }
@@ -63,6 +64,7 @@ export class SettingsService implements OnModuleInit {
         glassOpacity: 0.7,
         blurStrength: 20,
         maintenanceMode: false,
+        creditsPerGeneration: 1,
       });
     }
     return settings;

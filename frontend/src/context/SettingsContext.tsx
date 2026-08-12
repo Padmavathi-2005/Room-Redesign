@@ -16,6 +16,8 @@ export interface AppSettings {
   logo?: string;
   favicon?: string;
   maintenanceMode: boolean;
+  creditsPerGeneration: number;
+  activeTheme?: 'light' | 'dark';
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -30,6 +32,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   glassOpacity: 0.7,
   blurStrength: 20,
   maintenanceMode: false,
+  creditsPerGeneration: 1,
 };
 
 interface SettingsContextType {
@@ -46,7 +49,12 @@ const SettingsContext = createContext<SettingsContextType>({
   updateSettings: async () => {},
 });
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+  const cleanUrl = envUrl.replace(/\/$/, '');
+  return cleanUrl.endsWith('/api/v1') ? cleanUrl : `${cleanUrl}/api/v1`;
+};
+const API_BASE_URL = getApiBaseUrl();
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);

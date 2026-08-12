@@ -10,6 +10,7 @@ export enum ThemeMode {
 
 @Schema({ timestamps: true, collection: 'settings' })
 export class Setting {
+  // 1. Branding & Visual System
   @Prop({ default: 'RoomAI' })
   applicationName: string;
 
@@ -46,8 +47,119 @@ export class Setting {
   @Prop({ default: null })
   favicon?: string;
 
+  // 2. Social Login & OAuth Credentials
+  @Prop({ default: false })
+  enableGoogleLogin: boolean;
+
+  @Prop({ default: '' })
+  googleClientId?: string;
+
+  @Prop({ default: '' })
+  googleClientSecret?: string;
+
+  @Prop({ default: '' })
+  googleCallbackUrl?: string;
+
+  @Prop({ default: false })
+  enableAppleLogin: boolean;
+
+  @Prop({ default: '' })
+  appleClientId?: string;
+
+  @Prop({ default: '' })
+  appleTeamId?: string;
+
+  @Prop({ default: '' })
+  appleKeyId?: string;
+
+  @Prop({ default: '' })
+  applePrivateKey?: string;
+
+  // 3. AI Engine & API Tokens
+  @Prop({ default: 'replicate' })
+  primaryAiProvider: string;
+
+  @Prop({ default: '' })
+  replicateApiKey?: string;
+
+  @Prop({ default: '' })
+  openaiApiKey?: string;
+
+  @Prop({ default: '' })
+  huggingfaceToken?: string;
+
+  @Prop({ default: 60 })
+  aiGenerationTimeout: number;
+
+  // 4. Stripe Payment Gateway
+  @Prop({ default: true })
+  stripeTestMode: boolean;
+
+  @Prop({ default: '' })
+  stripePublishableKey?: string;
+
+  @Prop({ default: '' })
+  stripeSecretKey?: string;
+
+  @Prop({ default: '' })
+  stripeWebhookSecret?: string;
+
+  // 5. Cloud Storage & Media Delivery
+  @Prop({ default: 'local' })
+  storageProvider: string;
+
+  @Prop({ default: '' })
+  cloudinaryCloudName?: string;
+
+  @Prop({ default: '' })
+  cloudinaryApiKey?: string;
+
+  @Prop({ default: '' })
+  cloudinaryApiSecret?: string;
+
+  @Prop({ default: '' })
+  awsS3Bucket?: string;
+
+  @Prop({ default: '' })
+  awsRegion?: string;
+
+  // 6. Email & SMTP Server
+  @Prop({ default: '' })
+  smtpHost?: string;
+
+  @Prop({ default: 587 })
+  smtpPort: number;
+
+  @Prop({ default: '' })
+  smtpUser?: string;
+
+  @Prop({ default: '' })
+  smtpPass?: string;
+
+  @Prop({ default: '' })
+  smtpFromEmail?: string;
+
+  @Prop({ default: 'RoomAI System' })
+  smtpFromName?: string;
+
+  // 7. System Controls & Credit Economy
+  @Prop({ default: 50 })
+  defaultUserCredits: number;
+
+  @Prop({ default: 1 })
+  creditsPerGeneration: number;
+
+  @Prop({ default: 20 })
+  maxRoomsPerProject: number;
+
+  @Prop({ default: false })
+  enableWatermark: boolean;
+
   @Prop({ default: false })
   maintenanceMode: boolean;
+
+  @Prop({ default: 'support@roomai.com' })
+  supportEmail?: string;
 }
 
 export const SettingSchema = SchemaFactory.createForClass(Setting);

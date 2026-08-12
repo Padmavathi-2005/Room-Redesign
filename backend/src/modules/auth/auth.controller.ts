@@ -46,6 +46,20 @@ export class AuthController {
   }
 
   /**
+   * POST /api/v1/auth/admin-login
+   */
+  @Post('admin-login')
+  @HttpCode(HttpStatus.OK)
+  async adminLogin(@Body() loginDto: LoginDto) {
+    const result = await this.authService.adminLogin(loginDto);
+    return {
+      success: true,
+      message: 'Admin logged in successfully',
+      data: result,
+    };
+  }
+
+  /**
    * POST /api/v1/auth/logout
    */
   @UseGuards(JwtAuthGuard)

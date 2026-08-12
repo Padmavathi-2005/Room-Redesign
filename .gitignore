@@ -40,3 +40,4 @@ backend/.env
 docker_data/
 coverage/
 .turbo/
+backend/uploads/

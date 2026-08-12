@@ -1,15 +1,53 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Send, Mail, Phone, MapPin, Twitter, Linkedin, Github, MessageSquare } from 'lucide-react';
 
 export default function Footer() {
   const pathname = usePathname();
+  const [isModalActive, setIsModalActive] = useState(false);
 
-  // Hide global footer on Auth pages
-  if (pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password') {
+  // Observe modal status on body & DOM
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkModalState = () => {
+      const modalOpen = Boolean(
+        document.body.getAttribute('data-modal-open') === 'true' ||
+        document.documentElement.getAttribute('data-modal-open') === 'true' ||
+        document.body.classList.contains('modal-open') ||
+        document.querySelector('[data-modal-open="true"]')
+      );
+      setIsModalActive(modalOpen);
+    };
+
+    checkModalState();
+
+    const interval = setInterval(checkModalState, 100);
+    window.addEventListener('click', checkModalState, { capture: true });
+    window.addEventListener('keydown', checkModalState, { capture: true });
+
+    const observer = new MutationObserver(checkModalState);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('click', checkModalState);
+      window.removeEventListener('keydown', checkModalState);
+      observer.disconnect();
+    };
+  }, []);
+
+  // Hide global footer on Auth and Admin pages or when Modal is open
+  if (
+    isModalActive ||
+    pathname === '/login' ||
+    pathname === '/signup' ||
+    pathname === '/forgot-password' ||
+    pathname.startsWith('/admin')
+  ) {
     return null;
   }
 

@@ -3,6 +3,7 @@ import './globals.css';
 import Header from '@/components/layout/Header/Header';
 import Footer from '@/components/layout/Footer/Footer';
 import { SettingsProvider } from '@/context/SettingsContext';
+import ChunkErrorListener from '@/components/layout/ChunkErrorListener';
 
 export const metadata: Metadata = {
   title: 'RoomAI - Digital Craftsmanship & Construction ERP',
@@ -20,9 +21,11 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className="h-full antialiased selection:bg-blue-600 selection:text-white relative bg-[#FCFCFD] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-300">
         <SettingsProvider>
+          <ChunkErrorListener />
           {/* Faint Blueprint Grid */}
           <div className="fixed inset-0 blueprint-grid pointer-events-none z-0" />
 

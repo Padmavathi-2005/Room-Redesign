@@ -1,4 +1,2 @@
-/**
- * Redis Queue Definitions Barrel Export
- */
-export {};
+export * from './queue-worker.service';
+export * from './queue.module';

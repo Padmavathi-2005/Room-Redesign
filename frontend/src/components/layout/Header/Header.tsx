@@ -21,31 +21,73 @@ interface HeaderProps {
 
 export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
   const pathname = usePathname();
+
+  // Hide global navbar on Admin pages
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isModalActive, setIsModalActive] = useState(false);
   const [user, setUser] = useState<UserProfileData | null>(null);
 
-  // Check auth user from localStorage
+
+  // Observe modal status on body & DOM
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkModalState = () => {
+      const modalOpen = Boolean(
+        document.body.getAttribute('data-modal-open') === 'true' ||
+        document.documentElement.getAttribute('data-modal-open') === 'true' ||
+        document.body.classList.contains('modal-open') ||
+        document.querySelector('[data-modal-open="true"]')
+      );
+      setIsModalActive(modalOpen);
+    };
+
+    checkModalState();
+
+    const interval = setInterval(checkModalState, 100);
+    window.addEventListener('click', checkModalState, { capture: true });
+    window.addEventListener('keydown', checkModalState, { capture: true });
+
+    const observer = new MutationObserver(checkModalState);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('click', checkModalState);
+      window.removeEventListener('keydown', checkModalState);
+      observer.disconnect();
+    };
+  }, []);
+
+  // Check regular user auth session from localStorage
   const checkAuthUser = useCallback(() => {
     if (typeof window === 'undefined') return;
+
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
 
     if (token && storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
+        // Exclude admin tokens from home page user header
+        if (parsed && parsed.role === 'admin') {
+          setUser(null);
+          return;
+        }
+
         setUser({
-          name: parsed.name || 'Demo User',
-          email: parsed.email || 'user@roomai.com',
+          name: parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || 'User',
+          email: parsed.email || '',
           avatar: parsed.avatar,
-          credits: parsed.credits ?? 100,
+          credits: parsed.credits ?? 40,
         });
       } catch {
-        setUser({
-          name: 'Demo User',
-          email: 'user@roomai.com',
-          credits: 100,
-        });
+        setUser(null);
       }
     } else {
       setUser(null);
@@ -54,9 +96,12 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
 
   useEffect(() => {
     checkAuthUser();
-    // Listen for auth storage changes across tabs/components
     window.addEventListener('storage', checkAuthUser);
-    return () => window.removeEventListener('storage', checkAuthUser);
+    window.addEventListener('user-updated', checkAuthUser);
+    return () => {
+      window.removeEventListener('storage', checkAuthUser);
+      window.removeEventListener('user-updated', checkAuthUser);
+    };
   }, [checkAuthUser, pathname]);
 
   // Handle Scroll effect
@@ -68,19 +113,6 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Listen for Ctrl+K or Cmd+K shortcut
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsSearchOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Handle Sign Out action
   const handleSignOut = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
@@ -88,27 +120,16 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
     setUser(null);
-    window.location.href = '/';
+    window.location.href = '/login';
   };
 
-  const isLoggedIn = Boolean(user || propIsAuth);
-
-  // Hide global floating landing header on Dashboard routes for dedicated dashboard sidebar layout
-  if (
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/projects') ||
-    pathname.startsWith('/generate') ||
-    pathname.startsWith('/history') ||
-    pathname.startsWith('/billing') ||
-    pathname.startsWith('/settings') ||
-    pathname.startsWith('/upload')
-  ) {
+  if (isModalActive) {
     return null;
   }
 
   return (
     <>
-      <header className="fixed top-4 sm:top-6 left-0 right-0 z-50 w-full px-4 sm:px-6 lg:px-8 flex justify-center pointer-events-none">
+      <header className="fixed top-4 sm:top-6 left-0 right-0 z-40 w-full px-4 sm:px-6 lg:px-8 flex justify-center pointer-events-none">
         <motion.div
           layoutId="header-sidebar-morph"
           initial={{ y: -50, opacity: 0 }}
@@ -121,11 +142,11 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
           {/* LEFT: Brand Logo */}
           <Logo />
 
-          {/* CENTER: Navigation Links */}
+          {/* CENTER: Original Home Navigation Links */}
           <DesktopMenu />
 
           {/* RIGHT: Actions (Wishlist Heart Icon, Theme, Profile / Auth Buttons) */}
-          <div className="hidden lg:flex items-center gap-5 xl:gap-6">
+          <div className="hidden lg:flex items-center gap-4 xl:gap-5">
             {/* Wishlist Heart Button */}
             <Link href="/dashboard/wishlist">
               <motion.button
@@ -135,15 +156,13 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
                 className="relative w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-[#E5E7EB] dark:border-slate-800 text-rose-500 hover:border-rose-400 shadow-2xs hover:shadow-md hover:shadow-rose-500/20 flex items-center justify-center focus:outline-none transition-all"
               >
                 <Heart className="w-4 h-4 fill-rose-500/20 text-rose-500 hover:fill-rose-500 transition-colors" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-extrabold flex items-center justify-center border border-white dark:border-slate-900 shadow-xs">
-                  3
-                </span>
               </motion.button>
             </Link>
 
             <ThemeToggle />
 
-            {isLoggedIn && user ? (
+            {/* Regular User Auth State Rendering */}
+            {user ? (
               <ProfileDropdown user={user} onSignOut={handleSignOut} />
             ) : (
               <>
@@ -152,6 +171,8 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
               </>
             )}
           </div>
+
+
 
           {/* MOBILE: Drawer & Search Trigger */}
           <div className="flex items-center gap-2 lg:hidden">

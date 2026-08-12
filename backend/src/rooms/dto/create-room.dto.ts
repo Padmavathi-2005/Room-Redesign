@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray } from 'class-validator';
 
 export class CreateRoomDto {
   @IsString()
@@ -48,4 +48,71 @@ export class CreateRoomDto {
   @IsString()
   @IsOptional()
   userPrompt?: string;
+
+  @IsString()
+  @IsOptional()
+  houseAngle?: string;
+
+  @IsString()
+  @IsOptional()
+  cameraAngle?: string;
+
+  @IsString()
+  @IsOptional()
+  perspective?: string;
+
+  @IsString()
+  @IsOptional()
+  buildingType?: string;
+
+  @IsString()
+  @IsOptional()
+  roofType?: string;
+
+  @IsString()
+  @IsOptional()
+  environment?: string;
+
+  @IsString()
+  @IsOptional()
+  timeOfDay?: string;
+
+  @IsString()
+  @IsOptional()
+  tool?: string;
+
+  @IsString()
+  @IsOptional()
+  aiIntervention?: string;
+
+  @IsString()
+  @IsOptional()
+  mood?: string;
+
+  @IsString()
+  @IsOptional()
+  budgetLevel?: string;
+
+  @IsString()
+  @IsOptional()
+  furnitureHandling?: string;
+
+  @IsArray()
+  @IsOptional()
+  selectedProducts?: string[];
+
+  @IsString()
+  @IsOptional()
+  projectId?: string;
+
+  @IsString()
+  @IsOptional()
+  manusChatId?: string;
+
+  @IsString()
+  @IsOptional()
+  userId?: string;
+
+  @IsOptional()
+  creditsCost?: number;
 }

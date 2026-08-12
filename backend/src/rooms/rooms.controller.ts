@@ -12,6 +12,12 @@ export class RoomsController {
     return this.roomsService.generateRoomRedesign(createRoomDto);
   }
 
+  @Post('generate-2')
+  @HttpCode(HttpStatus.OK)
+  async generate2(@Body() body: { imageUrl: string; prompt: string }) {
+    return this.roomsService.generateRoomRedesign2(body);
+  }
+
   @Get()
   async findAll() {
     return this.roomsService.findAll();
