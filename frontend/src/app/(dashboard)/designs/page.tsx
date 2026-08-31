@@ -9,6 +9,7 @@ import {
   Search,
   Heart,
   Star,
+  StarHalf,
   X,
   Send,
   ArrowRight,
@@ -577,27 +578,43 @@ export default function DesignsPage() {
                     </p>
                   </div>
 
-                  {/* 5-Star Selector */}
-                  <div className="flex items-center gap-1.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setReviewRating(star)}
-                        className="p-1 transition-transform hover:scale-125 focus:outline-none"
-                        title={`Rate ${star} Stars`}
-                      >
-                        <Star
-                          className={`w-5 h-5 ${
-                            star <= reviewRating
-                              ? 'text-amber-400 fill-amber-400'
-                              : 'text-slate-300 dark:text-slate-600'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1 font-heading">
-                      {reviewRating}.0 / 5.0
+                  {/* 5-Star Selector (Supports Half-Stars 0.5 to 5.0!) */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const isFull = reviewRating >= star;
+                        const isHalf = reviewRating === star - 0.5;
+                        return (
+                          <div key={star} className="relative inline-flex items-center group">
+                            {/* Left Half Click Zone (.5) */}
+                            <button
+                              type="button"
+                              onClick={() => setReviewRating(star - 0.5)}
+                              className="absolute left-0 top-0 w-1/2 h-full z-10 cursor-pointer"
+                              title={`Rate ${star - 0.5} Stars`}
+                            />
+                            {/* Right Half Click Zone (.0) */}
+                            <button
+                              type="button"
+                              onClick={() => setReviewRating(star)}
+                              className="absolute right-0 top-0 w-1/2 h-full z-10 cursor-pointer"
+                              title={`Rate ${star} Stars`}
+                            />
+
+                            {/* Star Icon Rendering */}
+                            {isFull ? (
+                              <Star className="w-5 h-5 text-amber-400 fill-amber-400 transition-transform group-hover:scale-110" />
+                            ) : isHalf ? (
+                              <StarHalf className="w-5 h-5 text-amber-400 fill-amber-400 transition-transform group-hover:scale-110" />
+                            ) : (
+                              <Star className="w-5 h-5 text-slate-300 dark:text-slate-600 transition-transform group-hover:scale-110" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1 font-heading min-w-[55px]">
+                      {reviewRating.toFixed(1)} / 5.0
                     </span>
                   </div>
                 </div>
