@@ -333,12 +333,16 @@ export default function UserProjectsDashboardPage() {
       {/* CREATE PROJECT MODAL */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+          <div
+            onClick={() => setIsModalOpen(false)}
+            className="fixed top-0 left-0 w-screen h-screen z-[999999] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-2xl"
+          >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-2xl"
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white font-heading">

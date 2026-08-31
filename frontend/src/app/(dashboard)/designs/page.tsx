@@ -576,13 +576,17 @@ export default function DesignsPage() {
       {/* DESIGN DETAIL & REVIEWS MODAL */}
       <AnimatePresence>
         {isDetailModalOpen && selectedDetailDesign && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-slate-950/85 backdrop-blur-xl">
+          <div
+            onClick={handleCloseDetailModal}
+            className="fixed top-0 left-0 w-screen h-screen z-[999999] flex items-center justify-center p-4 sm:p-6 sm:p-10 overflow-hidden bg-slate-950/90 backdrop-blur-2xl"
+          >
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 15 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 15 }}
               transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-              className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6 scrollbar-none no-scrollbar"
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6 scrollbar-none no-scrollbar"
             >
               {/* Close Button */}
               <button

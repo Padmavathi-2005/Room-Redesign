@@ -97,9 +97,13 @@ export default function CheckoutModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+    <div
+      onClick={onClose}
+      className="fixed top-0 left-0 w-screen h-screen z-[999999] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-2xl"
+    >
       <div
-        className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6"
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6"
         data-modal-open="true"
       >
         {/* Close Button */}
