@@ -503,11 +503,12 @@ function GenerateStudioContent() {
     }
   }, [toolSlug]);
 
-  // Pre-fill studio form fields & pre-load photo when coming from "Try This Style in Studio"
+  // Pre-fill studio form fields & pre-load photo when coming from "Try This Style in Studio" or "View Generation Details"
   useEffect(() => {
     const qpRoomType = searchParams.get('roomType');
     const qpStyle = searchParams.get('style');
     const qpPresetImage = searchParams.get('presetImage');
+    const qpGeneratedImage = searchParams.get('generatedImage');
     const qpDesc = searchParams.get('desc');
 
     if (qpRoomType) {
@@ -521,6 +522,10 @@ function GenerateStudioContent() {
     if (qpPresetImage) {
       setUploadedImage(qpPresetImage);
       setIsUserUploaded(true);
+    }
+    if (qpGeneratedImage) {
+      setGeneratedResult(qpGeneratedImage);
+      setGeneratedImagesList([qpGeneratedImage]);
     }
     if (qpDesc && !qpDesc.toLowerCase().includes('8k uhd') && !qpDesc.toLowerCase().includes('consistency')) {
       setCustomRequirements(qpDesc);
