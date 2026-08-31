@@ -67,7 +67,11 @@ const API_BASE_URL = getApiBaseUrl();
 
 import AuthModal from '@/components/auth/AuthModal';
 
-export default function ProductsDropdown() {
+export interface ProductsDropdownProps {
+  label?: string;
+}
+
+export default function ProductsDropdown({ label = 'AI Tools' }: ProductsDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [categories, setCategories] = useState(DEFAULT_PRODUCT_CATEGORIES);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -170,10 +174,10 @@ export default function ProductsDropdown() {
         {/* AI Models Dropdown Trigger Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 py-1 text-sm font-medium text-[#0F172A] dark:text-slate-200 hover:text-[#2563EB] dark:hover:text-blue-400 transition-colors focus:outline-none rounded-2xl group"
+          className="flex items-center gap-1.5 py-1 text-xs font-bold text-[#0F172A] dark:text-slate-200 hover:text-[#2563EB] dark:hover:text-blue-400 transition-colors focus:outline-none rounded-2xl group"
         >
           <LayoutGrid className="w-4 h-4 text-slate-500 dark:text-slate-400 group-hover:text-[#2563EB] dark:group-hover:text-blue-400 transition-colors" />
-          <span>AI Models</span>
+          <span>{label}</span>
           <ChevronDown
             className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180 text-[#2563EB] dark:text-blue-400' : 'text-slate-400'
               }`}
