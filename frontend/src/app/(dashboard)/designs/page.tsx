@@ -546,7 +546,9 @@ export default function DesignsPage() {
                   {selectedDetailDesign.title}
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {selectedDetailDesign.description}
+                  {selectedDetailDesign.description && !selectedDetailDesign.description.toLowerCase().includes('8k uhd') && !selectedDetailDesign.description.toLowerCase().includes('consistency')
+                    ? selectedDetailDesign.description
+                    : `${selectedDetailDesign.style || 'Modern'} architectural transformation for ${selectedDetailDesign.roomType || 'space'}`}
                 </p>
               </div>
 

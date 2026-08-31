@@ -1095,7 +1095,7 @@ function GenerateStudioContent() {
           const newDesignItem = {
             _id: resData.roomId || resData._id || `gen-${Date.now()}`,
             title: `${selectedRoomType || 'Room'} ${selectedStyle || 'AI'} Redesign`,
-            description: compiledPrompt || `${selectedStyle || 'Modern'} style transformation`,
+            description: `${selectedStyle || 'Modern'} architectural transformation for ${selectedRoomType || 'space'}`,
             price: 0,
             toolSlug: currentSlug,
             totalImageCount: 1,
