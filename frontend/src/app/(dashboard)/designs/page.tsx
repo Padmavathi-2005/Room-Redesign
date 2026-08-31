@@ -168,6 +168,17 @@ export default function DesignsPage() {
     }
   };
 
+  // Cleanup body attributes on unmount
+  useEffect(() => {
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.removeAttribute('data-modal-open');
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+      }
+    };
+  }, []);
+
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false);
     if (typeof document !== 'undefined') {
@@ -546,10 +557,10 @@ export default function DesignsPage() {
 
                   <Link
                     href={`/generate?roomType=${encodeURIComponent(selectedDetailDesign.roomType || '')}&style=${encodeURIComponent(selectedDetailDesign.style || '')}&presetImage=${encodeURIComponent(selectedDetailDesign.beforeImageUrl || selectedDetailDesign.sampleImageUrl || '')}&generatedImage=${encodeURIComponent(selectedDetailDesign.sampleImageUrl || '')}&desc=${encodeURIComponent(selectedDetailDesign.description || '')}&autoView=true`}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-purple-600/30 transition-all font-heading"
+                    onClick={handleCloseDetailModal}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-purple-600/30 transition-all font-heading cursor-pointer"
                     title="Open Full Studio Generation View with Pre-filled Form & Output Gallery"
                   >
-                    <Eye className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
                     <span>View Generation Details</span>
                   </Link>
                 </div>
@@ -645,7 +656,8 @@ export default function DesignsPage() {
                   </a>
                   <Link
                     href={`/generate?roomType=${encodeURIComponent(selectedDetailDesign.roomType || '')}&style=${encodeURIComponent(selectedDetailDesign.style || '')}&presetImage=${encodeURIComponent(selectedDetailDesign.beforeImageUrl || selectedDetailDesign.sampleImageUrl || '')}&desc=${encodeURIComponent(selectedDetailDesign.description || '')}`}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold transition-colors shadow-md shadow-purple-600/30 font-heading"
+                    onClick={handleCloseDetailModal}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold transition-colors shadow-md shadow-purple-600/30 font-heading cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
                     <span>Try This Style in Studio</span>
