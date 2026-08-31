@@ -503,6 +503,31 @@ function GenerateStudioContent() {
     }
   }, [toolSlug]);
 
+  // Pre-fill studio form fields & pre-load photo when coming from "Try This Style in Studio"
+  useEffect(() => {
+    const qpRoomType = searchParams.get('roomType');
+    const qpStyle = searchParams.get('style');
+    const qpPresetImage = searchParams.get('presetImage');
+    const qpDesc = searchParams.get('desc');
+
+    if (qpRoomType) {
+      setSelectedRoomType(qpRoomType);
+    }
+    if (qpStyle) {
+      setSelectedStyle(qpStyle);
+      setExteriorStyle(qpStyle);
+      setGardenStyle(qpStyle);
+    }
+    if (qpPresetImage) {
+      setUploadedImage(qpPresetImage);
+      setIsUserUploaded(true);
+    }
+    if (qpDesc && !qpDesc.toLowerCase().includes('8k uhd') && !qpDesc.toLowerCase().includes('consistency')) {
+      setCustomRequirements(qpDesc);
+      setShowCustomRequirements(true);
+    }
+  }, [searchParams]);
+
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const isMouseDownRef = React.useRef<boolean>(false);
   const startXRef = React.useRef<number>(0);
