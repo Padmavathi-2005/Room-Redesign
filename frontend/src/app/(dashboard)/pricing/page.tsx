@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import CheckoutModal, { CheckoutPlan } from '@/components/ui/CheckoutModal';
+import { CreditTokenIcon } from '@/components/ui';
 
 export interface SubscriptionPlan {
   id: string;
@@ -195,8 +196,9 @@ export default function PricingPage() {
                       {tier.name}
                     </h3>
                   </div>
-                  <p className="text-xs font-bold text-purple-600 dark:text-purple-400">
-                    {tier.credits.toLocaleString()} AI Credits / month
+                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                    <CreditTokenIcon size="sm" />
+                    <span>{tier.credits.toLocaleString()} AI Tokens / month</span>
                   </p>
                 </div>
 
@@ -290,9 +292,15 @@ export default function PricingPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300 font-medium">
               <tr>
                 <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">Credits Allowance</td>
-                <td className="py-3.5 px-4">200 Credits / mo</td>
-                <td className="py-3.5 px-4 font-extrabold text-purple-600 dark:text-purple-400">650 Credits / mo</td>
-                <td className="py-3.5 px-4">1,800 Credits / mo</td>
+                <td className="py-3.5 px-4">
+                  <span className="inline-flex items-center gap-1"><span>200</span> <CreditTokenIcon size="xs" /> <span>/ mo</span></span>
+                </td>
+                <td className="py-3.5 px-4 font-extrabold text-purple-600 dark:text-purple-400">
+                  <span className="inline-flex items-center gap-1"><span>650</span> <CreditTokenIcon size="xs" /> <span>/ mo</span></span>
+                </td>
+                <td className="py-3.5 px-4">
+                  <span className="inline-flex items-center gap-1"><span>1,800</span> <CreditTokenIcon size="xs" /> <span>/ mo</span></span>
+                </td>
               </tr>
               <tr>
                 <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">Max Render Quality</td>

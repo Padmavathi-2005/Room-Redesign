@@ -42,6 +42,7 @@ import {
 import { ROOM_TYPES, DESIGN_STYLES, COLOR_PALETTES, MOODS, BUDGET_LEVELS, BUILDING_TYPES, ROOF_TYPES, LIGHTING_OPTIONS, ENVIRONMENTS, TIMES_OF_DAY } from '@/constants';
 import { projectService, ProjectData } from '@/services/project.service';
 import { useToast } from '@/context/ToastContext';
+import { CreditTokenIcon } from '@/components/ui';
 
 interface StudioToolConfig {
   id: string;
@@ -2537,7 +2538,11 @@ function GenerateStudioContent() {
             ) : (
               <>
                 <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
-                <span>Generate AI Redesign (4 Credits)</span>
+                <span className="flex items-center gap-1.5">
+                  <span>Generate AI Redesign (4</span>
+                  <CreditTokenIcon size="xs" />
+                  <span>)</span>
+                </span>
               </>
             )}
           </button>
