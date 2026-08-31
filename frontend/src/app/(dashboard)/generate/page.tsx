@@ -1090,6 +1090,27 @@ function GenerateStudioContent() {
           message: 'Your new space design has been generated successfully!',
         });
 
+        // Save generated image to local storage user_generated_designs for My Designs showcase
+        try {
+          const newDesignItem = {
+            _id: resData.roomId || resData._id || `gen-${Date.now()}`,
+            title: `${selectedRoomType || 'Room'} ${selectedStyle || 'AI'} Redesign`,
+            description: compiledPrompt || `${selectedStyle || 'Modern'} style transformation`,
+            price: 0,
+            toolSlug: currentSlug,
+            totalImageCount: 1,
+            roomType: selectedRoomType || 'Living Room',
+            style: selectedStyle || 'Modern',
+            sampleImageUrl: output,
+            beforeImageUrl: uploadedImage,
+            createdAt: new Date().toISOString(),
+          };
+          const existing = JSON.parse(localStorage.getItem('user_generated_designs') || '[]');
+          localStorage.setItem('user_generated_designs', JSON.stringify([newDesignItem, ...existing]));
+        } catch (e) {
+          console.warn('Failed to save design locally:', e);
+        }
+
         // Update local storage user credits & dispatch event
         if (currentUser) {
           const remaining = resData.remainingCredits ?? resData.data?.remainingCredits ?? (currentUser.credits !== undefined ? Math.max(0, currentUser.credits - 1) : 0);

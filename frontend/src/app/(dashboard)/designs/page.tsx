@@ -24,119 +24,10 @@ import {
 import { ProjectCard } from '@/components/marketplace/ProjectCard';
 import CommonPagination from '@/components/ui/CommonPagination';
 
-// Curated initial published designs fallback if backend database is empty
-const INITIAL_CURATED_DESIGNS: PublishedProjectData[] = [
-  {
-    _id: 'sample-design-1',
-    title: 'Modern Minimalist Living Room Redesign',
-    description: 'Complete transformation of a dim traditional living space into a bright, contemporary sanctuary featuring natural oak accents and ambient LED strip backlighting.',
-    price: 29,
-    originalPrice: 59,
-    discount: 50,
-    toolSlug: 'interior-design',
-    roomType: 'Living Room',
-    style: 'Modern Minimalist',
-    sampleImageUrl: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1000&q=80',
-    beforeImageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1000&q=80',
-    totalImageCount: 4,
-    tags: ['Minimalist', 'Oak Wood', 'Ambient Lighting'],
-    salesCount: 38,
-    wishlistCount: 42,
-    rating: 4.9,
-    reviewCount: 18,
-    reviews: [
-      {
-        id: 'r1',
-        userId: 'u1',
-        userName: 'Sophia Martinez',
-        userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
-        rating: 5,
-        comment: 'Absolutely stunning living room layout! The color scheme matched my exact aesthetic.',
-        createdAt: '2026-08-10T12:00:00Z',
-      },
-    ],
-    author: {
-      name: 'Elena Rostova',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80',
-    },
-    createdAt: '2026-08-01T10:00:00Z',
-  },
-  {
-    _id: 'sample-design-2',
-    title: 'Japandi Serenity Master Bedroom',
-    description: 'Harmonious blend of Japanese wabi-sabi principles and Scandinavian functionality with low linen bedframe and acoustic wooden slat wall.',
-    price: 39,
-    originalPrice: 69,
-    discount: 43,
-    toolSlug: 'interior-design',
-    roomType: 'Bedroom',
-    style: 'Japandi',
-    sampleImageUrl: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=1000&q=80',
-    beforeImageUrl: 'https://images.unsplash.com/photo-1540518614846-7ede433c5172?w=1000&q=80',
-    totalImageCount: 5,
-    tags: ['Japandi', 'Master Bedroom', 'Linen Textures'],
-    salesCount: 24,
-    wishlistCount: 31,
-    rating: 4.8,
-    reviewCount: 14,
-    reviews: [],
-    author: {
-      name: 'Liam Vance',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
-    },
-    createdAt: '2026-08-03T14:20:00Z',
-  },
-  {
-    _id: 'sample-design-3',
-    title: 'Luxury Marble & Brass Chef Kitchen',
-    description: 'High-end kitchen overhaul featuring Calacatta marble waterfall island, brushed brass hardware, and custom dark navy cabinetry.',
-    price: 0,
-    originalPrice: 49,
-    discount: 100,
-    toolSlug: 'interior-design',
-    roomType: 'Kitchen',
-    style: 'Luxury',
-    sampleImageUrl: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1000&q=80',
-    beforeImageUrl: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1000&q=80',
-    totalImageCount: 6,
-    tags: ['Kitchen', 'Marble Island', 'Brass Hardware'],
-    salesCount: 89,
-    wishlistCount: 95,
-    rating: 5.0,
-    reviewCount: 27,
-    reviews: [],
-    author: {
-      name: 'Sarah Jenkins',
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
-    },
-    createdAt: '2026-08-05T18:45:00Z',
-  },
-  {
-    _id: 'sample-design-4',
-    title: 'Industrial Executive Loft Office',
-    description: 'Ergonomic workspace redesign with exposed brick walls, matte black metal framing, and warm overhead Edison pendant lighting.',
-    price: 19,
-    originalPrice: 39,
-    discount: 51,
-    toolSlug: 'interior-design',
-    roomType: 'Office',
-    style: 'Industrial',
-    sampleImageUrl: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=1000&q=80',
-    beforeImageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1000&q=80',
-    totalImageCount: 3,
-    tags: ['Office', 'Industrial', 'Loft'],
-    salesCount: 19,
-    wishlistCount: 28,
-    rating: 4.7,
-    reviewCount: 9,
-    reviews: [],
-    author: {
-      name: 'David Miller',
-      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',
-    },
-    createdAt: '2026-08-07T11:10:00Z',
-  },
-];
+import { projectService } from '@/services/project.service';
+
+// Curated initial published designs fallback (empty so hardcoded sample images never show up)
+const INITIAL_CURATED_DESIGNS: PublishedProjectData[] = [];
 
 const CATEGORY_FILTERS = [
   'All',
@@ -157,7 +48,7 @@ export default function DesignsPage() {
   const [isLoadingShowcase, setIsLoadingShowcase] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [showcaseSearch, setShowcaseSearch] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'rating' | 'newest'>('rating');
+  const [sortBy, setSortBy] = useState<'rating' | 'newest'>('newest');
   const [viewMode, setViewMode] = useState<'masonry' | 'table'>('masonry');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -172,22 +63,58 @@ export default function DesignsPage() {
   const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
   const [reviewMessage, setReviewMessage] = useState<string>('');
 
-  // Load published designs showcase
+  // Load user's REAL generated designs showcase
   const loadPublishedShowcase = async () => {
     setIsLoadingShowcase(true);
     try {
-      const fetched = await marketplaceService.getPublishedProjects({
-        roomType: selectedCategory !== 'All' ? selectedCategory : undefined,
+      // 1. Load locally generated designs from localStorage
+      let localDesigns: PublishedProjectData[] = [];
+      try {
+        const stored = localStorage.getItem('user_generated_designs');
+        if (stored) {
+          localDesigns = JSON.parse(stored);
+        }
+      } catch (e) {}
+
+      // 2. Load backend user rooms
+      let backendRooms: any[] = [];
+      try {
+        backendRooms = await projectService.getAllRooms();
+      } catch (e) {}
+
+      const formattedRooms: PublishedProjectData[] = (backendRooms || []).map((r: any) => ({
+        _id: r._id || r.id || `room-${Math.random()}`,
+        title: r.name || `${r.roomType || 'Room'} ${r.theme || 'AI'} Redesign`,
+        description: r.customInstructions || r.prompt || `AI architectural render output`,
+        price: 0,
+        toolSlug: r.toolSlug || 'interior-design',
+        totalImageCount: 1,
+        roomType: r.roomType || 'Living Room',
+        style: r.theme || 'Modern',
+        sampleImageUrl: r.generatedImage || r.coverImage || r.originalImage,
+        beforeImageUrl: r.originalImage,
+        createdAt: r.createdAt || new Date().toISOString(),
+      }));
+
+      // Combine local & backend designs
+      const combined = [...localDesigns, ...formattedRooms];
+
+      // Filter by room category if selected
+      const filtered = combined.filter((item) => {
+        if (!item.sampleImageUrl) return false;
+        if (selectedCategory === 'All') return true;
+        return item.roomType?.toLowerCase() === selectedCategory.toLowerCase() || item.style?.toLowerCase() === selectedCategory.toLowerCase();
       });
 
-      if (fetched && fetched.length > 0) {
-        setPublishedDesigns(fetched);
-      } else {
-        setPublishedDesigns(INITIAL_CURATED_DESIGNS);
-      }
+      // Deduplicate items by sampleImageUrl
+      const uniqueDesigns = filtered.filter((item, index, self) =>
+        index === self.findIndex((t) => t.sampleImageUrl === item.sampleImageUrl)
+      );
+
+      setPublishedDesigns(uniqueDesigns);
     } catch (err) {
-      console.warn('Fallback to curated designs:', err);
-      setPublishedDesigns(INITIAL_CURATED_DESIGNS);
+      console.warn('Error loading real user designs:', err);
+      setPublishedDesigns([]);
     } finally {
       setIsLoadingShowcase(false);
     }
