@@ -432,21 +432,21 @@ export default function DesignsPage() {
             </p>
           </div>
         ) : viewMode === 'masonry' ? (
-          /* UNSPLASH / PINTEREST STYLE MASONRY CARDS GRID (PRESERVES EXACT NATURAL IMAGE SHAPE) */
+          /* UNSPLASH / PINTEREST STYLE MASONRY CARDS GRID (2 PER ROW WITH ROUNDED-LG BORDER RADIUS) */
           <div className="space-y-6">
-            <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+            <div className="columns-1 md:columns-2 gap-6 space-y-6">
               {paginatedShowcase.map((proj) => (
                 <div
                   key={proj._id}
                   onClick={() => handleOpenDetailModal(proj)}
-                  className="break-inside-avoid relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-2xl transition-all duration-300 group cursor-pointer"
+                  className="break-inside-avoid relative rounded-lg overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-2xl transition-all duration-300 group cursor-pointer"
                 >
                   {/* NATURAL ASPECT RATIO IMAGE (NO CROPPING!) */}
-                  <div className="relative w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+                  <div className="relative w-full overflow-hidden bg-slate-100 dark:bg-slate-800 rounded-lg">
                     <img
                       src={proj.sampleImageUrl}
                       alt={proj.title}
-                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500 rounded-3xl"
+                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg"
                     />
 
                     {/* TOP FLOATING OVERLAY: Room Type Badge */}
@@ -472,7 +472,7 @@ export default function DesignsPage() {
                     </div>
 
                     {/* BOTTOM HOVER GRADIENT OVERLAY WITH TITLE & STYLE */}
-                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent text-white space-y-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent text-white space-y-1.5 opacity-90 group-hover:opacity-100 transition-opacity rounded-b-lg">
                       <h4 className="font-extrabold text-sm font-heading line-clamp-1 leading-snug text-white">
                         {proj.title}
                       </h4>
