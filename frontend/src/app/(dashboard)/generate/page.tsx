@@ -946,13 +946,30 @@ function GenerateStudioContent() {
     checkApiHealth();
   }, []);
 
-  // Handle image upload input
+  // Handle image upload input with resolution & clarity inspection
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (evt) => {
-        setUploadedImage(evt.target?.result as string);
+        const dataUrl = evt.target?.result as string;
+        
+        // Inspect image resolution and dimensions
+        const img = new Image();
+        img.onload = () => {
+          const w = img.naturalWidth;
+          const h = img.naturalHeight;
+          if (w < 450 || h < 450) {
+            showToast({
+              type: 'info',
+              title: 'Low Resolution Photo Detected',
+              message: `Uploaded image is ${w}×${h}px. Recommended resolution is 512×512px or higher for crisp 8K UHD architectural details. AI will automatically upscale and enhance pixel clarity while preserving original shape.`,
+            });
+          }
+        };
+        img.src = dataUrl;
+
+        setUploadedImage(dataUrl);
         setGeneratedResult(null);
         setDemoAfterResult(null);
         setIsUserUploaded(true);

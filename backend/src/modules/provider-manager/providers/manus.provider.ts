@@ -182,7 +182,12 @@ export class ManusProvider implements IAIProvider {
 
     // Attach public URL to prompt if accessible over internet, otherwise transmit image buffer directly
     const imagePrefix = isPublicUrl ? `Reference Input Room Image URL: ${absoluteImageUrl}\n\n` : '';
-    const manusCombinedPrompt = `${imagePrefix}${input.prompt}`;
+    
+    const aspectAndResolutionDirective = `\n\nCRITICAL RESOLUTION & GEOMETRIC PROPORTION INSTRUCTIONS:
+1. PRESERVE ORIGINAL ASPECT RATIO: Maintain the exact geometric aspect ratio, camera perspective, and room shape of the reference input image. Do not warp, stretch, or alter the natural room proportions.
+2. HIGH PIXEL UPSCALE & CLARITY ENHANCEMENT: If the uploaded input image is low-resolution or blurry (e.g. 300x300), upscale and render the output image into ultra-crisp, high-resolution architectural quality (minimum 4K/8K UHD, e.g., 1024x1024 / 2048x2048 or higher equivalent matching the exact aspect ratio). Enhance all room textures, lighting, and materials into razor-sharp, photorealistic clarity.`;
+
+    const manusCombinedPrompt = `${imagePrefix}${input.prompt}${aspectAndResolutionDirective}`;
 
     // Loop through available API keys starting from currentKeyIndex
     let lastErrorMessage = '';
