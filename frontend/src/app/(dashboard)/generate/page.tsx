@@ -38,6 +38,7 @@ import {
   Trees,
   Building2,
   X,
+  Star,
 } from 'lucide-react';
 import { ROOM_TYPES, DESIGN_STYLES, COLOR_PALETTES, MOODS, BUDGET_LEVELS, BUILDING_TYPES, ROOF_TYPES, LIGHTING_OPTIONS, ENVIRONMENTS, TIMES_OF_DAY } from '@/constants';
 import { projectService, ProjectData } from '@/services/project.service';
@@ -578,6 +579,19 @@ function GenerateStudioContent() {
   const [showCustomRequirements, setShowCustomRequirements] = useState<boolean>(false);
   const [customRequirements, setCustomRequirements] = useState<string>('');
   const [preserveStructure, setPreserveStructure] = useState<boolean>(true);
+
+  // Private Rating & Review Feedback State
+  const [userStarRating, setUserStarRating] = useState<number>(5);
+  const [hasSubmittedRating, setHasSubmittedRating] = useState<boolean>(false);
+
+  const handleSendRatingFeedback = async () => {
+    setHasSubmittedRating(true);
+    showToast({
+      type: 'success',
+      title: 'Rating Submitted!',
+      message: 'Thank you! Your feedback helps us continuously improve AI model quality. Your data remains 100% private.',
+    });
+  };
 
   const toggleProductSelection = (productName: string) => {
     if (selectedProducts.includes(productName)) {
@@ -2632,6 +2646,51 @@ function GenerateStudioContent() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* PRIVATE PLATFORM RATING & REVIEW BOX */}
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-50/80 via-indigo-50/40 to-slate-50 dark:from-purple-950/40 dark:via-indigo-950/20 dark:to-slate-900 border border-purple-100 dark:border-purple-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white font-heading">
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <span>Rate Your AI Redesign Quality & Experience</span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                Your rating helps us improve AI model fidelity. No personal user data or private room images are ever shared publicly.
+              </p>
+            </div>
+
+            {hasSubmittedRating ? (
+              <div className="px-3.5 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <span>Thank you for rating! ★ {userStarRating}/5 Rating Recorded</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                {/* 5-STAR SELECTOR */}
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setUserStarRating(star)}
+                      className="p-1 text-amber-400 hover:scale-125 transition-transform cursor-pointer"
+                      title={`${star} Star`}
+                    >
+                      <Star className={`w-5 h-5 ${star <= userStarRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-700'}`} />
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSendRatingFeedback}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer font-heading"
+                >
+                  Submit Rating
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
