@@ -40,7 +40,10 @@ export class Project {
   lighting?: string;
 
   @Prop({ required: false, default: '' })
-  manusChatId?: string; // Manus AI session thread ID
+  manusChatId?: string; // Active Manus AI session thread ID
+
+  @Prop({ type: Array, default: [] })
+  manusChatHistory?: string[]; // History of past Manus AI session IDs (never deleted)
 
   @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'ProjectRoom' }], default: [] })
   rooms: MongooseSchema.Types.ObjectId[];

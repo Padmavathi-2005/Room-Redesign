@@ -22,6 +22,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { isModelAllowedForUser, getRequiredPlanForModel } from '@/utils/planPermissions';
+import AuthModal from '@/components/auth/AuthModal';
 
 interface ToolItem {
   id: string;
@@ -339,6 +340,8 @@ export default function ToolsCatalogPage() {
   }, []);
 
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [pendingToolHref, setPendingToolHref] = useState<string>('');
   const [upgradeModalInfo, setUpgradeModalInfo] = useState<{ isOpen: boolean; toolName: string; requiredPlan: string }>({
     isOpen: false,
     toolName: '',
@@ -404,7 +407,7 @@ export default function ToolsCatalogPage() {
               <button
                 key={tab.id}
                 onClick={() => setSelectedCategory(tab.id)}
-                className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all whitespace-nowrap focus:outline-none cursor-pointer ${
+                className={`px-4 py-2 text-xs font-semibold rounded-2xl transition-all whitespace-nowrap focus:outline-none cursor-pointer ${
                   selectedCategory === tab.id
                     ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
                     : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-purple-50 hover:text-purple-700'
@@ -423,7 +426,7 @@ export default function ToolsCatalogPage() {
               placeholder="Search AI tool..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-600/30 focus:border-purple-600 transition-all placeholder:text-slate-400 text-slate-900"
+              className="w-full pl-9 pr-4 py-2 text-xs bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-600/30 focus:border-purple-600 transition-all placeholder:text-slate-400 text-slate-900"
             />
           </div>
         </div>
@@ -439,7 +442,7 @@ export default function ToolsCatalogPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.04 }}
-                className="group relative bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs hover:shadow-xl hover:border-purple-300 transition-all duration-300 flex flex-col justify-between"
+                className="group relative bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:shadow-xl hover:border-purple-300 transition-all duration-300 flex flex-col justify-between"
               >
                 <div className="space-y-4">
                   {/* Card Top Header: Icon + Name + Category + Badges */}
@@ -460,12 +463,12 @@ export default function ToolsCatalogPage() {
 
                     <div className="flex flex-col items-end gap-1">
                       {!isAllowed ? (
-                        <span className="px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs flex items-center gap-1 font-heading">
+                        <span className="px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs flex items-center gap-1 font-heading">
                           <Sparkles className="w-2.5 h-2.5 fill-white text-white" />
                           <span>PRO ✦</span>
                         </span>
                       ) : tool.badge ? (
-                        <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-purple-100 text-purple-800 border border-purple-200/60">
+                        <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-2xl bg-purple-100 text-purple-800 border border-purple-200/60">
                           {tool.badge}
                         </span>
                       ) : null}
@@ -487,7 +490,7 @@ export default function ToolsCatalogPage() {
                           alt={`${tool.name} Original`}
                           className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-md text-[9px] font-extrabold text-white border border-white/10 uppercase tracking-wider">
+                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-2xl bg-slate-900/80 backdrop-blur-md text-[9px] font-extrabold text-white border border-white/10 uppercase tracking-wider">
                           Original Photo
                         </div>
                       </div>
@@ -499,7 +502,7 @@ export default function ToolsCatalogPage() {
                           alt={`${tool.name} Converted AI`}
                           className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-purple-600/90 backdrop-blur-md text-[9px] font-extrabold text-white border border-purple-400/30 uppercase tracking-wider flex items-center gap-1">
+                        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-2xl bg-purple-600/90 backdrop-blur-md text-[9px] font-extrabold text-white border border-purple-400/30 uppercase tracking-wider flex items-center gap-1">
                           <Sparkles className="w-2.5 h-2.5 text-amber-300 fill-amber-300" />
                           <span>AI Render</span>
                         </div>
@@ -523,12 +526,22 @@ export default function ToolsCatalogPage() {
                 {/* Launch Button Footer */}
                 <div className="pt-4">
                   {isAllowed ? (
-                    <Link href={`/generate?tool=${tool.id}`}>
-                      <button className="w-full py-2.5 px-4 rounded-xl bg-slate-900 group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-indigo-600 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md group-hover:shadow-purple-500/25 cursor-pointer font-heading">
-                        <span>Try {tool.name}</span>
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                      </button>
-                    </Link>
+                    <button
+                      onClick={() => {
+                        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                        const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+                        if (!token && !storedUser) {
+                          setPendingToolHref(`/generate?tool=${tool.id}`);
+                          setShowAuthModal(true);
+                        } else {
+                          window.location.href = `/generate?tool=${tool.id}`;
+                        }
+                      }}
+                      className="w-full py-2.5 px-4 rounded-2xl bg-slate-900 group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-indigo-600 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md group-hover:shadow-purple-500/25 cursor-pointer font-heading"
+                    >
+                      <span>Try {tool.name}</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </button>
                   ) : (
                     <button
                       onClick={() => {
@@ -539,7 +552,7 @@ export default function ToolsCatalogPage() {
                           requiredPlan: reqPlan,
                         });
                       }}
-                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer font-heading"
+                      className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer font-heading"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-200 fill-amber-200" />
                       <span>Unlock {tool.name} (PRO ✦)</span>
@@ -553,7 +566,7 @@ export default function ToolsCatalogPage() {
 
         {/* Empty Search Result State */}
         {filteredTools.length === 0 && (
-          <div className="text-center py-16 bg-white border border-slate-200 rounded-3xl p-8 space-y-4">
+          <div className="text-center py-16 bg-white border border-slate-200 rounded-2xl p-8 space-y-4">
             <Search className="w-10 h-10 text-slate-300 mx-auto" />
             <h3 className="text-base font-bold text-slate-800">No AI tools matched your search</h3>
             <p className="text-xs text-slate-500">Try adjusting your keyword or filter tabs.</p>
@@ -562,7 +575,7 @@ export default function ToolsCatalogPage() {
                 setSelectedCategory('all');
                 setSearchQuery('');
               }}
-              className="px-4 py-2 bg-blue-50 text-blue-700 font-semibold text-xs rounded-xl hover:bg-blue-100 transition-colors"
+              className="px-4 py-2 bg-blue-50 text-blue-700 font-semibold text-xs rounded-2xl hover:bg-blue-100 transition-colors"
             >
               Reset Filters
             </button>
@@ -577,7 +590,7 @@ export default function ToolsCatalogPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 text-center relative overflow-hidden"
+            className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 text-center relative overflow-hidden"
           >
             <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-md border border-amber-200">
               <Sparkles className="w-7 h-7" />
@@ -614,6 +627,12 @@ export default function ToolsCatalogPage() {
           </motion.div>
         </div>
       )}
+      {/* Auth Modal for Unauthenticated Tool Access */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        redirectUrl={pendingToolHref || '/generate'}
+      />
     </div>
   );
 }

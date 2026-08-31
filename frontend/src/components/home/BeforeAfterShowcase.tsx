@@ -179,7 +179,7 @@ export default function BeforeAfterShowcase() {
           onTouchStart={() => setIsInteracting(true)}
           onTouchEnd={() => setIsInteracting(false)}
           onTouchMove={handleTouchMove}
-          className="relative aspect-[16/9] w-full rounded-3xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-2xl cursor-ew-resize select-none"
+          className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-2xl cursor-ew-resize select-none"
         >
           {/* PREVIOUS PROJECT UNDERNEATH (Prevents any blank gap) */}
           {prevProject && (
@@ -227,7 +227,7 @@ export default function BeforeAfterShowcase() {
                   alt="After View"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute top-3.5 right-3.5 px-3 py-1 bg-[#1D4ED8]/90 backdrop-blur-md rounded-xl text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md border border-white/30 z-10 pointer-events-none">
+                <div className="absolute top-3.5 right-3.5 px-3 py-1 bg-[var(--primary)]/90 backdrop-blur-md rounded-2xl text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md border border-white/30 z-10 pointer-events-none">
                   AFTER
                 </div>
               </div>
@@ -246,7 +246,7 @@ export default function BeforeAfterShowcase() {
                     alt="Before View"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute top-3.5 left-3.5 px-3 py-1 bg-slate-900/85 backdrop-blur-md rounded-xl text-[10px] font-extrabold uppercase tracking-wider text-white border border-white/20 z-10 pointer-events-none">
+                  <div className="absolute top-3.5 left-3.5 px-3 py-1 bg-slate-900/85 backdrop-blur-md rounded-2xl text-[10px] font-extrabold uppercase tracking-wider text-white border border-white/20 z-10 pointer-events-none">
                     BEFORE
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export default function BeforeAfterShowcase() {
             style={{ left: `${sliderPosition}%` }}
           >
             <div className="w-8 h-8 rounded-full bg-white text-slate-800 border border-slate-200 shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform">
-              <GripVertical className="w-4 h-4 text-[#1D4ED8]" />
+              <GripVertical className="w-4 h-4 text-[var(--primary)]" />
             </div>
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function BeforeAfterShowcase() {
                 <button
                   key={cat.id}
                   onClick={() => selectCategory(idx)}
-                  className={`relative flex-1 min-w-[75px] py-2 px-3 text-xs font-semibold rounded-xl transition-colors duration-200 text-center z-10 ${
+                  className={`relative flex-1 min-w-[75px] py-2 px-3 text-xs font-semibold rounded-2xl transition-colors duration-200 text-center z-10 ${
                     isActive ? 'text-white font-bold' : 'text-slate-700 hover:text-slate-900'
                   }`}
                 >
@@ -303,7 +303,7 @@ export default function BeforeAfterShowcase() {
                   {isActive && (
                     <motion.div
                       layoutId="activeCategoryPill"
-                      className="absolute inset-0 bg-[#1D4ED8] rounded-xl shadow-md -z-10"
+                      className="absolute inset-0 bg-[var(--primary)] rounded-2xl shadow-md -z-10"
                       transition={{ type: 'spring', stiffness: 350, damping: 28 }}
                     />
                   )}
@@ -321,7 +321,7 @@ export default function BeforeAfterShowcase() {
               key={cat.id}
               onClick={() => selectCategory(idx)}
               className={`h-1.5 rounded-full transition-all duration-300 ${
-                idx === categoryIndex ? 'w-5 bg-[#1D4ED8]' : 'w-1.5 bg-slate-300'
+                idx === categoryIndex ? 'w-5 bg-[var(--primary)]' : 'w-1.5 bg-slate-300'
               }`}
               aria-label={`Switch to ${cat.name}`}
             />

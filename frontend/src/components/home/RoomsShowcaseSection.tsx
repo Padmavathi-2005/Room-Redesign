@@ -56,7 +56,7 @@ export default function RoomsShowcaseSection() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           
           {/* Left Flank Card */}
-          <div className="lg:col-span-3 hidden lg:block h-[340px] rounded-3xl overflow-hidden shadow-xl border border-white/80 bg-slate-900 relative">
+          <div className="lg:col-span-3 hidden lg:block h-[340px] rounded-2xl overflow-hidden shadow-xl border border-white/80 bg-slate-900 relative">
             <AnimatePresence mode="popLayout">
               <motion.img
                 key={SHOWCASE_IMAGES[leftIndex].id}
@@ -72,7 +72,7 @@ export default function RoomsShowcaseSection() {
           </div>
 
           {/* Center Main Spotlight Card (ENTERS SMOOTHLY FROM RIGHT TO CENTER EVERY 5 SECONDS) */}
-          <div className="lg:col-span-6 relative h-[360px] sm:h-[450px] rounded-3xl overflow-hidden shadow-2xl border-2 border-blue-200/80 bg-slate-900">
+          <div className="lg:col-span-6 relative h-[360px] sm:h-[450px] rounded-2xl overflow-hidden shadow-2xl border-2 border-blue-200/80 bg-slate-900">
             <AnimatePresence mode="popLayout">
               <motion.img
                 key={SHOWCASE_IMAGES[centerIndex].id}
@@ -88,7 +88,7 @@ export default function RoomsShowcaseSection() {
           </div>
 
           {/* Right Flank Card */}
-          <div className="lg:col-span-3 hidden lg:block h-[340px] rounded-3xl overflow-hidden shadow-xl border border-white/80 bg-slate-900 relative">
+          <div className="lg:col-span-3 hidden lg:block h-[340px] rounded-2xl overflow-hidden shadow-xl border border-white/80 bg-slate-900 relative">
             <AnimatePresence mode="popLayout">
               <motion.img
                 key={SHOWCASE_IMAGES[rightIndex].id}

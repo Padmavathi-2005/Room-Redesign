@@ -125,7 +125,7 @@ export class UpdateSettingsDto {
   @Min(1)
   aiGenerationTimeout?: number;
 
-  // 4. Stripe Payment Gateway
+  // 4. Stripe & PayPal Payment Gateways
   @IsOptional()
   @IsBoolean()
   stripeTestMode?: boolean;
@@ -141,6 +141,22 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsString()
   stripeWebhookSecret?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  paypalSandboxMode?: boolean;
+
+  @IsOptional()
+  @IsString()
+  paypalClientId?: string;
+
+  @IsOptional()
+  @IsString()
+  paypalClientSecret?: string;
+
+  @IsOptional()
+  @IsString()
+  paypalWebhookId?: string;
 
   // 5. Cloud Storage & Media Delivery
   @IsOptional()

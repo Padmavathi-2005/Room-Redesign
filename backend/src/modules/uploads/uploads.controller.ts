@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Body,
   UseInterceptors,
   UploadedFile,
   HttpCode,
@@ -25,6 +26,22 @@ export class UploadsController {
       success: true,
       message: 'Product Tools Loaded',
       data: tools,
+    };
+  }
+
+  /**
+   * POST /api/v1/uploads/resolve-url (Resolves direct image URL from web page link)
+   */
+  @Post('resolve-url')
+  @HttpCode(HttpStatus.OK)
+  async resolveUrl(@Body('url') url: string) {
+    if (!url) {
+      return { success: false, message: 'URL is required' };
+    }
+    const resolvedUrl = await this.uploadsService.resolveWebPageImageUrl(url);
+    return {
+      success: true,
+      data: { url: resolvedUrl },
     };
   }
 

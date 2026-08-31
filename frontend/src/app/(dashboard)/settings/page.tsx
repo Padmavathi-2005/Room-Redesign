@@ -46,7 +46,7 @@ export default function AdminSettingsPage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* SECTION 1: Active Theme Mode */}
-        <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-4">
+        <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-4">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Sun className="w-5 h-5 text-amber-500" />
             <span>Active Theme Mode</span>
@@ -82,7 +82,7 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* SECTION 2: Dynamic Palette Color Controls */}
-        <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-6">
+        <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-6">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-indigo-500" />
             <span>Brand & Palette Colors</span>
@@ -99,13 +99,13 @@ export default function AdminSettingsPage() {
                   type="color"
                   value={formState.primaryColor || '#6366F1'}
                   onChange={(e) => handleChange('primaryColor', e.target.value)}
-                  className="w-12 h-12 rounded-xl border border-slate-200 cursor-pointer overflow-hidden p-0"
+                  className="w-12 h-12 rounded-2xl border border-slate-200 cursor-pointer overflow-hidden p-0"
                 />
                 <input
                   type="text"
                   value={formState.primaryColor || '#6366F1'}
                   onChange={(e) => handleChange('primaryColor', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-mono"
                 />
               </div>
             </div>
@@ -120,13 +120,13 @@ export default function AdminSettingsPage() {
                   type="color"
                   value={formState.secondaryColor || '#8B5CF6'}
                   onChange={(e) => handleChange('secondaryColor', e.target.value)}
-                  className="w-12 h-12 rounded-xl border border-slate-200 cursor-pointer overflow-hidden p-0"
+                  className="w-12 h-12 rounded-2xl border border-slate-200 cursor-pointer overflow-hidden p-0"
                 />
                 <input
                   type="text"
                   value={formState.secondaryColor || '#8B5CF6'}
                   onChange={(e) => handleChange('secondaryColor', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-mono"
                 />
               </div>
             </div>
@@ -141,13 +141,13 @@ export default function AdminSettingsPage() {
                   type="color"
                   value={formState.accentColor || '#06B6D4'}
                   onChange={(e) => handleChange('accentColor', e.target.value)}
-                  className="w-12 h-12 rounded-xl border border-slate-200 cursor-pointer overflow-hidden p-0"
+                  className="w-12 h-12 rounded-2xl border border-slate-200 cursor-pointer overflow-hidden p-0"
                 />
                 <input
                   type="text"
                   value={formState.accentColor || '#06B6D4'}
                   onChange={(e) => handleChange('accentColor', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-mono"
                 />
               </div>
             </div>
@@ -162,13 +162,13 @@ export default function AdminSettingsPage() {
                   type="color"
                   value={formState.backgroundColor || '#FFFFFF'}
                   onChange={(e) => handleChange('backgroundColor', e.target.value)}
-                  className="w-12 h-12 rounded-xl border border-slate-200 cursor-pointer overflow-hidden p-0"
+                  className="w-12 h-12 rounded-2xl border border-slate-200 cursor-pointer overflow-hidden p-0"
                 />
                 <input
                   type="text"
                   value={formState.backgroundColor || '#FFFFFF'}
                   onChange={(e) => handleChange('backgroundColor', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-mono"
                 />
               </div>
             </div>
@@ -183,13 +183,13 @@ export default function AdminSettingsPage() {
                   type="color"
                   value={formState.textColor || '#111827'}
                   onChange={(e) => handleChange('textColor', e.target.value)}
-                  className="w-12 h-12 rounded-xl border border-slate-200 cursor-pointer overflow-hidden p-0"
+                  className="w-12 h-12 rounded-2xl border border-slate-200 cursor-pointer overflow-hidden p-0"
                 />
                 <input
                   type="text"
                   value={formState.textColor || '#111827'}
                   onChange={(e) => handleChange('textColor', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl font-mono"
                 />
               </div>
             </div>
@@ -197,7 +197,7 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* SECTION 3: Glassmorphism & Radius Sliders */}
-        <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-6">
+        <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-6">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Sliders className="w-5 h-5 text-indigo-500" />
             <span>Glassmorphism & Border Radius Sliders</span>
@@ -256,7 +256,7 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* SECTION 4: Application Meta & Maintenance Mode */}
-        <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-6">
+        <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-6">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-indigo-500" />
             <span>Platform Metadata</span>
@@ -288,6 +288,34 @@ export default function AdminSettingsPage() {
                 </span>
               </label>
             </div>
+          </div>
+        </div>
+
+        {/* SECTION: Table Pagination & System Settings */}
+        <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-4">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Sliders className="w-5 h-5 text-purple-600" />
+            <span>Table & Data Pagination Settings</span>
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Configure the default row limit and pagination size for all tables across the application (My Designs, Dashboard, Admin Tables).
+          </p>
+
+          <div className="max-w-xs space-y-2">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Default Table Rows Per Page
+            </label>
+            <select
+              value={formState.tablePaginationLimit || 10}
+              onChange={(e) => handleChange('tablePaginationLimit', Number(e.target.value))}
+              className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+            >
+              <option value={5}>5 Rows Per Page</option>
+              <option value={10}>10 Rows Per Page</option>
+              <option value={15}>15 Rows Per Page</option>
+              <option value={25}>25 Rows Per Page</option>
+              <option value={50}>50 Rows Per Page</option>
+            </select>
           </div>
         </div>
 

@@ -65,7 +65,7 @@ export default function Generate2Page() {
       {/* Top Header */}
       <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -78,7 +78,7 @@ export default function Generate2Page() {
 
         <Link
           href="/generate"
-          className="text-xs font-semibold px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors"
+          className="text-xs font-semibold px-4 py-2 rounded-2xl bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors"
         >
           Back to standard generate
         </Link>
@@ -110,7 +110,7 @@ export default function Generate2Page() {
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="https://images.unsplash.com/photo-..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none placeholder:text-slate-600 transition-all font-mono"
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none placeholder:text-slate-600 transition-all font-mono"
               />
               <p className="text-[10px] text-slate-500 leading-normal">
                 Must be an absolute HTTP/HTTPS address accessible publicly on the internet (e.g. Unsplash, Imgur).
@@ -128,13 +128,13 @@ export default function Generate2Page() {
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={5}
                 placeholder="A high quality photorealistic modern scandinavian living room redesign with clean oak details, neutral gray sofa, warm sunset lighting, highly detailed..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none placeholder:text-slate-600 transition-all leading-relaxed"
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none placeholder:text-slate-600 transition-all leading-relaxed"
               />
             </div>
 
             {/* Error Message */}
             {errorMsg && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl p-3 flex items-start gap-2.5">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-2xl p-3 flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -144,7 +144,7 @@ export default function Generate2Page() {
             <button
               type="submit"
               disabled={isGenerating}
-              className={`w-full py-4.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 active:scale-95 transition-all ${
+              className={`w-full py-4.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 active:scale-95 transition-all ${
                 isGenerating
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                   : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white hover:opacity-90'
@@ -174,7 +174,7 @@ export default function Generate2Page() {
                 <ImageIcon className="w-4 h-4" />
                 Original Image Preview
               </span>
-              <div className="flex-1 bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden flex items-center justify-center relative min-h-[250px]">
+              <div className="flex-1 bg-slate-950/80 border border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center relative min-h-[250px]">
                 {imageUrl.trim() ? (
                   <img
                     src={imageUrl}
@@ -199,7 +199,7 @@ export default function Generate2Page() {
                 <Sparkles className="w-4 h-4 text-indigo-400" />
                 Generated Redesign
               </span>
-              <div className="flex-1 bg-slate-950/80 border border-slate-800 rounded-xl overflow-hidden flex items-center justify-center relative min-h-[250px]">
+              <div className="flex-1 bg-slate-950/80 border border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center relative min-h-[250px]">
                 <AnimatePresence mode="wait">
                   {isGenerating ? (
                     <motion.div

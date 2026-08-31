@@ -37,6 +37,9 @@ export class ProductTool {
 
   @Prop({ required: false, default: '' })
   convertedImage: string;
+
+  @Prop({ type: Array, default: [] })
+  widgets: any[];
 }
 
 export const ProductToolSchema = SchemaFactory.createForClass(ProductTool);

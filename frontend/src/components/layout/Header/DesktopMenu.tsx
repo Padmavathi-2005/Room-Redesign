@@ -36,7 +36,7 @@ export default function DesktopMenu() {
 
   return (
     <nav className="hidden lg:flex items-center gap-7 xl:gap-8 text-xs font-semibold">
-      <NavItem href="/#features" label="Features" />
+      <NavItem href="/designs" label="Designs" />
       <ProductsDropdown />
       <NavItem href="/pricing" label="Pricing" />
       <NavItem href="/about" label="About" />

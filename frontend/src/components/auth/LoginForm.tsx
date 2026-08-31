@@ -24,12 +24,17 @@ export default function LoginForm() {
       return;
     }
 
+    if (email.toLowerCase().trim() === 'admin@gmail.com' || email.toLowerCase().includes('admin')) {
+      setErrorMessage('Admin accounts cannot log in through the user login form. Please use the Admin Portal.');
+      return;
+    }
+
     setIsLoading(true);
 
     // Save user auth session in localStorage & cookies
     if (typeof window !== 'undefined') {
       const mockToken = 'mock_jwt_token_roomai_' + Date.now();
-      const userRole = email.toLowerCase().includes('admin') ? 'admin' : 'Architect';
+      const userRole = 'user';
       
       localStorage.setItem('token', mockToken);
       localStorage.setItem(
@@ -44,7 +49,7 @@ export default function LoginForm() {
       document.cookie = `token=${mockToken}; path=/; max-age=86400; SameSite=Lax`;
 
       // Simulate backend auth check and redirect to dashboard
-      const targetPath = userRole === 'admin' ? '/admin/dashboard' : '/dashboard';
+      const targetPath = '/dashboard';
       setTimeout(() => {
         setIsLoading(false);
         setIsSuccess(true);
@@ -71,7 +76,7 @@ export default function LoginForm() {
         {/* Card Header & Brand Logo */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 mb-3 px-3.5 py-1.5 rounded-full bg-indigo-50/80 border border-indigo-100/80 shadow-inner">
-            <div className="w-5 h-5 rounded-lg bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 flex items-center justify-center shadow-md">
+            <div className="w-5 h-5 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 flex items-center justify-center shadow-md">
               <Sparkles className="w-3 h-3 text-white" />
             </div>
             <span className="text-sm font-bold bg-gradient-to-r from-indigo-700 via-purple-700 to-slate-900 bg-clip-text text-transparent tracking-tight font-heading">
@@ -110,7 +115,7 @@ export default function LoginForm() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2"
+              className="mb-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>{isSignUp ? 'Account created successfully! Redirecting...' : 'Signed in successfully! Welcome back.'}</span>
@@ -122,7 +127,7 @@ export default function LoginForm() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2"
+              className="mb-4 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2"
             >
               <ShieldCheck className="w-4 h-4 text-rose-500 shrink-0" />
               <span>{errorMessage}</span>
@@ -147,7 +152,7 @@ export default function LoginForm() {
                   placeholder="Alex Morgan"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 glass-input outline-none font-medium"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 glass-input outline-none font-medium"
                 />
               </div>
             </motion.div>
@@ -166,7 +171,7 @@ export default function LoginForm() {
                 placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 glass-input outline-none font-medium"
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 glass-input outline-none font-medium"
               />
             </div>
           </div>
@@ -195,7 +200,7 @@ export default function LoginForm() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 glass-input outline-none font-medium"
+                className="w-full pl-10 pr-10 py-2.5 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 glass-input outline-none font-medium"
               />
               <button
                 type="button"
@@ -229,7 +234,7 @@ export default function LoginForm() {
             disabled={isLoading}
             whileHover={{ scale: 1.015 }}
             whileTap={{ scale: 0.985 }}
-            className="w-full mt-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-600 hover:from-indigo-500 hover:via-purple-500 hover:to-cyan-500 shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all duration-300 animated-glow-btn disabled:opacity-75 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+            className="w-full mt-2 py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-600 hover:from-indigo-500 hover:via-purple-500 hover:to-cyan-500 shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all duration-300 animated-glow-btn disabled:opacity-75 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
           >
             {isLoading ? (
               <>

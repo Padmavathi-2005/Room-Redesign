@@ -122,7 +122,9 @@ export default function AdminPlansPage() {
 
       const profileData = await profileRes.json();
       
-      if (!profileData || !profileData.success || !profileData.data || profileData.data.user?.role !== 'admin') {
+      const isAdminRole = profileData?.data?.user?.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(profileData.data.user.role);
+
+      if (!profileData || !profileData.success || !profileData.data || !isAdminRole) {
         setIsAdmin(false);
         setLoading(false);
         setTimeout(() => {
@@ -135,10 +137,71 @@ export default function AdminPlansPage() {
 
       const plansRes = await fetch(`${apiUrl}/subscription/plans?includeInactive=true`, {
         headers: { Authorization: `Bearer ${authToken}` },
-      });
-      const plansData = await plansRes.json();
-      if (plansData && plansData.success) {
-        setPlans(plansData.data);
+      }).catch(() => null);
+
+      if (plansRes && plansRes.ok) {
+        const plansData = await plansRes.json();
+        if (plansData && plansData.success && Array.isArray(plansData.data)) {
+          setPlans(plansData.data);
+          return;
+        }
+      }
+
+      // Fallback local storage plans if offline
+      const storedPlans = localStorage.getItem('admin_custom_plans');
+      if (storedPlans) {
+        try {
+          setPlans(JSON.parse(storedPlans));
+        } catch {
+          // fallback
+        }
+      } else {
+        const defaultAdminPlans: DatabasePlan[] = [
+          {
+            _id: 'plan-1',
+            name: 'Starter Pro',
+            code: 'starter',
+            priceMonthly: 19,
+            priceAnnual: 15,
+            credits: 200,
+            description: 'Perfect for homeowners redesigning personal room spaces.',
+            features: ['200 AI Credits / mo', 'Full HD (1080p) Quality', '5 Workspace Projects'],
+            stripePriceIdMonthly: 'price_starter_m',
+            stripePriceIdAnnual: 'price_starter_a',
+            isPopular: false,
+            isActive: true,
+          },
+          {
+            _id: 'plan-2',
+            name: 'Pro Studio',
+            code: 'pro',
+            priceMonthly: 39,
+            priceAnnual: 31,
+            credits: 650,
+            description: 'For interior designers & creators who need maximum quality.',
+            features: ['650 AI Credits / mo', '4K Ultra-HD Crisp Renders', 'Unlimited Projects', 'Commercial Rights'],
+            stripePriceIdMonthly: 'price_pro_m',
+            stripePriceIdAnnual: 'price_pro_a',
+            isPopular: true,
+            isActive: true,
+          },
+          {
+            _id: 'plan-3',
+            name: 'Agency Master',
+            code: 'master',
+            priceMonthly: 89,
+            priceAnnual: 71,
+            credits: 1800,
+            description: 'For architectural firms & high-volume commercial teams.',
+            features: ['1,800 AI Credits / mo', '8K Extreme Resolution', 'Unlimited Projects', 'Dedicated Support'],
+            stripePriceIdMonthly: 'price_agency_m',
+            stripePriceIdAnnual: 'price_agency_a',
+            isPopular: false,
+            isActive: true,
+          },
+        ];
+        setPlans(defaultAdminPlans);
+        localStorage.setItem('admin_custom_plans', JSON.stringify(defaultAdminPlans));
       }
     } catch (err) {
       console.error(err);
@@ -303,7 +366,7 @@ export default function AdminPlansPage() {
   if (isAdmin === false) {
     return (
       <div className="min-h-[50vh] bg-transparent text-slate-900 flex flex-col items-center justify-center p-6 text-center">
-        <div className="p-6 rounded-3xl bg-red-50 border border-red-200 max-w-md space-y-6">
+        <div className="p-6 rounded-2xl bg-red-50 border border-red-200 max-w-md space-y-6">
           <ShieldAlert className="w-16 h-16 text-red-600 mx-auto" />
           <div className="space-y-2">
             <h1 className="text-xl font-black text-slate-900">Access Denied</h1>
@@ -340,7 +403,7 @@ export default function AdminPlansPage() {
       )}
 
       {/* Image Generation Configuration Card */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4">
+      <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4">
         <div>
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Image Generation Configuration</h3>
           <p className="text-[10px] font-semibold text-slate-500 mt-1">Configure global resource properties for credit consumption.</p>
@@ -388,7 +451,7 @@ export default function AdminPlansPage() {
         </div>
         <button
           onClick={openCreateForm}
-          className="inline-flex items-center gap-1.5 px-4.5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black shadow shadow-indigo-650/20 cursor-pointer transition-all shrink-0 w-fit"
+          className="inline-flex items-center gap-1.5 px-4.5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black shadow shadow-indigo-650/20 cursor-pointer transition-all shrink-0 w-fit"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Add Subscription Plan</span>
@@ -496,7 +559,7 @@ export default function AdminPlansPage() {
                 return (
                   <label
                     key={model.id}
-                    className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    className={`flex items-start gap-2.5 p-2.5 rounded-2xl border transition-all cursor-pointer ${
                       isChecked
                         ? 'bg-white border-indigo-500/60 shadow-xs text-slate-900 ring-1 ring-indigo-500/20'
                         : 'bg-slate-100/60 border-slate-200 text-slate-500 hover:bg-white/60'
@@ -571,7 +634,7 @@ export default function AdminPlansPage() {
       </AdminModal>
 
       {/* Plans Table Summary */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm backdrop-blur-md overflow-x-auto">
+      <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm backdrop-blur-md overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-slate-200 font-bold text-slate-400">
@@ -610,7 +673,7 @@ export default function AdminPlansPage() {
                         return (
                           <span
                             key={mId}
-                            className="px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-[9px] font-bold shrink-0"
+                            className="px-1.5 py-0.5 rounded-2xl bg-purple-50 text-purple-700 border border-purple-200 text-[9px] font-bold shrink-0"
                             title={mObj?.desc || mId}
                           >
                             ✓ {mObj ? mObj.name.replace(' AI', '') : mId}
@@ -633,7 +696,7 @@ export default function AdminPlansPage() {
                       <button
                         onClick={() => openEditForm(p)}
                         aria-label="Edit Plan"
-                        className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-650 hover:text-slate-900 transition-all cursor-pointer shadow-sm"
+                        className="p-2 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-650 hover:text-slate-900 transition-all cursor-pointer shadow-sm"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -641,7 +704,7 @@ export default function AdminPlansPage() {
                         <button
                           onClick={() => handleDelete(p._id || '')}
                           aria-label="Delete Plan"
-                          className="p-2 rounded-xl bg-red-50 border border-red-100 hover:bg-red-100/60 text-red-600 hover:text-red-700 transition-all cursor-pointer shadow-sm"
+                          className="p-2 rounded-2xl bg-red-50 border border-red-100 hover:bg-red-100/60 text-red-600 hover:text-red-700 transition-all cursor-pointer shadow-sm"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -662,7 +725,7 @@ export default function AdminPlansPage() {
       </div>
 
       {/* Payment Transactions & Income Ledger */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm backdrop-blur-md space-y-4">
+      <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm backdrop-blur-md space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Payment Transactions & Revenue Ledger</h3>

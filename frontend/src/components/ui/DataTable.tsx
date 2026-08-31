@@ -132,7 +132,7 @@ export function DataTable<T extends Record<string, any>>({
   return (
     <div className="space-y-4">
       {/* HEADER CONTROLS (TITLE, SEARCH & ROW LIMIT) */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-4">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {(title || subtitle) && (
             <div>
@@ -169,7 +169,7 @@ export function DataTable<T extends Record<string, any>>({
                 setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
+              className="px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
             >
               {pageSizeOptions.map((opt) => (
                 <option key={opt} value={opt}>
@@ -182,7 +182,7 @@ export function DataTable<T extends Record<string, any>>({
       </div>
 
       {/* TABLE DATA CONTAINER */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-xs">
+      <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -220,7 +220,7 @@ export function DataTable<T extends Record<string, any>>({
                   <tr key={idx} className="animate-pulse">
                     {columns.map((col, cIdx) => (
                       <td key={cIdx} className="px-5 py-4">
-                        <div className="h-4 bg-slate-100 rounded-md w-3/4" />
+                        <div className="h-4 bg-slate-100 rounded-2xl w-3/4" />
                       </td>
                     ))}
                   </tr>
@@ -279,7 +279,7 @@ export function DataTable<T extends Record<string, any>>({
                 type="button"
                 onClick={() => setCurrentPage(1)}
                 disabled={validCurrentPage === 1}
-                className="p-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                className="p-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 title="First Page"
               >
                 <ChevronsLeft className="w-4 h-4 text-slate-700" />
@@ -289,13 +289,13 @@ export function DataTable<T extends Record<string, any>>({
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={validCurrentPage === 1}
-                className="p-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                className="p-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 title="Previous Page"
               >
                 <ChevronLeft className="w-4 h-4 text-slate-700" />
               </button>
 
-              <span className="px-3 py-1 bg-white border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900 font-mono">
+              <span className="px-3 py-1 bg-white border border-slate-200 rounded-2xl text-xs font-extrabold text-slate-900 font-mono">
                 {validCurrentPage} / {totalPages}
               </span>
 
@@ -303,7 +303,7 @@ export function DataTable<T extends Record<string, any>>({
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={validCurrentPage === totalPages}
-                className="p-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                className="p-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 title="Next Page"
               >
                 <ChevronRight className="w-4 h-4 text-slate-700" />
@@ -313,7 +313,7 @@ export function DataTable<T extends Record<string, any>>({
                 type="button"
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={validCurrentPage === totalPages}
-                className="p-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                className="p-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 title="Last Page"
               >
                 <ChevronsRight className="w-4 h-4 text-slate-700" />

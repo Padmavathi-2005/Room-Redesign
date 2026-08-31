@@ -12,7 +12,7 @@ export default function ErpDashboardMockup() {
         initial={{ opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="relative bg-white/90 border border-slate-200/90 rounded-3xl shadow-2xl shadow-slate-400/20 p-5 sm:p-6 space-y-4 backdrop-blur-xl"
+        className="relative bg-white/90 border border-slate-200/90 rounded-2xl shadow-2xl shadow-slate-400/20 p-5 sm:p-6 space-y-4 backdrop-blur-xl"
       >
         {/* Mock Window Control Dots */}
         <div className="flex items-center gap-1.5 pb-2 border-b border-slate-100">
@@ -56,15 +56,15 @@ export default function ErpDashboardMockup() {
               <span className="text-emerald-600 font-semibold">92% Available</span>
             </div>
             <div className="grid grid-cols-3 gap-2 pt-1 text-xs">
-              <div className="p-2.5 bg-white rounded-xl border border-slate-200/60 text-center">
+              <div className="p-2.5 bg-white rounded-2xl border border-slate-200/60 text-center">
                 <span className="text-[10px] text-slate-400 block">Cement & Steel</span>
                 <span className="font-bold text-slate-800">Ready</span>
               </div>
-              <div className="p-2.5 bg-white rounded-xl border border-slate-200/60 text-center">
+              <div className="p-2.5 bg-white rounded-2xl border border-slate-200/60 text-center">
                 <span className="text-[10px] text-slate-400 block">Labour Force</span>
                 <span className="font-bold text-emerald-600">186 Present</span>
               </div>
-              <div className="p-2.5 bg-white rounded-xl border border-slate-200/60 text-center">
+              <div className="p-2.5 bg-white rounded-2xl border border-slate-200/60 text-center">
                 <span className="text-[10px] text-slate-400 block">Invoices</span>
                 <span className="font-bold text-blue-600">Approved</span>
               </div>
@@ -92,7 +92,7 @@ export default function ErpDashboardMockup() {
         transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
         className="absolute -bottom-4 -left-4 sm:-left-8 flex items-center gap-3 p-3 px-4 bg-white/95 border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-300/40 backdrop-blur-md z-20"
       >
-        <div className="p-2 rounded-xl bg-emerald-600 text-white">
+        <div className="p-2 rounded-2xl bg-emerald-600 text-white">
           <HardHat className="w-4 h-4" />
         </div>
         <div>

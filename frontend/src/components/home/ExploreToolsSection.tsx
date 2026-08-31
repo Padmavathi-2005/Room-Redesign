@@ -153,10 +153,10 @@ export default function ExploreToolsSection() {
                     setActiveTabId(tool.id);
                     setSliderPos(50);
                   }}
-                  className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 whitespace-nowrap ${
+                  className={`px-5 py-2.5 text-xs font-bold rounded-2xl transition-all duration-200 whitespace-nowrap ${
                     isActive
-                      ? 'bg-[#1D4ED8] text-white shadow-md'
-                      : 'text-slate-700 hover:text-slate-900 hover:bg-white/60'
+                      ? 'bg-[var(--primary)] text-white shadow-md'
+: 'text-slate-700 hover:text-slate-900 hover:bg-white/60'
                   }`}
                 >
                   {tool.tabLabel}
@@ -172,7 +172,7 @@ export default function ExploreToolsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative bg-white/95 border border-slate-200/90 rounded-3xl shadow-xl shadow-slate-200/50 p-6 sm:p-10 overflow-hidden"
+          className="relative bg-white/95 border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-6 sm:p-10 overflow-hidden"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -185,7 +185,7 @@ export default function ExploreToolsSection() {
             >
               {/* LEFT COLUMN: Tool Description & Tags */}
               <div className="lg:col-span-6 space-y-5 text-left">
-                <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-xs font-bold uppercase tracking-wider">
+                <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-2xl text-xs font-bold uppercase tracking-wider">
                   {activeTool.badge}
                 </span>
 
@@ -202,7 +202,7 @@ export default function ExploreToolsSection() {
                   {activeTool.tags.map((tag, idx) => (
                     <span
                       key={idx}
-                      className="px-3 py-1.5 bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-700"
+                      className="px-3 py-1.5 bg-slate-100 border border-slate-200/80 rounded-2xl text-xs font-semibold text-slate-700"
                     >
                       {tag}
                     </span>
@@ -211,7 +211,7 @@ export default function ExploreToolsSection() {
 
                 <div className="pt-2">
                   <Link href={`/generate?tool=${activeTool.id}`}>
-                    <button className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-[#1D4ED8] hover:bg-blue-700 rounded-2xl shadow-md transition-all">
+                    <button className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-[var(--primary)] hover:opacity-90 rounded-2xl shadow-md transition-all">
                       <span>Try {activeTool.tabLabel}</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
@@ -239,7 +239,7 @@ export default function ExploreToolsSection() {
                       alt="After Transformation"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-3.5 right-3.5 px-3 py-1 bg-[#1D4ED8]/90 backdrop-blur-md rounded-xl text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md border border-white/30 z-10 pointer-events-none">
+                    <div className="absolute top-3.5 right-3.5 px-3 py-1 bg-[var(--primary)]/90 backdrop-blur-md rounded-2xl text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md border border-white/30 z-10 pointer-events-none">
                       After
                     </div>
                   </div>
@@ -258,7 +258,7 @@ export default function ExploreToolsSection() {
                         alt="Before Transformation"
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute top-3.5 left-3.5 px-3 py-1 bg-slate-900/85 backdrop-blur-md rounded-xl text-[10px] font-extrabold uppercase tracking-wider text-white border border-white/20 z-10 pointer-events-none">
+                      <div className="absolute top-3.5 left-3.5 px-3 py-1 bg-slate-900/85 backdrop-blur-md rounded-2xl text-[10px] font-extrabold uppercase tracking-wider text-white border border-white/20 z-10 pointer-events-none">
                         Before
                       </div>
                     </div>
@@ -270,7 +270,7 @@ export default function ExploreToolsSection() {
                     style={{ left: `${sliderPos}%` }}
                   >
                     <div className="w-9 h-9 rounded-full bg-white text-slate-800 border border-slate-200 shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform">
-                      <GripVertical className="w-4 h-4 text-[#1D4ED8]" />
+                      <GripVertical className="w-4 h-4 text-[var(--primary)]" />
                     </div>
                   </div>
                 </div>

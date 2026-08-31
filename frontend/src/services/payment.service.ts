@@ -44,4 +44,34 @@ export const paymentService = {
     });
     return res.json();
   },
+
+  /**
+   * Request PayPal order creation
+   */
+  async createPayPalOrder(plan: string, billingCycle: 'monthly' | 'annual', token: string) {
+    const res = await fetch(`${API_URL}/payments/paypal/create-order`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ plan, billingCycle }),
+    });
+    return res.json();
+  },
+
+  /**
+   * Request PayPal order capture
+   */
+  async capturePayPalOrder(orderId: string, plan: string, token: string) {
+    const res = await fetch(`${API_URL}/payments/paypal/capture-order`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ orderId, plan }),
+    });
+    return res.json();
+  },
 };

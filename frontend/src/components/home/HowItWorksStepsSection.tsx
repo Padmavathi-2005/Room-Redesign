@@ -111,8 +111,8 @@ export default function HowItWorksStepsSection() {
         {/* Connected Feature Process Nodes Line */}
         <div className="max-w-4xl mx-auto py-2 px-4">
           <div className="flex items-center justify-between relative">
-            {/* Dashed Connecting Line */}
-            <div className="absolute top-1/2 left-6 right-6 -translate-y-1/2 border-t-2 border-dashed border-blue-200 z-0" />
+            {/* Dashed Connecting Line aligned to exact center of 48px icon boxes */}
+            <div className="absolute top-6 left-6 right-6 -translate-y-1/2 border-t-2 border-dashed border-blue-300 dark:border-blue-700/60 z-0" />
 
             {FEATURE_NODES.map((node, idx) => {
               const NodeIcon = node.icon;
@@ -148,22 +148,19 @@ export default function HowItWorksStepsSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.12 }}
-                className="relative bg-white border border-blue-100 rounded-3xl p-8 shadow-xl shadow-blue-500/5 hover:shadow-2xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between group"
+                className="relative bg-white border border-blue-100 rounded-2xl p-8 shadow-xl shadow-blue-500/5 hover:shadow-2xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between group"
               >
                 {/* Large Background Step Number */}
-                <span className="absolute top-4 right-6 text-5xl font-extrabold font-heading text-slate-100 group-hover:text-blue-50 transition-colors pointer-events-none select-none">
+                <span className="absolute top-5 right-6 text-5xl font-black font-heading text-slate-200/80 dark:text-slate-800/80 group-hover:text-blue-500/20 transition-colors pointer-events-none select-none z-0">
                   {step.stepNumber}
                 </span>
 
                 <div className="space-y-5 relative z-10">
-                  {/* Step Badge & Icon */}
+                  {/* Step Icon */}
                   <div className="flex items-center justify-between">
                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${step.accentColor} text-white flex items-center justify-center shadow-md`}>
                       <StepIcon className="w-6 h-6" />
                     </div>
-                    <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
-                      {step.badge}
-                    </span>
                   </div>
 
                   {/* Title & Description */}

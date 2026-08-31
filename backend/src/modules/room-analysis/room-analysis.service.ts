@@ -14,17 +14,7 @@ export class RoomAnalysisService {
    * or returns a structured room analysis based on input metadata.
    */
   async analyzeRoomImage(imageUrlOrBase64?: string, options?: any): Promise<RoomAnalysisResult> {
-    const manusKey = process.env.MANUS_API_KEY;
-
-    if (imageUrlOrBase64 && manusKey && (imageUrlOrBase64.startsWith('http://') || imageUrlOrBase64.startsWith('https://') || imageUrlOrBase64.startsWith('data:image/'))) {
-      try {
-        return await this.analyzeWithManus(imageUrlOrBase64, manusKey);
-      } catch (err: any) {
-        this.logger.warn(`Manus Vision analysis failed, falling back to default analyzer: ${err.message}`);
-      }
-    }
-
-    // Default Fallback Analyzer with high structural detection
+    // Instant deterministic structural analysis and camera lock clause (0ms overhead)
     return this.generateDefaultAnalysis(options);
   }
 
@@ -32,7 +22,7 @@ export class RoomAnalysisService {
    * Calls Manus Vision API for room image analysis
    */
   private async analyzeWithManus(imageUrl: string, apiKey: string): Promise<RoomAnalysisResult> {
-    const manusApiUrl = process.env.MANUS_API_URL || 'https://api.manus.im/v1';
+    const manusApiUrl = process.env.MANUS_API_URL || 'https://api.manus.ai/v2';
     const systemPrompt = `You are an expert architectural and interior design AI analyzer.
 Analyze the provided room image and respond strictly with a JSON object matching this schema:
 {
@@ -66,8 +56,10 @@ Analyze the provided room image and respond strictly with a JSON object matching
   "emptySpace": ["Passageways and Open Floor Area"]
 }`;
 
+    const cleanApiKey = apiKey.trim().replace(/^["']|["']$/g, '');
+
     const response = await axios.post(
-      `${manusApiUrl}/chat/completions`,
+      manusApiUrl.includes('/v2') ? `${manusApiUrl}/chat/completions` : `${manusApiUrl}/chat/completions`,
       {
         model: 'manus-vision',
         messages: [
@@ -85,7 +77,9 @@ Analyze the provided room image and respond strictly with a JSON object matching
       },
       {
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          'x-manus-api-key': cleanApiKey,
+          'API_KEY': cleanApiKey,
+          Authorization: `Bearer ${cleanApiKey}`,
           'Content-Type': 'application/json',
         },
         timeout: 15000,

@@ -1,28 +1,33 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Heart } from 'lucide-react';
+
 import Logo from './Logo';
 import DesktopMenu from './DesktopMenu';
+import MobileMenu from './MobileMenu';
 import SearchButton from './SearchButton';
+import ProfileDropdown from './ProfileDropdown';
 import SearchModal from './SearchModal';
 import ThemeToggle from './ThemeToggle';
-import LoginButton from './LoginButton';
-import GetStartedButton from './GetStartedButton';
-import ProfileDropdown, { UserProfileData } from './ProfileDropdown';
-import MobileMenu from './MobileMenu';
 
-interface HeaderProps {
-  isAuthenticated?: boolean;
+interface UserProfileData {
+  name: string;
+  email: string;
+  credits: number;
+  plan: string;
+  avatar?: string;
+  avatarUrl?: string;
+  role?: string;
 }
 
-export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
+export default function Header() {
   const pathname = usePathname();
 
-  // Hide global navbar on Admin pages
+  // Hide global navbar ONLY on Admin pages
   if (pathname.startsWith('/admin')) {
     return null;
   }
@@ -32,6 +37,18 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
   const [isModalActive, setIsModalActive] = useState(false);
   const [user, setUser] = useState<UserProfileData | null>(null);
 
+  const headerRef = useRef<HTMLDivElement>(null);
+  const isAppRoute = pathname.startsWith('/generate') ||
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/projects') ||
+    pathname.startsWith('/designs') ||
+    pathname.startsWith('/templates') ||
+    pathname.startsWith('/pricing') ||
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/wishlist') ||
+    pathname.startsWith('/shopping-list');
+
+  const isAppDashboard = Boolean((user && pathname !== '/') || isAppRoute);
 
   // Observe modal status on body & DOM
   useEffect(() => {
@@ -40,6 +57,7 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
     const checkModalState = () => {
       const modalOpen = Boolean(
         document.body.getAttribute('data-modal-open') === 'true' ||
+        document.body.getAttribute('data-fullscreen-workspace') === 'true' ||
         document.documentElement.getAttribute('data-modal-open') === 'true' ||
         document.body.classList.contains('modal-open') ||
         document.querySelector('[data-modal-open="true"]')
@@ -48,10 +66,10 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
     };
 
     checkModalState();
+    const interval = setInterval(checkModalState, 300);
 
-    const interval = setInterval(checkModalState, 100);
-    window.addEventListener('click', checkModalState, { capture: true });
-    window.addEventListener('keydown', checkModalState, { capture: true });
+    window.addEventListener('click', checkModalState);
+    window.addEventListener('keydown', checkModalState);
 
     const observer = new MutationObserver(checkModalState);
     observer.observe(document.body, { childList: true, subtree: true, attributes: true });
@@ -74,18 +92,19 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
     if (token && storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        // Exclude admin tokens from home page user header
-        if (parsed && parsed.role === 'admin') {
+        const isAdmin = parsed && parsed.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(parsed.role);
+        if (!isAdmin) {
+          setUser({
+            name: parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || 'User',
+            email: parsed.email || 'user@example.com',
+            credits: parsed.credits ?? 100,
+            plan: parsed.plan ? `${parsed.plan.toUpperCase()}` : 'PREMIUM',
+            avatar: parsed.avatar || parsed.avatarUrl || '',
+            role: parsed.role,
+          });
+        } else {
           setUser(null);
-          return;
         }
-
-        setUser({
-          name: parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || 'User',
-          email: parsed.email || '',
-          avatar: parsed.avatar,
-          credits: parsed.credits ?? 40,
-        });
       } catch {
         setUser(null);
       }
@@ -97,18 +116,22 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
   useEffect(() => {
     checkAuthUser();
     window.addEventListener('storage', checkAuthUser);
-    window.addEventListener('user-updated', checkAuthUser);
+    window.addEventListener('user-credits-updated', checkAuthUser);
     return () => {
       window.removeEventListener('storage', checkAuthUser);
-      window.removeEventListener('user-updated', checkAuthUser);
+      window.removeEventListener('user-credits-updated', checkAuthUser);
     };
   }, [checkAuthUser, pathname]);
 
-  // Handle Scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -127,33 +150,78 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
     return null;
   }
 
+  // AUTHENTICATED DASHBOARD HEADER (FULL-WIDTH EDGE-TO-EDGE SQUARE NAVBAR)
+  if (isAppDashboard) {
+    return (
+      <>
+        <header ref={headerRef} className="fixed top-0 left-0 right-0 w-full z-40 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/90 dark:border-slate-800 shadow-xs backdrop-blur-xl pointer-events-auto">
+          <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 h-[64px] flex items-center justify-between">
+            {/* LEFT SIDE: RoomAI Brand Logo */}
+            <div className="shrink-0 flex items-center gap-3">
+              <Logo />
+            </div>
+
+            {/* CENTER: Desktop Navigation Menu */}
+            <div className="hidden md:flex flex-1 justify-center">
+              <DesktopMenu />
+            </div>
+
+            {/* RIGHT SIDE: User Actions & Profile */}
+            <div className="hidden lg:flex items-center gap-4 xl:gap-5 shrink-0">
+              <Link href="/wishlist">
+                <motion.button
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.92 }}
+                  aria-label="View Wishlist"
+                  className="relative w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-[#E5E7EB] dark:border-slate-800 text-rose-500 hover:border-rose-400 shadow-2xs hover:shadow-md hover:shadow-rose-500/20 flex items-center justify-center focus:outline-none transition-all cursor-pointer"
+                >
+                  <Heart className="w-4 h-4 fill-rose-500/20 text-rose-500 hover:fill-rose-500 transition-colors" />
+                </motion.button>
+              </Link>
+
+              <ThemeToggle />
+
+              {user && <ProfileDropdown user={user} onSignOut={handleSignOut} />}
+            </div>
+
+            {/* MOBILE MENU CONTROLS */}
+            <div className="flex items-center gap-2 md:hidden">
+              <SearchButton onClick={() => setIsSearchOpen(true)} />
+              <MobileMenu onOpenSearch={() => setIsSearchOpen(true)} />
+            </div>
+          </div>
+        </header>
+
+        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      </>
+    );
+  }
+
+  // PUBLIC HOMEPAGE & AUTH PAGES HEADER (ELEGANT FLOATING CAPSULE PILL NAVBAR)
   return (
     <>
-      <header className="fixed top-4 sm:top-6 left-0 right-0 z-40 w-full px-4 sm:px-6 lg:px-8 flex justify-center pointer-events-none">
+      <header
+        ref={headerRef}
+        className="fixed top-3 sm:top-5 left-0 right-0 z-40 w-full px-4 sm:px-6 lg:px-8 flex justify-center pointer-events-none"
+      >
         <motion.div
-          layoutId="header-sidebar-morph"
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 240, damping: 22 }}
-          className={`pointer-events-auto relative w-full max-w-7xl px-4 sm:px-8 lg:px-10 flex items-center justify-between transition-all duration-300 rounded-3xl bg-white/95 dark:bg-slate-900/90 border border-slate-200/70 dark:border-slate-800 shadow-md shadow-slate-900/5 dark:shadow-slate-950/40 backdrop-blur-xl ${
-            isScrolled ? 'h-[64px] sm:h-[68px] shadow-lg shadow-slate-900/10' : 'h-[72px] sm:h-[76px]'
+          initial={{ y: -20, opacity: 0, scale: 0.98 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+          className={`pointer-events-auto relative w-full max-w-7xl px-4 sm:px-8 lg:px-10 flex items-center justify-between transition-all duration-300 rounded-2xl bg-white/95 dark:bg-slate-900/90 border border-slate-200/70 dark:border-slate-800 shadow-lg shadow-slate-900/10 backdrop-blur-xl ${
+            isScrolled ? 'h-[64px] sm:h-[68px]' : 'h-[72px] sm:h-[76px]'
           }`}
         >
-          {/* LEFT: Brand Logo */}
           <Logo />
-
-          {/* CENTER: Original Home Navigation Links */}
           <DesktopMenu />
 
-          {/* RIGHT: Actions (Wishlist Heart Icon, Theme, Profile / Auth Buttons) */}
           <div className="hidden lg:flex items-center gap-4 xl:gap-5">
-            {/* Wishlist Heart Button */}
-            <Link href="/dashboard/wishlist">
+            <Link href="/wishlist">
               <motion.button
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.92 }}
                 aria-label="View Wishlist"
-                className="relative w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-[#E5E7EB] dark:border-slate-800 text-rose-500 hover:border-rose-400 shadow-2xs hover:shadow-md hover:shadow-rose-500/20 flex items-center justify-center focus:outline-none transition-all"
+                className="relative w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-[#E5E7EB] dark:border-slate-800 text-rose-500 hover:border-rose-400 shadow-2xs hover:shadow-md hover:shadow-rose-500/20 flex items-center justify-center focus:outline-none transition-all cursor-pointer"
               >
                 <Heart className="w-4 h-4 fill-rose-500/20 text-rose-500 hover:fill-rose-500 transition-colors" />
               </motion.button>
@@ -161,20 +229,26 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
 
             <ThemeToggle />
 
-            {/* Regular User Auth State Rendering */}
             {user ? (
               <ProfileDropdown user={user} onSignOut={handleSignOut} />
             ) : (
-              <>
-                <LoginButton />
-                <GetStartedButton />
-              </>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/login"
+                  className="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400 transition-colors px-3 py-2"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/login?mode=signup"
+                  className="px-4 py-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-purple-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Get Started
+                </Link>
+              </div>
             )}
           </div>
 
-
-
-          {/* MOBILE: Drawer & Search Trigger */}
           <div className="flex items-center gap-2 lg:hidden">
             <SearchButton onClick={() => setIsSearchOpen(true)} />
             <MobileMenu onOpenSearch={() => setIsSearchOpen(true)} />
@@ -182,7 +256,6 @@ export default function Header({ isAuthenticated: propIsAuth }: HeaderProps) {
         </motion.div>
       </header>
 
-      {/* Global Command Palette / Search Modal */}
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );

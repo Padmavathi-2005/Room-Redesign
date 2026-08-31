@@ -24,7 +24,7 @@ export default function CallToActionBanner() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-10 sm:p-16 text-center overflow-hidden shadow-2xl shadow-blue-900/30"
+          className="relative bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-10 sm:p-16 text-center overflow-hidden shadow-2xl shadow-blue-900/30"
         >
           {/* Subtle Background Glow Blobs & Grid */}
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />

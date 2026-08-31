@@ -22,8 +22,8 @@ export class SettingsService implements OnModuleInit {
         await this.settingModel.create({
           applicationName: 'RoomAI',
           activeTheme: ThemeMode.LIGHT,
-          primaryColor: '#2563eb',
-          secondaryColor: '#4f46e5',
+          primaryColor: '#1D4ED8',
+          secondaryColor: '#7C3AED',
           accentColor: '#06B6D4',
           backgroundColor: '#FFFFFF',
           textColor: '#111827',
@@ -33,13 +33,13 @@ export class SettingsService implements OnModuleInit {
           maintenanceMode: false,
           creditsPerGeneration: 1,
         });
-        this.logger.log('✅ Default Settings Created with Primary #2563eb & Secondary #4f46e5');
+        this.logger.log('✅ Default Settings Created with Primary #1D4ED8 & Secondary #7C3AED');
       } else {
         await this.settingModel.updateOne(
           {},
-          { $set: { primaryColor: '#2563eb', secondaryColor: '#4f46e5', creditsPerGeneration: 1 } },
+          { $set: { primaryColor: '#1D4ED8', secondaryColor: '#7C3AED', creditsPerGeneration: 1 } },
         );
-        this.logger.log('✅ Settings Updated with Primary #2563eb & Secondary #4f46e5');
+        this.logger.log('✅ Settings Updated with Primary #1D4ED8 & Secondary #7C3AED');
       }
     } catch (e) {
       this.logger.warn(`Settings DB initialization bypassed (${e.message})`);
@@ -55,8 +55,8 @@ export class SettingsService implements OnModuleInit {
       settings = await this.settingModel.create({
         applicationName: 'RoomAI',
         activeTheme: ThemeMode.LIGHT,
-        primaryColor: '#2563eb',
-        secondaryColor: '#4f46e5',
+        primaryColor: '#1D4ED8',
+        secondaryColor: '#7C3AED',
         accentColor: '#06B6D4',
         backgroundColor: '#FFFFFF',
         textColor: '#111827',

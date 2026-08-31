@@ -119,7 +119,7 @@ export default function AdminCmsListPage() {
   return (
     <div className="space-y-6 pb-12">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 font-bold">
             <FileText className="w-5 h-5" />
@@ -146,7 +146,7 @@ export default function AdminCmsListPage() {
       {/* Stats Quick Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black">
+          <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-black">
             <FileText className="w-5 h-5" />
           </div>
           <div>
@@ -156,7 +156,7 @@ export default function AdminCmsListPage() {
         </div>
 
         <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black">
             <Globe className="w-5 h-5" />
           </div>
           <div>
@@ -166,7 +166,7 @@ export default function AdminCmsListPage() {
         </div>
 
         <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-black">
+          <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center font-black">
             <Eye className="w-5 h-5" />
           </div>
           <div>
@@ -191,7 +191,7 @@ export default function AdminCmsListPage() {
       )}
 
       {/* Controls Bar: Search & Status Filters */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -199,14 +199,14 @@ export default function AdminCmsListPage() {
             placeholder="Search pages by title or slug..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:bg-white focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:bg-white focus:border-indigo-500"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+            className={`px-3 py-1.5 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
               statusFilter === 'all'
                 ? 'bg-slate-900 text-white'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -216,7 +216,7 @@ export default function AdminCmsListPage() {
           </button>
           <button
             onClick={() => setStatusFilter('published')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+            className={`px-3 py-1.5 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
               statusFilter === 'published'
                 ? 'bg-emerald-600 text-white'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -226,7 +226,7 @@ export default function AdminCmsListPage() {
           </button>
           <button
             onClick={() => setStatusFilter('draft')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+            className={`px-3 py-1.5 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
               statusFilter === 'draft'
                 ? 'bg-amber-600 text-white'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -238,7 +238,7 @@ export default function AdminCmsListPage() {
       </div>
 
       {/* CMS Pages Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-3">
             <RefreshCw className="w-7 h-7 animate-spin text-indigo-600" />
@@ -268,7 +268,7 @@ export default function AdminCmsListPage() {
                   <tr key={page._id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-4 px-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 font-bold">
+                        <div className="w-8 h-8 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 font-bold">
                           <FileText className="w-4 h-4" />
                         </div>
                         <div>
@@ -330,7 +330,7 @@ export default function AdminCmsListPage() {
                         {/* Edit in Builder */}
                         <button
                           onClick={() => router.push(`/admin/cms/builder?id=${page._id}`)}
-                          className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
+                          className="px-3 py-1.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Edit Builder</span>
@@ -340,7 +340,7 @@ export default function AdminCmsListPage() {
                         <Link
                           href={`/p/${page.slug}`}
                           target="_blank"
-                          className="p-1.5 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                          className="p-1.5 rounded-2xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                           title="Open Public Link"
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -350,7 +350,7 @@ export default function AdminCmsListPage() {
                         {!page.isSystemPage && (
                           <button
                             onClick={() => handleDelete(page._id, page.title, page.isSystemPage)}
-                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-2xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                             title="Delete Page"
                           >
                             <Trash2 className="w-4 h-4" />

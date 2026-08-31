@@ -103,6 +103,9 @@ export interface PromptInputOptions {
   budget?: string;
   furnitureHandling?: string;
   selectedProducts?: string[];
+  flooringMaterial?: string;
+  flooringFinish?: string;
+  flooringGrout?: string;
   imageUrl?: string;
   materials?: string[];
   domainScope?: string;

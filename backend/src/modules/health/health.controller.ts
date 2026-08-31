@@ -4,7 +4,8 @@ import { Controller, Get } from '@nestjs/common';
 export class HealthController {
   @Get()
   check() {
-    const hasManusToken = !!(process.env.MANUS_API_KEY && process.env.MANUS_API_KEY.trim() !== '');
+    const rawKey = process.env.MANUS_API_KEYS || process.env.MANUS_API_KEY || '';
+    const hasManusToken = !!(rawKey && rawKey.trim().replace(/^["']|["']$/g, '') !== '');
 
     return {
       status: 'ok',

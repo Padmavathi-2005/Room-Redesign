@@ -18,6 +18,12 @@ export class RoomsController {
     return this.roomsService.generateRoomRedesign2(body);
   }
 
+  @Post('test-manus')
+  @HttpCode(HttpStatus.OK)
+  async testManus(@Body() body: { imageUrl?: string; prompt?: string }) {
+    return this.roomsService.testManusDirectly(body);
+  }
+
   @Get()
   async findAll() {
     return this.roomsService.findAll();

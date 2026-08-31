@@ -1,16 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-outfit: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-inter: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-manrope: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-outfit: 'IBM Plex Serif', serif;
+  --font-heading: 'IBM Plex Serif', serif;
+  --font-ibm: 'IBM Plex Serif', serif;
 
   /* Dynamic DB Theme Variables */
-  --primary: #2563eb;
-  --secondary: #4f46e5;
+  --primary: #1D4ED8;
+  --secondary: #7C3AED;
   --accent: #06B6D4;
   --background: #FFFFFF;
   --text: #111827;
@@ -19,8 +22,88 @@
   --blur-strength: 20px;
 }
 
-body, button, input, select, textarea {
-  font-family: var(--font-inter);
+body, button, input, select, textarea, .font-sans, .font-manrope {
+  font-family: var(--font-manrope);
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading, .font-outfit, .font-ibm {
+  font-family: var(--font-ibm) !important;
+}
+
+/* Global Text Selection in Secondary Brand Accent Color (Purple) */
+::selection {
+  background-color: #9333ea !important;
+  color: #ffffff !important;
+}
+
+::-moz-selection {
+  background-color: #9333ea !important;
+  color: #ffffff !important;
+}
+
+/* Global Custom Select Dropdown & Option Popup Styling */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234F46E5'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e") !important;
+  background-position: right 0.85rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1.1em 1.1em !important;
+  padding-right: 2.75rem !important;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+select:focus {
+  outline: none !important;
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+}
+
+select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: 1rem !important;
+}
+
+.dark select option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+/* Suppress header & sticky navbar in Fullscreen Workspace Mode */
+[data-fullscreen-workspace="true"] header,
+[data-fullscreen-workspace="true"] .sticky.top-2,
+body.fullscreen-workspace-active header,
+.fullscreen-workspace-active header {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide native ugly browser scrollbars inside modals & containers */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar,
+[data-modal-open="true"] ::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar,
+.scrollbar-none,
+[data-modal-open="true"] * {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 h1, h2, h3, h4, h5, h6, .font-heading {
@@ -56,7 +139,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .glass-input {
   background: rgba(255, 255, 255, var(--glass-opacity));
   backdrop-filter: blur(var(--blur-strength));
-  border-radius: calc(var(--radius) * 0.75);
+  border-radius: var(--radius);
   border: 1px solid rgba(226, 232, 240, 0.8);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -130,32 +213,73 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   100% { transform: rotate(360deg); }
 }
 
-/* Sleek Rounded Modal Scrollbar */
-.custom-modal-scroll {
+/* Non-Shifting Visible Overlay Horizontal Scrollbar System */
+.custom-scrollbar-horizontal {
+  box-sizing: border-box !important;
+  height: 68px !important;
+  min-height: 68px !important;
+  overflow-y: hidden !important;
   scrollbar-width: thin;
-  scrollbar-color: rgba(147, 51, 234, 0.25) transparent;
+  scrollbar-color: #9333ea #f1f5f9;
+}
+
+.custom-modal-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #9333ea transparent;
+}
+
+.custom-scrollbar-horizontal::-webkit-scrollbar {
+  height: 6px;
+  background-color: #f1f5f9;
+  border-radius: 9999px;
 }
 
 .custom-modal-scroll::-webkit-scrollbar {
   width: 5px;
+  background-color: transparent;
+}
+
+.custom-scrollbar-horizontal::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
 }
 
 .custom-modal-scroll::-webkit-scrollbar-track {
   background: transparent;
-  margin-top: 16px;
-  margin-bottom: 16px;
 }
 
-.custom-modal-scroll::-webkit-scrollbar-thumb {
-  background: rgba(147, 51, 234, 0.3);
+.custom-scrollbar-horizontal::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #9333ea, #6366f1);
   border-radius: 9999px;
 }
 
-.custom-modal-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(147, 51, 234, 0.6);
+.custom-modal-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(147, 51, 234, 0.4);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
 }
 
-/* Force hide global header & footer navigation when any modal/popup is open */
+.custom-scrollbar-horizontal::-webkit-scrollbar-thumb:hover {
+  background: #7e22ce;
+}
+
+.custom-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(147, 51, 234, 0.7);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Force hide global header, footer, & header sticky wrapper containers when any modal/popup is open */
 html[data-modal-open="true"] header,
 body[data-modal-open="true"] header,
 body.modal-open header,
@@ -163,10 +287,17 @@ body.modal-open header,
 html[data-modal-open="true"] footer,
 body[data-modal-open="true"] footer,
 body.modal-open footer,
-[data-modal-open="true"] footer {
+[data-modal-open="true"] footer,
+body[data-modal-open="true"] .sticky.top-2,
+body[data-modal-open="true"] .sticky.top-4,
+body.modal-open .sticky.top-2,
+body.modal-open .sticky.top-4 {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
   pointer-events: none !important;
 }
 
@@ -179,4 +310,56 @@ input::-webkit-credentials-auto-fill-button {
   width: 0 !important;
   height: 0 !important;
   pointer-events: none !important;
+}
+
+/* Global Blueprint & AI Loader Keyframes */
+@keyframes laserScan {
+  0% {
+    left: -50%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.animate-laser-scan {
+  animation: laserScan 1.4s ease-in-out infinite;
+}
+
+@keyframes brandPulse {
+  0%, 100% {
+    transform: scale(0.94);
+    opacity: 0.88;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+.animate-brand-pulse {
+  animation: brandPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes dotWave {
+  0%, 80%, 100% {
+    transform: translateY(0) scale(0.85);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-6px) scale(1.25);
+    opacity: 1;
+  }
+}
+
+.animate-dot-1 {
+  animation: dotWave 1.3s ease-in-out infinite 0s;
+}
+
+.animate-dot-2 {
+  animation: dotWave 1.3s ease-in-out infinite 0.2s;
+}
+
+.animate-dot-3 {
+  animation: dotWave 1.3s ease-in-out infinite 0.4s;
 }

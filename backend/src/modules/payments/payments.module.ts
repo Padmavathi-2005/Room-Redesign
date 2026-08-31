@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { SubscriptionModule } from '../subscription/subscription.module';
+import { SettingsModule } from '../settings/settings.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { SubscriptionPlanDefinition, SubscriptionPlanDefinitionSchema } from '../subscription/schemas/subscription-plan.schema';
 
@@ -13,6 +14,7 @@ import { SubscriptionPlanDefinition, SubscriptionPlanDefinitionSchema } from '..
       { name: SubscriptionPlanDefinition.name, schema: SubscriptionPlanDefinitionSchema },
     ]),
     SubscriptionModule,
+    SettingsModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService],

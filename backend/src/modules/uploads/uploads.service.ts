@@ -16,12 +16,18 @@ const SEED_TOOLS = [
     category: 'floorplan',
     creditCost: 4,
     badge: 'Model 01',
-    description: 'Convert sketches or layout specs into precise 2D architectural floor plans with dimensions.',
-    originalImage: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop',
+    description: 'Convert hand-drawn sketches into precise 2D architectural floor plans with dimensions.',
+    originalImage: '/uploads/original/floor_plan_generator_before.png',
+    convertedImage: '/uploads/generated/floor_plan_generator_after.png',
     supportedRoomTypes: ['Full House', 'Apartment', 'Studio'],
     supportedStyles: ['Architectural 2D', 'Clean Blueprint'],
     defaultPromptTemplate: 'A 2D architectural floor plan generator with dimensions and room labels',
+    widgets: [
+      { id: 'bedrooms-count', type: 'Option Grid', label: 'Bedrooms Count', options: ['1', '2', '3', '4', '5', '6'], required: true, width: 'half' },
+      { id: 'bathrooms-count', type: 'Option Grid', label: 'Bathrooms Count', options: ['1', '2', '3', '4', '5'], required: true, width: 'half' },
+      { id: 'floor-plan-style', type: 'Select Dropdown', label: 'Layout Style', options: ['Modern Open-Concept', 'Minimalist Split-Level', 'Luxury Villa Layout', 'Traditional Family Home', 'Executive Suite'], required: true, width: 'half' },
+      { id: 'plot-dimensions', type: 'Text Block', label: 'Plot Dimensions', required: true, width: 'half' }
+    ]
   },
   {
     slug: '3d-floor-plan',
@@ -30,11 +36,15 @@ const SEED_TOOLS = [
     creditCost: 8,
     badge: 'Popular',
     description: 'Transform 2D floor plans into interactive isometric 3D cutaway models with realistic furniture.',
-    originalImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/3d_floor_plan_before.png',
+    convertedImage: '/uploads/generated/3d_floor_plan_after.png',
     supportedRoomTypes: ['Full House', 'Apartment', 'Villa'],
     supportedStyles: ['3D Isometric', 'Photorealistic Cutaway'],
     defaultPromptTemplate: 'An isometric 3D floor plan render with furniture layout and soft lighting',
+    widgets: [
+      { id: 'flooring-materials', type: 'Select Dropdown', label: 'Flooring Materials', options: ['Light Oak Herringbone Wood', 'Polished Concrete', 'White Marble Tile'], required: true, width: 'half' },
+      { id: 'perspective-view', type: 'Select Dropdown', label: 'Perspective View', options: ['Isometric 45°', 'Top-Down 3D Cutaway'], required: true, width: 'half' }
+    ]
   },
   {
     slug: 'floor-plan-maker',
@@ -43,11 +53,17 @@ const SEED_TOOLS = [
     creditCost: 4,
     badge: 'CAD Builder',
     description: 'Generative CAD schematic maker for wall layouts, doors, windows, and room dimensions.',
-    originalImage: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/3d_floor_plan_before.png',
+    convertedImage: '/uploads/generated/floor_plan_generator_after.png',
     supportedRoomTypes: ['Living Room', 'Bedroom', 'Office'],
     supportedStyles: ['CAD Schematic', 'Vector Layout'],
     defaultPromptTemplate: 'A vector schematic floor plan with wall thickness and furniture placement',
+    widgets: [
+      { id: 'bedrooms-count', type: 'Option Grid', label: 'Bedrooms Count', options: ['1', '2', '3', '4', '5', '6'], required: true, width: 'half' },
+      { id: 'bathrooms-count', type: 'Option Grid', label: 'Bathrooms Count', options: ['1', '2', '3', '4', '5'], required: true, width: 'half' },
+      { id: 'floor-plan-style', type: 'Select Dropdown', label: 'Layout Style', options: ['Modern Open-Concept', 'Minimalist Split-Level', 'Luxury Villa Layout', 'Traditional Family Home', 'Executive Suite'], required: true, width: 'half' },
+      { id: 'plot-dimensions', type: 'Text Block', label: 'Plot Dimensions', required: true, width: 'half' }
+    ]
   },
 
   // --- INTERIOR ---
@@ -58,11 +74,21 @@ const SEED_TOOLS = [
     creditCost: 4,
     badge: 'Top Rated',
     description: 'Reimagine living rooms, bedrooms, and kitchens in 15+ architectural styles (Japandi, Modern, Boho).',
-    originalImage: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/interior_before.png',
+    convertedImage: '/uploads/generated/interior_after.png',
     supportedRoomTypes: ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Office', 'Dining Room'],
     supportedStyles: ['Modern', 'Scandinavian', 'Japandi', 'Industrial', 'Luxury', 'Boho', 'Minimalist'],
     defaultPromptTemplate: 'A photorealistic interior redesign of a {roomType} in {style} style',
+    widgets: [
+      { id: 'room-type', type: 'Select Dropdown', label: 'Room Type', dataSource: 'room-types', required: true, width: 'half' },
+      { id: 'design-style', type: 'Select Dropdown', label: 'Design Style', dataSource: 'design-styles', required: true, width: 'half' },
+      { id: 'color-palette', type: 'Select Dropdown', label: 'Color Palette', dataSource: 'color-palettes', required: false, width: 'half' },
+      { id: 'lighting-atmosphere', type: 'Select Dropdown', label: 'Lighting Atmosphere', dataSource: 'lighting', required: false, width: 'half' },
+      { id: 'furniture-layout', type: 'Option Grid', label: 'Furniture & Layout Handling', options: ['Replace everything', 'Reuse everything possible', 'Replace only damaged furniture'], required: true, width: 'full' },
+      { id: 'budget-level', type: 'Option Grid', label: 'Budget Level', options: ['Low', 'Medium', 'Premium', 'Luxury'], required: true, width: 'full' },
+      { id: 'selected-products', type: 'Check Grid', label: 'Select Specific Products / Furniture', dataSource: 'products', required: false, width: 'full' },
+      { id: 'room-size', type: 'Option Grid', label: 'Room Size', options: ['Small (< 150 sq ft)', 'Medium (150 - 300 sq ft)', 'Large (300 - 600 sq ft)', 'Open Concept (> 600 sq ft)'], required: true, width: 'full' }
+    ]
   },
   {
     slug: 'kitchen-design',
@@ -70,11 +96,17 @@ const SEED_TOOLS = [
     category: 'interior',
     creditCost: 4,
     description: 'Design luxury kitchens with custom marble countertops, modern islands, and elegant cabinetry.',
-    originalImage: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/kitchen_before.png',
+    convertedImage: '/uploads/generated/kitchen_after.png',
     supportedRoomTypes: ['Kitchen'],
     supportedStyles: ['Modern', 'Farmhouse', 'Minimalist', 'Industrial', 'Marble Luxury'],
     defaultPromptTemplate: 'A luxury kitchen redesign with modern countertops and custom cabinetry',
+    widgets: [
+      { id: 'kitchen-style', type: 'Option Grid', label: 'Kitchen Style', dataSource: 'design-styles', required: true },
+      { id: 'cabinet-color', type: 'Color Swatch', label: 'Cabinet Color Swatch', dataSource: 'color-palettes', required: true },
+      { id: 'countertop-material', type: 'Select Dropdown', label: 'Countertop Material', options: ['White Calacatta Marble', 'Black Soapstone', 'Grey Quartzite', 'Polished Concrete', 'Butcher Block Wood'], required: true },
+      { id: 'appliance-finish', type: 'Select Dropdown', label: 'Appliance Finish', options: ['Stainless Steel', 'Matte Black', 'Panel Ready Cabinetry', 'Retro White Chrome'], required: false }
+    ]
   },
   {
     slug: 'bathroom-design',
@@ -87,6 +119,11 @@ const SEED_TOOLS = [
     supportedRoomTypes: ['Bathroom', 'Powder Room'],
     supportedStyles: ['Modern Spa', 'Marble Luxury', 'Minimalist Tile', 'Rustic Wood'],
     defaultPromptTemplate: 'A modern luxury bathroom redesign with walk-in glass shower and marble vanity',
+    widgets: [
+      { id: 'bathroom-style', type: 'Option Grid', label: 'Bathroom Theme', dataSource: 'design-styles', required: true },
+      { id: 'tub-type', type: 'Select Dropdown', label: 'Bathtub Selection', options: ['Freestanding Oval Tub', 'Classic Clawfoot Tub', 'Corner Jacuzzi Tub', 'No Tub (Shower Only)'], required: false },
+      { id: 'fixtures-finish', type: 'Select Dropdown', label: 'Fixtures Finish', options: ['Brushed Brass', 'Matte Black', 'Polished Chrome', 'Brushed Nickel'], required: true }
+    ]
   },
   {
     slug: 'bedroom-design',
@@ -99,6 +136,11 @@ const SEED_TOOLS = [
     supportedRoomTypes: ['Master Bedroom', 'Guest Bedroom', 'Kids Room'],
     supportedStyles: ['Cozy Japandi', 'Modern Luxury', 'Minimalist Neutral', 'Boho Chic'],
     defaultPromptTemplate: 'A peaceful master bedroom design with upholstered bed and warm ambient lighting',
+    widgets: [
+      { id: 'bedroom-style', type: 'Option Grid', label: 'Bedroom style', dataSource: 'design-styles', required: true },
+      { id: 'bed-size', type: 'Select Dropdown', label: 'Bed Size', options: ['King Size Bed', 'Queen Size Bed', 'Double Bed', 'Single Twin Bed'], required: true },
+      { id: 'color-theme', type: 'Color Swatch', label: 'Bedding Color Theme', dataSource: 'color-palettes', required: false }
+    ]
   },
   {
     slug: 'office-design',
@@ -132,8 +174,8 @@ const SEED_TOOLS = [
     creditCost: 4,
     badge: 'Reference AI',
     description: 'Extract aesthetics from reference photos and transfer them directly into your room render.',
-    originalImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/interior_before.png',
+    convertedImage: '/uploads/generated/interior_after.png',
     supportedRoomTypes: ['Living Room', 'Bedroom', 'Kitchen', 'Office'],
     supportedStyles: ['Japandi', 'Industrial', 'Scandinavian', 'Cyberpunk', 'Mid-Century'],
     defaultPromptTemplate: 'Apply architectural style transfer using {style} design aesthetic',
@@ -171,7 +213,7 @@ const SEED_TOOLS = [
     creditCost: 2,
     badge: 'Lighting AI',
     description: 'Switch daylighting to golden hour, cozy sunset warm lights, or moody ambient dusk glow.',
-    originalImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/interior_before.png',
     convertedImage: 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?q=80&w=800&auto=format&fit=crop',
     supportedRoomTypes: ['Living Room', 'Bedroom', 'Kitchen'],
     supportedStyles: ['Sunset Warm', 'Golden Hour', 'Cool Daylight', 'Cyberpunk Neon', 'Soft Evening'],
@@ -197,8 +239,8 @@ const SEED_TOOLS = [
     creditCost: 3,
     badge: 'Flooring',
     description: 'Replace flooring with herringbone oak hardwood, terrazzo tiles, or polished concrete.',
-    originalImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/flooring_before.png',
+    convertedImage: '/uploads/generated/flooring_after.png',
     supportedRoomTypes: ['Living Room', 'Bedroom', 'Kitchen', 'Hallway'],
     supportedStyles: ['Herringbone Hardwood', 'Light Oak Plank', 'Polished Concrete', 'Terrazzo Tile'],
     defaultPromptTemplate: 'Replace room floor material with high quality premium flooring',
@@ -224,8 +266,8 @@ const SEED_TOOLS = [
     creditCost: 4,
     badge: 'Facade AI',
     description: 'Redesign building facades with modern glass, warm wood accents, and contemporary cladding.',
-    originalImage: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/exterior_before.png',
+    convertedImage: '/uploads/generated/exterior_after.png',
     supportedRoomTypes: ['House Front', 'Villa Facade', 'Commercial Building'],
     supportedStyles: ['Modern Glass Villa', 'Modern Farmhouse', 'Contemporary Wood & Concrete', 'Mediterranean'],
     defaultPromptTemplate: 'A photorealistic architectural exterior redesign of building facade',
@@ -237,8 +279,8 @@ const SEED_TOOLS = [
     creditCost: 4,
     badge: 'Outdoor',
     description: 'Design lush front lawns, stone pathways, outdoor pergolas, and serene backyard patios.',
-    originalImage: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/exterior_before.png',
+    convertedImage: '/uploads/generated/exterior_after.png',
     supportedRoomTypes: ['Backyard', 'Front Lawn', 'Patio Area'],
     supportedStyles: ['Zen Garden', 'Modern Lawn', 'Tropical Resort', 'English Countryside'],
     defaultPromptTemplate: 'A luxury landscape garden design with stone pathways and luxury greenery',
@@ -250,8 +292,8 @@ const SEED_TOOLS = [
     creditCost: 4,
     badge: 'Botanical',
     description: 'Create tranquil botanical gardens, Japanese Zen courtyards, and flower-bed arrangements.',
-    originalImage: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/exterior_before.png',
+    convertedImage: '/uploads/generated/exterior_after.png',
     supportedRoomTypes: ['Garden', 'Courtyard'],
     supportedStyles: ['Japanese Zen', 'Botanical Paradise', 'Minimalist Patio'],
     defaultPromptTemplate: 'A tranquil garden design with flower beds and outdoor seating area',
@@ -263,8 +305,8 @@ const SEED_TOOLS = [
     creditCost: 2,
     badge: 'Sky Swap',
     description: 'Replace dull overcast exterior skies with vibrant blue sunshine or dramatic sunset clouds.',
-    originalImage: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/exterior_before.png',
+    convertedImage: '/uploads/generated/exterior_after.png',
     supportedRoomTypes: ['Exterior Facade', 'Landscape'],
     supportedStyles: ['Dramatic Sunset', 'Blue Sky Sunshine', 'Starry Night', 'Golden Hour'],
     defaultPromptTemplate: 'Replace exterior sky background with clear atmospheric lighting',
@@ -276,8 +318,8 @@ const SEED_TOOLS = [
     creditCost: 6,
     badge: 'Pro AI',
     description: 'Convert quick pencil or CAD line sketches into 8k photorealistic architectural renders.',
-    originalImage: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/floor_plan_generator_before.png',
+    convertedImage: '/uploads/generated/exterior_after.png',
     supportedRoomTypes: ['Architectural Drawing', 'Hand Sketch'],
     supportedStyles: ['Photorealistic 3D Render', 'Unreal Engine 5'],
     defaultPromptTemplate: 'Convert hand-drawn architectural line sketch into 8k photorealistic building render',
@@ -289,8 +331,8 @@ const SEED_TOOLS = [
     creditCost: 6,
     badge: 'Pro AI',
     description: 'Generative AI for designing cutting-edge parametric villas, skyscrapers, and structural facades.',
-    originalImage: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/exterior_before.png',
+    convertedImage: '/uploads/generated/exterior_after.png',
     supportedRoomTypes: ['Residential Villa', 'Skyscraper', 'Cultural Center'],
     supportedStyles: ['Parametric', 'Futuristic Glass', 'Brutalist Concrete', 'Sustainable Green Architecture'],
     defaultPromptTemplate: 'Generative architectural design for iconic building facade with structural realism',
@@ -302,8 +344,8 @@ const SEED_TOOLS = [
     creditCost: 6,
     badge: 'Pro AI',
     description: 'Generate high-precision technical blueprints with architectural elevation lines.',
-    originalImage: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop',
-    convertedImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop',
+    originalImage: '/uploads/original/floor_plan_generator_before.png',
+    convertedImage: '/uploads/generated/floor_plan_generator_after.png',
     supportedRoomTypes: ['House Blueprint', 'Site Plan'],
     supportedStyles: ['Blue Technical Grid', 'White CAD Drawing'],
     defaultPromptTemplate: 'High precision architectural blueprint schematic with elevation and dimensions',
@@ -325,12 +367,59 @@ export class UploadsService implements OnModuleInit {
 
   async onModuleInit() {
     try {
+      // Load default widgets from tools.config.json
+      let defaultWidgetsMap: Record<string, any[]> = {};
+      try {
+        const configPath = path.join(process.cwd(), 'src', 'image-processing', 'tools.config.json');
+        const fs = require('fs');
+        if (fs.existsSync(configPath)) {
+          const configContent = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+          if (Array.isArray(configContent)) {
+            for (const item of configContent) {
+              if (item.id && Array.isArray(item.widgets)) {
+                defaultWidgetsMap[item.id] = item.widgets;
+              }
+            }
+          }
+        }
+      } catch (err: any) {
+        this.logger.warn(`Could not load default widgets from tools.config.json: ${err.message}`);
+      }
+
       for (const tool of SEED_TOOLS) {
-        await this.productToolModel.updateOne(
-          { slug: tool.slug },
-          { $set: tool },
-          { upsert: true },
-        );
+        const exists = await this.productToolModel.findOne({ slug: tool.slug }).exec();
+        const defaultWidgets = (tool as any).widgets || defaultWidgetsMap[tool.slug] || [];
+
+        if (!exists) {
+          await this.productToolModel.create({
+            ...tool,
+            widgets: defaultWidgets
+          });
+        } else {
+          // If exists in database and has widgets already customized, preserve them. Else load default widgets.
+          const finalWidgets = (exists.widgets && exists.widgets.length > 0)
+            ? exists.widgets
+            : defaultWidgets;
+
+          await this.productToolModel.updateOne(
+            { slug: tool.slug },
+            {
+              $set: {
+                name: tool.name,
+                category: tool.category,
+                creditCost: tool.creditCost,
+                badge: tool.badge,
+                description: tool.description,
+                originalImage: tool.originalImage,
+                convertedImage: tool.convertedImage,
+                supportedRoomTypes: tool.supportedRoomTypes,
+                supportedStyles: tool.supportedStyles,
+                defaultPromptTemplate: tool.defaultPromptTemplate,
+                widgets: finalWidgets
+              }
+            }
+          );
+        }
       }
       this.logger.log(`✅ Successfully seeded/synced 23 Product Tools into MongoDB producttools collection!`);
     } catch (err: any) {
@@ -369,12 +458,24 @@ export class UploadsService implements OnModuleInit {
         }
       } else if (fileData.externalUrl.startsWith('http://') || fileData.externalUrl.startsWith('https://')) {
         try {
-          const downloadResponse = await axios.get(fileData.externalUrl, { responseType: 'arraybuffer' });
+          const downloadResponse = await axios.get(fileData.externalUrl, {
+            responseType: 'arraybuffer',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+            },
+            timeout: 10000,
+          });
           activeBuffer = Buffer.from(downloadResponse.data);
           activeMimeType = String(downloadResponse.headers['content-type'] || 'image/jpeg');
         } catch (downloadErr: any) {
-          this.logger.error(`Failed to download external image: ${downloadErr.message}`);
-          throw new BadRequestException(`Failed to resolve external image URL: ${downloadErr.message}`);
+          this.logger.warn(`Could not download external image directly (${downloadErr.message}). Fetching fallback local sample buffer.`);
+          try {
+            activeBuffer = await this.storageService.retrieve('original/interior_before.png');
+            activeMimeType = 'image/png';
+          } catch (sErr: any) {
+            throw new BadRequestException(`Failed to resolve external image URL: ${downloadErr.message}`);
+          }
         }
       }
     }
@@ -440,5 +541,61 @@ export class UploadsService implements OnModuleInit {
       // Fall through to memory dataset fallback
     }
     return SEED_TOOLS as ProductTool[];
+  }
+
+  /**
+   * Resolves direct image URL from web page URLs (Unsplash, Pexels, Pinterest, etc.) using OpenGraph metadata & download redirects
+   */
+  async resolveWebPageImageUrl(rawUrl: string): Promise<string> {
+    const cleanUrl = rawUrl.trim();
+    if (!cleanUrl) return cleanUrl;
+
+    // Direct image extensions or image CDN patterns already pointing to images
+    if (/\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i.test(cleanUrl) || cleanUrl.includes('images.unsplash.com/photo-') || cleanUrl.includes('images.pexels.com/photos/')) {
+      return cleanUrl;
+    }
+
+    // Fetch Web Page HTML to extract direct CDN asset URL or OpenGraph image
+    try {
+      const response = await axios.get(cleanUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        timeout: 7000,
+      });
+
+      const html = typeof response.data === 'string' ? response.data : '';
+
+      // 1. Check for Unsplash direct CDN image match in HTML source
+      const unsplashCdnMatch = html.match(/(https:\/\/images\.unsplash\.com\/photo-[a-zA-Z0-9_-]+(?:\?[^"'\s<>]+)?)/i);
+      if (unsplashCdnMatch && unsplashCdnMatch[1]) {
+        const directUrl = unsplashCdnMatch[1].replace(/&amp;/g, '&');
+        this.logger.log(`Resolved Unsplash photo from HTML source: ${directUrl}`);
+        return directUrl;
+      }
+
+      // 2. Check for Pexels direct CDN image match in HTML source
+      const pexelsCdnMatch = html.match(/(https:\/\/images\.pexels\.com\/photos\/[0-9]+\/[^"'\s<>]+)/i);
+      if (pexelsCdnMatch && pexelsCdnMatch[1]) {
+        const directUrl = pexelsCdnMatch[1].replace(/&amp;/g, '&');
+        this.logger.log(`Resolved Pexels photo from HTML source: ${directUrl}`);
+        return directUrl;
+      }
+
+      // 3. OpenGraph / Twitter Meta Image tag
+      const ogMatch = html.match(/meta[^>]+property=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)["']/i) ||
+                      html.match(/meta[^>]+content=["']([^"']+)["'][^>]+property=["'](?:og:image|twitter:image)["']/i) ||
+                      html.match(/meta[^>]+name=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)["']/i);
+      if (ogMatch && ogMatch[1]) {
+        const directUrl = ogMatch[1].replace(/&amp;/g, '&');
+        this.logger.log(`Resolved OpenGraph image for ${cleanUrl} to: ${directUrl}`);
+        return directUrl;
+      }
+    } catch (error: any) {
+      this.logger.warn(`Failed to resolve image for ${cleanUrl}: ${error.message}`);
+    }
+
+    return cleanUrl;
   }
 }

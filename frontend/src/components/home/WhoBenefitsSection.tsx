@@ -133,7 +133,7 @@ export default function WhoBenefitsSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.08 }}
-                className="relative bg-white border border-blue-100 rounded-3xl p-7 shadow-lg shadow-blue-500/5 hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
+                className="relative bg-white border border-blue-100 rounded-2xl p-7 shadow-lg shadow-blue-500/5 hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
               >
                 <div className="space-y-4">
                   {/* Icon Badge */}

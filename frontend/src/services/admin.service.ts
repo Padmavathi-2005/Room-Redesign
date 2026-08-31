@@ -93,6 +93,7 @@ export interface AdminModel {
   defaultPromptTemplate?: string;
   createdAt?: string;
   updatedAt?: string;
+  widgets?: any[];
 }
 
 export interface AdminOverviewStats {

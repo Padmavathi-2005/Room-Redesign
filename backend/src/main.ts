@@ -52,21 +52,27 @@ async function bootstrap() {
   // Global v1 API Prefix
   app.setGlobalPrefix('api/v1');
 
-  const preferredPort = parseInt(process.env.PORT || '5000', 10);
+  const preferredPort = parseInt(process.env.PORT || '5001', 10);
   let port = preferredPort;
+  let started = false;
 
-  try {
-    await app.listen(port);
-  } catch (err: any) {
-    if (err.code === 'EADDRINUSE') {
-      port = preferredPort + 1;
-      console.warn(`⚠️ Port ${preferredPort} is in use, attempting port ${port}...`);
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try {
       await app.listen(port);
-    } else {
-      throw err;
+      started = true;
+      break;
+    } catch (err: any) {
+      if (err.code === 'EADDRINUSE') {
+        console.warn(`⚠️ Port ${port} is in use, attempting port ${port + 1}...`);
+        port += 1;
+      } else {
+        throw err;
+      }
     }
   }
 
-  console.log(`🚀 RoomAI NestJS Server running at http://localhost:${port}/api/v1`);
+  if (started) {
+    console.log(`🚀 RoomAI NestJS Server running at http://localhost:${port}/api/v1`);
+  }
 }
 bootstrap();

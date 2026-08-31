@@ -141,13 +141,13 @@ export default function RoomTypesSection() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.25 }}
-            className="bg-white border border-indigo-100 rounded-3xl p-6 sm:p-8 space-y-8 shadow-xl shadow-indigo-500/5"
+            className="bg-white border border-indigo-100 rounded-2xl p-6 sm:p-8 space-y-8 shadow-xl shadow-indigo-500/5"
           >
             {/* Top Room Banner */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
               <div className="space-y-2 max-w-2xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md">
                     <activeRoom.icon className="w-5 h-5" />
                   </div>
                   <div>
@@ -173,7 +173,7 @@ export default function RoomTypesSection() {
                   {activeRoom.popularStyles.map((style) => (
                     <span
                       key={style}
-                      className="px-2.5 py-1 text-[11px] font-semibold bg-indigo-50/70 border border-indigo-100 rounded-lg text-indigo-900 shadow-2xs"
+                      className="px-2.5 py-1 text-[11px] font-semibold bg-indigo-50/70 border border-indigo-100 rounded-2xl text-indigo-900 shadow-2xs"
                     >
                       {style}
                     </span>
@@ -211,7 +211,7 @@ export default function RoomTypesSection() {
                     </div>
 
                     <Link href={`/generate?tool=${tool.slug}&roomType=${encodeURIComponent(activeRoom.name)}`}>
-                      <button className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+                      <button className="w-full py-2 px-3 rounded-2xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
                         <span>Launch {tool.name}</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>

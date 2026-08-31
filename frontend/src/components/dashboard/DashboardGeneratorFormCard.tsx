@@ -387,7 +387,7 @@ export default function DashboardGeneratorFormCard() {
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 space-y-5 relative overflow-hidden"
+      className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl shadow-slate-900/5 space-y-5 relative overflow-hidden"
     >
       {/* CARD HEADER & FULL STUDIO LINK */}
       <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -413,7 +413,7 @@ export default function DashboardGeneratorFormCard() {
             <span>Full Studio</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-xs font-bold text-amber-700 dark:text-amber-300">
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-xs font-bold text-amber-700 dark:text-amber-300">
             <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
             <span>{activeQuality.credits} {activeQuality.credits === 1 ? 'Credit' : 'Credits'}</span>
           </div>
@@ -421,11 +421,11 @@ export default function DashboardGeneratorFormCard() {
       </div>
 
       {/* SPACE CATEGORY TAB BAR (INTERIORS / EXTERIORS / GARDENS) */}
-      <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700">
+      <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700">
         <button
           type="button"
           onClick={() => setActiveTab('interiors')}
-          className={`flex-1 py-1.5 px-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-1.5 px-2 text-xs font-bold rounded-2xl transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'interiors'
               ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -438,7 +438,7 @@ export default function DashboardGeneratorFormCard() {
         <button
           type="button"
           onClick={() => setActiveTab('exteriors')}
-          className={`flex-1 py-1.5 px-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-1.5 px-2 text-xs font-bold rounded-2xl transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'exteriors'
               ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -451,7 +451,7 @@ export default function DashboardGeneratorFormCard() {
         <button
           type="button"
           onClick={() => setActiveTab('gardens')}
-          className={`flex-1 py-1.5 px-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-1.5 px-2 text-xs font-bold rounded-2xl transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'gardens'
               ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -476,7 +476,7 @@ export default function DashboardGeneratorFormCard() {
           <button
             type="button"
             onClick={() => setIsQualityOpen(!isQualityOpen)}
-            className="w-full flex items-center justify-between py-2 px-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white hover:border-purple-500 transition-all focus:outline-none"
+            className="w-full flex items-center justify-between py-2 px-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white hover:border-purple-500 transition-all focus:outline-none"
           >
             <span className="font-bold font-heading">
               {activeQuality.name} — {activeQuality.credits} {activeQuality.credits === 1 ? 'credit' : 'credits'}
@@ -505,7 +505,7 @@ export default function DashboardGeneratorFormCard() {
                           setSelectedQuality(opt.id);
                           setIsQualityOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left border ${
+                        className={`w-full flex items-center justify-between p-2.5 rounded-2xl transition-all text-left border ${
                           isSelected
                             ? 'bg-purple-50/90 dark:bg-purple-950/70 border-purple-500/80 text-slate-900 dark:text-white'
                             : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
@@ -514,7 +514,7 @@ export default function DashboardGeneratorFormCard() {
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
                             <span className="font-extrabold font-heading text-xs">{opt.name}</span>
-                            <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${opt.tagBg}`}>
+                            <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-2xl ${opt.tagBg}`}>
                               {opt.tag}
                             </span>
                           </div>
@@ -524,7 +524,7 @@ export default function DashboardGeneratorFormCard() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          <span className="px-2 py-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                             {opt.credits} {opt.credits === 1 ? 'credit' : 'credits'}
                           </span>
                           {isSelected && <Check className="w-4 h-4 text-purple-600" />}
@@ -544,7 +544,7 @@ export default function DashboardGeneratorFormCard() {
           <div className="space-y-3 p-3 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-2xl">
             <div className="flex items-center justify-between text-xs font-extrabold text-amber-900 dark:text-amber-300 font-heading">
               <span>💡 Change Room Light Controls</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-200/80 dark:bg-amber-900 text-amber-900 dark:text-amber-100 rounded-md">Lighting Engine</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-200/80 dark:bg-amber-900 text-amber-900 dark:text-amber-100 rounded-2xl">Lighting Engine</span>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -555,7 +555,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={selectedLightType}
                   onChange={(e) => setSelectedLightType(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
+                  className="w-full py-1.5 px-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white"
                 >
                   {LIGHT_TYPES.map((lt) => (
                     <option key={lt} value={lt}>{lt}</option>
@@ -570,7 +570,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={timeOfDay}
                   onChange={(e) => setTimeOfDay(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
+                  className="w-full py-1.5 px-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white"
                 >
                   {TIMES_OF_DAY.map((tod) => (
                     <option key={tod} value={tod}>{tod}</option>
@@ -591,7 +591,7 @@ export default function DashboardGeneratorFormCard() {
                 step="100"
                 value={kelvinWarmth}
                 onChange={(e) => setKelvinWarmth(Number(e.target.value))}
-                className="w-full accent-amber-600 cursor-pointer h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg"
+                className="w-full accent-amber-600 cursor-pointer h-1.5 bg-slate-200 dark:bg-slate-700 rounded-2xl"
               />
               <div className="flex justify-between text-[9px] font-bold text-slate-400">
                 <span>2700K Warm Cozy</span>
@@ -605,7 +605,7 @@ export default function DashboardGeneratorFormCard() {
           <div className="space-y-3 p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 rounded-2xl">
             <div className="flex items-center justify-between text-xs font-extrabold text-emerald-900 dark:text-emerald-300 font-heading">
               <span>🧹 AI Room Cleaner & Declutter</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 rounded-md">Pristine Space</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 rounded-2xl">Pristine Space</span>
             </div>
 
             <div className="space-y-1">
@@ -618,7 +618,7 @@ export default function DashboardGeneratorFormCard() {
                     type="button"
                     key={lvl}
                     onClick={() => setCleanerLevel(lvl)}
-                    className={`py-1.5 px-2 text-xs font-extrabold rounded-xl border text-center transition-all ${
+                    className={`py-1.5 px-2 text-xs font-extrabold rounded-2xl border text-center transition-all ${
                       cleanerLevel === lvl
                         ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                         : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
@@ -635,7 +635,7 @@ export default function DashboardGeneratorFormCard() {
           <div className="space-y-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 rounded-2xl">
             <div className="flex items-center justify-between text-xs font-extrabold text-blue-900 dark:text-blue-300 font-heading">
               <span>🎨 Paint Color Visualizer</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-200/80 dark:bg-blue-900 text-blue-900 dark:text-blue-100 rounded-md">Wall Swatches</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-200/80 dark:bg-blue-900 text-blue-900 dark:text-blue-100 rounded-2xl">Wall Swatches</span>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -646,7 +646,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={wallTarget}
                   onChange={(e) => setWallTarget(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
+                  className="w-full py-1.5 px-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white"
                 >
                   <option value="accent feature wall">Accent Feature Wall</option>
                   <option value="main interior walls">Main Interior Walls</option>
@@ -661,7 +661,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={paintFinish}
                   onChange={(e) => setPaintFinish(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
+                  className="w-full py-1.5 px-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white"
                 >
                   {PAINT_FINISHES.map((f) => (
                     <option key={f} value={f}>{f}</option>
@@ -681,7 +681,7 @@ export default function DashboardGeneratorFormCard() {
                     key={pc.name}
                     title={pc.name}
                     onClick={() => setPaintColor(pc.name)}
-                    className={`h-8 rounded-xl border flex items-center justify-center transition-transform ${
+                    className={`h-8 rounded-2xl border flex items-center justify-center transition-transform ${
                       paintColor === pc.name ? 'scale-110 ring-2 ring-blue-600 border-white' : 'border-slate-200'
                     }`}
                     style={{ backgroundColor: pc.hex }}
@@ -696,7 +696,7 @@ export default function DashboardGeneratorFormCard() {
           <div className="space-y-3 p-3 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-900/40 rounded-2xl">
             <div className="flex items-center justify-between text-xs font-extrabold text-purple-900 dark:text-purple-300 font-heading">
               <span>🧱 AI Wall Design & Texture</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-200/80 dark:bg-purple-900 text-purple-900 dark:text-purple-100 rounded-md">Feature Wall</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-200/80 dark:bg-purple-900 text-purple-900 dark:text-purple-100 rounded-2xl">Feature Wall</span>
             </div>
 
             <div className="space-y-1">
@@ -706,7 +706,7 @@ export default function DashboardGeneratorFormCard() {
               <select
                 value={wallMaterial}
                 onChange={(e) => setWallMaterial(e.target.value)}
-                className="w-full py-1.5 px-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
+                className="w-full py-1.5 px-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white"
               >
                 {WALL_MATERIALS.map((wm) => (
                   <option key={wm} value={wm}>{wm}</option>
@@ -726,7 +726,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={selectedRoom}
                   onChange={(e) => setSelectedRoom(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {ROOM_TYPES.map((room) => (
                     <option key={room.id} value={room.id}>
@@ -743,7 +743,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={selectedStyle}
                   onChange={(e) => setSelectedStyle(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {INTERIOR_STYLES.map((style) => (
                     <option key={style.id} value={style.id}>
@@ -763,7 +763,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={selectedPalette}
                   onChange={(e) => setSelectedPalette(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {COLOR_PALETTES.map((pal) => (
                     <option key={pal.slug} value={pal.slug}>
@@ -780,7 +780,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={selectedLighting}
                   onChange={(e) => setSelectedLighting(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {LIGHTING_OPTIONS.map((light) => (
                     <option key={light} value={light}>
@@ -802,7 +802,7 @@ export default function DashboardGeneratorFormCard() {
                     type="button"
                     key={opt.id}
                     onClick={() => setFurnitureHandling(opt.id)}
-                    className={`py-1 px-1.5 text-[10px] font-bold rounded-lg border text-center transition-all ${
+                    className={`py-1 px-1.5 text-[10px] font-bold rounded-2xl border text-center transition-all ${
                       furnitureHandling === opt.id
                         ? 'bg-purple-50 border-purple-600 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
                         : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
@@ -825,7 +825,7 @@ export default function DashboardGeneratorFormCard() {
                     type="button"
                     key={b.slug}
                     onClick={() => setSelectedBudget(b.slug)}
-                    className={`py-1 px-2 text-[11px] font-bold rounded-lg border text-center transition-all ${
+                    className={`py-1 px-2 text-[11px] font-bold rounded-2xl border text-center transition-all ${
                       selectedBudget === b.slug
                         ? 'bg-purple-50 border-purple-600 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
                         : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
@@ -849,7 +849,7 @@ export default function DashboardGeneratorFormCard() {
                 step="1"
                 value={aiInterventionIndex}
                 onChange={(e) => setAiInterventionIndex(Number(e.target.value))}
-                className="w-full accent-purple-600 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+                className="w-full accent-purple-600 h-1 bg-slate-200 dark:bg-slate-700 rounded-2xl cursor-pointer"
               />
               <div className="flex items-center justify-between text-[9px] font-bold text-slate-500">
                 {AI_INTERVENTION_LEVELS.map((lvl, idx) => (
@@ -871,7 +871,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={houseAngle}
                   onChange={(e) => setHouseAngle(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {HOUSE_ANGLES.map((a) => (
                     <option key={a} value={a}>{a}</option>
@@ -886,7 +886,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={exteriorTool}
                   onChange={(e) => setExteriorTool(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {EXTERIOR_TOOLS.map((t) => (
                     <option key={t} value={t}>{t}</option>
@@ -903,7 +903,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={buildingType}
                   onChange={(e) => setBuildingType(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {BUILDING_TYPES.map((bt) => (
                     <option key={bt} value={bt}>{bt}</option>
@@ -918,7 +918,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={roofType}
                   onChange={(e) => setRoofType(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {ROOF_TYPES.map((rt) => (
                     <option key={rt} value={rt}>{rt}</option>
@@ -935,7 +935,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={environment}
                   onChange={(e) => setEnvironment(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {ENVIRONMENTS.map((env) => (
                     <option key={env} value={env}>{env}</option>
@@ -950,7 +950,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={timeOfDay}
                   onChange={(e) => setTimeOfDay(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {TIMES_OF_DAY.map((tod) => (
                     <option key={tod} value={tod}>{tod}</option>
@@ -966,7 +966,7 @@ export default function DashboardGeneratorFormCard() {
               <select
                 value={exteriorStyle}
                 onChange={(e) => setExteriorStyle(e.target.value)}
-                className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
               >
                 {EXTERIOR_STYLES.map((s) => (
                   <option key={s} value={s}>{s}</option>
@@ -1007,7 +1007,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={gardenType}
                   onChange={(e) => setGardenType(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {GARDEN_TYPES.map((gt) => (
                     <option key={gt} value={gt}>{gt}</option>
@@ -1022,7 +1022,7 @@ export default function DashboardGeneratorFormCard() {
                 <select
                   value={gardenStyle}
                   onChange={(e) => setGardenStyle(e.target.value)}
-                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
                   {GARDEN_STYLES.map((gs) => (
                     <option key={gs} value={gs}>{gs}</option>
@@ -1063,7 +1063,7 @@ export default function DashboardGeneratorFormCard() {
           </label>
 
           {uploadedImage ? (
-            <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 group h-20">
+            <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 group h-20">
               <img src={uploadedImage} alt="Uploaded Room" className="w-full h-full object-cover" />
               <button
                 type="button"
@@ -1074,7 +1074,7 @@ export default function DashboardGeneratorFormCard() {
               </button>
             </div>
           ) : (
-            <label className="flex items-center justify-center gap-2 p-2.5 border border-dashed border-purple-300/80 hover:border-purple-600 rounded-xl cursor-pointer bg-purple-50/20 dark:bg-slate-800/40 transition-colors group">
+            <label className="flex items-center justify-center gap-2 p-2.5 border border-dashed border-purple-300/80 hover:border-purple-600 rounded-2xl cursor-pointer bg-purple-50/20 dark:bg-slate-800/40 transition-colors group">
               <ImageIcon className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Upload image (PNG, JPG)
@@ -1106,7 +1106,7 @@ export default function DashboardGeneratorFormCard() {
                 value={customMsg}
                 onChange={(e) => setCustomMsg(e.target.value)}
                 placeholder="e.g. Add warm wooden slat walls & cream sofa..."
-                className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="w-full py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
             </div>
           )}
@@ -1119,7 +1119,7 @@ export default function DashboardGeneratorFormCard() {
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -5 }}
-              className="p-2.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-2"
+              className="p-2.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 rounded-2xl text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-2"
             >
               <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
               <span>{validationError}</span>
@@ -1133,7 +1133,7 @@ export default function DashboardGeneratorFormCard() {
           disabled={isGenerating}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
-          className="w-full py-2.5 px-4 text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-xl shadow-md shadow-purple-500/20 transition-all flex items-center justify-center gap-1.5 font-heading disabled:opacity-75"
+          className="w-full py-2.5 px-4 text-xs font-extrabold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-2xl shadow-md shadow-purple-500/20 transition-all flex items-center justify-center gap-1.5 font-heading disabled:opacity-75"
         >
           {isGenerating ? (
             <>
@@ -1157,7 +1157,7 @@ export default function DashboardGeneratorFormCard() {
               exit={{ opacity: 0, y: 5 }}
               className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800"
             >
-              <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 flex items-center justify-between">
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
                   <span>AI Redesign generated successfully!</span>
@@ -1173,7 +1173,7 @@ export default function DashboardGeneratorFormCard() {
                 </a>
               </div>
 
-              <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 h-44 group">
+              <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 h-44 group">
                 <img src={generatedResult} alt="Generated AI Redesign" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <a
@@ -1189,7 +1189,7 @@ export default function DashboardGeneratorFormCard() {
               </div>
 
               {compiledPrompt && (
-                <div className="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-800 text-[10px] space-y-1">
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-[10px] space-y-1">
                   <span className="font-extrabold text-slate-500 uppercase tracking-widest block font-heading">
                     AI Prompt Spec:
                   </span>
@@ -1211,7 +1211,7 @@ export default function DashboardGeneratorFormCard() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 text-center relative overflow-hidden"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 text-center relative overflow-hidden"
             >
               <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center mx-auto shadow-md border border-amber-200 dark:border-amber-800">
                 <Sparkles className="w-7 h-7" />

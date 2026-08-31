@@ -129,7 +129,7 @@ export default function DashboardNavCard() {
       initial={{ opacity: 0, y: -15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="w-full bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xl shadow-slate-900/5 mb-8 space-y-4"
+      className="w-full bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl shadow-slate-900/5 mb-8 space-y-4"
     >
       {/* CARD TOP BAR: LOGO, CREDITS BADGE, THEME TOGGLE, PROFILE */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-800/80">
@@ -157,7 +157,7 @@ export default function DashboardNavCard() {
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="py-1.5 px-3.5 text-xs font-bold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 font-heading"
+              className="py-1.5 px-3.5 text-xs font-bold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-2xl shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 font-heading"
             >
               <Sparkles className="w-3 h-3 text-amber-300" />
               <span>Upgrade Now</span>
@@ -172,7 +172,7 @@ export default function DashboardNavCard() {
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg transition-all focus:outline-none"
             >
-              <div className="w-7 h-7 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs font-extrabold shadow-inner">
+              <div className="w-7 h-7 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs font-extrabold shadow-inner">
                 {initials}
               </div>
               <span className="text-xs font-bold capitalize font-heading hidden sm:inline">
@@ -200,14 +200,14 @@ export default function DashboardNavCard() {
                     <Link
                       href="/settings"
                       onClick={() => setIsProfileMenuOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-600 font-semibold"
+                      className="flex items-center gap-2 px-3 py-2 rounded-2xl text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-600 font-semibold"
                     >
                       <Settings className="w-4 h-4 text-slate-400" />
                       <span>Settings</span>
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold border-t border-slate-100 dark:border-slate-800 mt-1"
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-2xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold border-t border-slate-100 dark:border-slate-800 mt-1"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Sign Out</span>

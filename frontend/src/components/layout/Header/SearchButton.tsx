@@ -19,7 +19,7 @@ export default function SearchButton({ onClick }: SearchButtonProps) {
     >
       <Search className="w-3.5 h-3.5 text-slate-400" />
       <span className="hidden sm:inline">Search...</span>
-      <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100/80 border border-[#E5E7EB] rounded-md">
+      <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100/80 border border-[#E5E7EB] rounded-2xl">
         ⌘K
       </kbd>
     </motion.button>

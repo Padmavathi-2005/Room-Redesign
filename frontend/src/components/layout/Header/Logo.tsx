@@ -9,7 +9,7 @@ export default function Logo() {
   return (
     <Link
       href="/"
-      className="flex items-center gap-3.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-xl"
+      className="flex items-center gap-3.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl"
     >
       <motion.div
         whileHover={{ scale: 1.06, rotate: 2 }}

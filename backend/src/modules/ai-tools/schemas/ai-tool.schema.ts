@@ -22,6 +22,9 @@ export class AiTool {
 
   @Prop({ required: false, default: true })
   isActive: boolean;
+
+  @Prop({ type: Array, default: [] })
+  widgets?: any[];
 }
 
 export const AiToolSchema = SchemaFactory.createForClass(AiTool);

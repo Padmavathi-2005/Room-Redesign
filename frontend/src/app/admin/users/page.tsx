@@ -138,7 +138,7 @@ export default function AdminUsersPage() {
         const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'User';
         return (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-extrabold flex items-center justify-center text-xs border border-purple-200">
+            <div className="w-9 h-9 rounded-2xl bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-extrabold flex items-center justify-center text-xs border border-purple-200">
               {fullName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -168,7 +168,7 @@ export default function AdminUsersPage() {
             <span>{user.role}</span>
           </span>
 
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold uppercase tracking-wider">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold uppercase tracking-wider">
             {user.subscriptionTier || 'FREE'} PLAN
           </span>
         </div>
@@ -214,7 +214,7 @@ export default function AdminUsersPage() {
           <button
             type="button"
             onClick={() => handleOpenCreditModal(user)}
-            className="p-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+            className="p-1.5 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
             title="Edit Credits & Plan Tier"
           >
             <Coins className="w-3.5 h-3.5" />
@@ -224,7 +224,7 @@ export default function AdminUsersPage() {
           <button
             type="button"
             onClick={() => handleToggleRole(user)}
-            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition-all cursor-pointer"
+            className="p-1.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition-all cursor-pointer"
             title="Toggle Role"
           >
             {user.role === 'ADMIN' ? 'Demote' : 'Promote Admin'}
@@ -233,7 +233,7 @@ export default function AdminUsersPage() {
           <button
             type="button"
             onClick={() => handleOpenDeleteModal(user)}
-            className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer"
+            className="p-1.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer"
             title="Delete User"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -246,7 +246,7 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       {/* PAGE TITLE & REFRESH BUTTON */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs">
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-extrabold rounded-full font-heading">
             <UserIcon className="w-3.5 h-3.5" />
@@ -314,7 +314,7 @@ export default function AdminUsersPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-slate-200 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-5"
+              className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5"
             >
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-base font-extrabold text-slate-900 font-heading flex items-center gap-2">
@@ -342,7 +342,7 @@ export default function AdminUsersPage() {
                   <select
                     value={newTier}
                     onChange={(e) => setNewTier(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
                   >
                     <option value="FREE">Free Tier (Default)</option>
                     <option value="STARTER">Starter Tier ($19/mo)</option>
@@ -370,7 +370,7 @@ export default function AdminUsersPage() {
                         key={amount}
                         type="button"
                         onClick={() => setNewCredits((prev) => prev + amount)}
-                        className="px-2 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-extrabold border border-purple-200 transition-colors"
+                        className="px-2 py-1 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-extrabold border border-purple-200 transition-colors"
                       >
                         +{amount}
                       </button>
@@ -387,7 +387,7 @@ export default function AdminUsersPage() {
                 <button
                   type="button"
                   onClick={() => setIsCreditModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs"
+                  className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs"
                 >
                   Cancel
                 </button>
@@ -395,7 +395,7 @@ export default function AdminUsersPage() {
                   type="button"
                   onClick={handleSaveCredits}
                   disabled={isActionSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50"
                 >
                   {isActionSubmitting ? 'Saving...' : 'Save Settings'}
                 </button>
@@ -413,7 +413,7 @@ export default function AdminUsersPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-slate-200 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 text-center"
+              className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-center"
             >
               <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
                 <Trash2 className="w-6 h-6" />
@@ -431,7 +431,7 @@ export default function AdminUsersPage() {
                 <button
                   type="button"
                   onClick={() => setIsDeleteModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs"
+                  className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs"
                 >
                   Cancel
                 </button>
@@ -439,7 +439,7 @@ export default function AdminUsersPage() {
                   type="button"
                   onClick={handleConfirmDelete}
                   disabled={isActionSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50"
                 >
                   {isActionSubmitting ? 'Deleting...' : 'Permanently Delete'}
                 </button>

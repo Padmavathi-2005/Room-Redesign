@@ -62,7 +62,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ type: 'spring', duration: 0.3 }}
-            className="relative z-10 w-full max-w-2xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-2xl backdrop-blur-2xl overflow-hidden"
+            className="relative z-10 w-full max-w-2xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-2xl backdrop-blur-2xl overflow-hidden"
           >
             {/* Input Header */}
             <div className="flex items-center px-5 py-4 border-b border-slate-200/80 dark:border-slate-800/80">
@@ -77,7 +77,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
               />
               <button
                 onClick={onClose}
-                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors"
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-2xl transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -97,7 +97,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   className="flex items-center justify-between px-4 py-3 rounded-2xl hover:bg-indigo-50/80 dark:hover:bg-indigo-950/40 group transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-indigo-100/60 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400">
+                    <div className="p-2 rounded-2xl bg-indigo-100/60 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400">
                       <Sparkles className="w-4 h-4" />
                     </div>
                     <div>

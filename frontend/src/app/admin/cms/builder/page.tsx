@@ -33,7 +33,7 @@ interface BlockItem {
 export default function AdminCmsBuilderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pageId = searchParams.get('id');
+  const pageId = searchParams ? searchParams.get('id') : null;
 
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -269,11 +269,11 @@ export default function AdminCmsBuilderPage() {
   return (
     <div className="space-y-6 pb-16">
       {/* Top Navigation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push('/admin/cms')}
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+            className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -289,10 +289,10 @@ export default function AdminCmsBuilderPage() {
 
         <div className="flex items-center gap-2.5">
           {/* Tab Switcher */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+          <div className="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200">
             <button
               onClick={() => setActiveTab('editor')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'editor' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
@@ -300,7 +300,7 @@ export default function AdminCmsBuilderPage() {
             </button>
             <button
               onClick={() => setActiveTab('preview')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'preview' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
@@ -334,7 +334,7 @@ export default function AdminCmsBuilderPage() {
       )}
 
       {/* Page Configuration Form Header */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
         <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Page Metadata & SEO Settings</h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -346,7 +346,7 @@ export default function AdminCmsBuilderPage() {
               placeholder="e.g. Terms of Service"
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
-              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl font-bold"
+              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-bold"
             />
           </div>
 
@@ -358,7 +358,7 @@ export default function AdminCmsBuilderPage() {
               placeholder="e.g. terms-of-service"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl font-mono text-xs"
+              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-mono text-xs"
             />
           </div>
 
@@ -367,7 +367,7 @@ export default function AdminCmsBuilderPage() {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as any)}
-              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl font-bold"
+              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-bold"
             >
               <option value="published">Published (Live Public)</option>
               <option value="draft">Draft (Private)</option>
@@ -382,7 +382,7 @@ export default function AdminCmsBuilderPage() {
             placeholder="Search engine meta description for Google indexing..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl font-medium"
+            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-medium"
           />
         </div>
 
@@ -390,11 +390,11 @@ export default function AdminCmsBuilderPage() {
         <div className="pt-2 flex items-center justify-between border-t border-slate-150 text-xs">
           <div className="flex items-center gap-3">
             <span className="font-bold text-slate-700">Editor Mode:</span>
-            <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+            <div className="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200">
               <button
                 type="button"
                 onClick={() => setEditMode('blocks')}
-                className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
+                className={`px-3 py-1 rounded-2xl font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
                   editMode === 'blocks' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600'
                 }`}
               >
@@ -404,7 +404,7 @@ export default function AdminCmsBuilderPage() {
               <button
                 type="button"
                 onClick={() => setEditMode('html')}
-                className={`px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
+                className={`px-3 py-1 rounded-2xl font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
                   editMode === 'html' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600'
                 }`}
               >
@@ -438,7 +438,7 @@ export default function AdminCmsBuilderPage() {
               </div>
 
               {blocks.length === 0 ? (
-                <div className="p-12 text-center bg-white border border-slate-200/80 rounded-3xl text-slate-400 space-y-3">
+                <div className="p-12 text-center bg-white border border-slate-200/80 rounded-2xl text-slate-400 space-y-3">
                   <Layout className="w-10 h-10 mx-auto text-slate-300" />
                   <p className="text-sm font-bold text-slate-700">No Component Blocks Added</p>
                   <p className="text-xs">Click a block button on the right palette to add it to your page canvas.</p>
@@ -447,7 +447,7 @@ export default function AdminCmsBuilderPage() {
                 blocks.map((block, idx) => (
                   <div
                     key={block.id}
-                    className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-2xs space-y-4 relative group"
+                    className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-4 relative group"
                   >
                     {/* Block Header */}
                     <div className="flex items-center justify-between pb-3 border-b border-slate-150">
@@ -462,7 +462,7 @@ export default function AdminCmsBuilderPage() {
                           type="button"
                           disabled={idx === 0}
                           onClick={() => moveBlock(idx, 'up')}
-                          className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 disabled:opacity-30 cursor-pointer"
+                          className="p-1 rounded-2xl hover:bg-slate-100 text-slate-500 disabled:opacity-30 cursor-pointer"
                         >
                           <ChevronUp className="w-4 h-4" />
                         </button>
@@ -470,14 +470,14 @@ export default function AdminCmsBuilderPage() {
                           type="button"
                           disabled={idx === blocks.length - 1}
                           onClick={() => moveBlock(idx, 'down')}
-                          className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 disabled:opacity-30 cursor-pointer"
+                          className="p-1 rounded-2xl hover:bg-slate-100 text-slate-500 disabled:opacity-30 cursor-pointer"
                         >
                           <ChevronDown className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => removeBlock(block.id)}
-                          className="p-1 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                          className="p-1 rounded-2xl hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -494,7 +494,7 @@ export default function AdminCmsBuilderPage() {
                               type="text"
                               value={block.content.title || ''}
                               onChange={(e) => updateBlockContent(block.id, { ...block.content, title: e.target.value })}
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900"
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900"
                             />
                           </div>
                           <div className="space-y-1">
@@ -503,7 +503,7 @@ export default function AdminCmsBuilderPage() {
                               type="text"
                               value={block.content.badge || ''}
                               onChange={(e) => updateBlockContent(block.id, { ...block.content, badge: e.target.value })}
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900"
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900"
                             />
                           </div>
                         </div>
@@ -513,7 +513,7 @@ export default function AdminCmsBuilderPage() {
                             rows={2}
                             value={block.content.subtitle || ''}
                             onChange={(e) => updateBlockContent(block.id, { ...block.content, subtitle: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 resize-none font-medium"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 resize-none font-medium"
                           />
                         </div>
                       </div>
@@ -527,7 +527,7 @@ export default function AdminCmsBuilderPage() {
                             type="text"
                             value={block.content.title || ''}
                             onChange={(e) => updateBlockContent(block.id, { ...block.content, title: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900"
                           />
                         </div>
                         <div className="space-y-1">
@@ -536,7 +536,7 @@ export default function AdminCmsBuilderPage() {
                             rows={5}
                             value={block.content.body || ''}
                             onChange={(e) => updateBlockContent(block.id, { ...block.content, body: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-normal leading-relaxed"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-normal leading-relaxed"
                           />
                         </div>
                       </div>
@@ -551,7 +551,7 @@ export default function AdminCmsBuilderPage() {
                               type="text"
                               value={block.content.headline || ''}
                               onChange={(e) => updateBlockContent(block.id, { ...block.content, headline: e.target.value })}
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900"
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900"
                             />
                           </div>
                           <div className="space-y-1">
@@ -560,7 +560,7 @@ export default function AdminCmsBuilderPage() {
                               type="text"
                               value={block.content.buttonText || ''}
                               onChange={(e) => updateBlockContent(block.id, { ...block.content, buttonText: e.target.value })}
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900"
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900"
                             />
                           </div>
                         </div>
@@ -575,7 +575,7 @@ export default function AdminCmsBuilderPage() {
                             type="text"
                             value={block.content.imageUrl || ''}
                             onChange={(e) => updateBlockContent(block.id, { ...block.content, imageUrl: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-xs text-slate-900"
                           />
                         </div>
                         <div className="space-y-1">
@@ -584,7 +584,7 @@ export default function AdminCmsBuilderPage() {
                             type="text"
                             value={block.content.caption || ''}
                             onChange={(e) => updateBlockContent(block.id, { ...block.content, caption: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900"
                           />
                         </div>
                       </div>
@@ -597,7 +597,7 @@ export default function AdminCmsBuilderPage() {
                           rows={4}
                           value={block.content.rawHtml || ''}
                           onChange={(e) => updateBlockContent(block.id, { ...block.content, rawHtml: e.target.value })}
-                          className="w-full px-3 py-2 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl focus:outline-none"
+                          className="w-full px-3 py-2 bg-slate-900 text-emerald-400 font-mono text-xs rounded-2xl focus:outline-none"
                         />
                       </div>
                     )}
@@ -607,7 +607,7 @@ export default function AdminCmsBuilderPage() {
             </div>
 
             {/* Right Col: Component Palette Sidebar */}
-            <div className="lg:col-span-1 bg-white border border-slate-200/80 p-5 rounded-3xl shadow-2xs space-y-4">
+            <div className="lg:col-span-1 bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs space-y-4">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Add Component Block</h3>
               <div className="space-y-2 text-xs">
                 <button
@@ -698,7 +698,7 @@ export default function AdminCmsBuilderPage() {
           </div>
         ) : (
           /* Custom Raw HTML Editor Mode */
-          <div className="bg-white border border-slate-200/80 p-6 rounded-3xl shadow-2xs space-y-3 text-xs font-bold text-slate-700">
+          <div className="bg-white border border-slate-200/80 p-6 rounded-2xl shadow-2xs space-y-3 text-xs font-bold text-slate-700">
             <div className="flex items-center justify-between">
               <label className="text-sm font-black text-slate-900">Custom Full-Page HTML & CSS</label>
               <span className="text-[11px] font-mono text-indigo-600">Raw HTML Mode Active</span>
@@ -714,7 +714,7 @@ export default function AdminCmsBuilderPage() {
         )
       ) : (
         /* Live Render Preview Pane */
-        <div className="bg-white border border-slate-200/80 rounded-3xl p-8 shadow-2xs space-y-8 min-h-[500px]">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-2xs space-y-8 min-h-[500px]">
           <div className="border-b border-slate-150 pb-4 flex items-center justify-between text-xs text-slate-400 font-bold">
             <span>PUBLIC PAGE PREVIEW</span>
             <span>/p/{slug || 'your-slug'}</span>
@@ -727,7 +727,7 @@ export default function AdminCmsBuilderPage() {
               {blocks.map((block) => {
                 if (block.type === 'hero') {
                   return (
-                    <div key={block.id} className="text-center space-y-4 py-8 bg-indigo-50/50 rounded-3xl border border-indigo-100 p-8">
+                    <div key={block.id} className="text-center space-y-4 py-8 bg-indigo-50/50 rounded-2xl border border-indigo-100 p-8">
                       {block.content.badge && (
                         <span className="px-3 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">
                           {block.content.badge}
@@ -751,7 +751,7 @@ export default function AdminCmsBuilderPage() {
                 if (block.type === 'image') {
                   return (
                     <div key={block.id} className="space-y-2 text-center">
-                      <img src={block.content.imageUrl} alt="CMS Showcase" className="w-full max-h-96 object-cover rounded-3xl border border-slate-200" />
+                      <img src={block.content.imageUrl} alt="CMS Showcase" className="w-full max-h-96 object-cover rounded-2xl border border-slate-200" />
                       {block.content.caption && <p className="text-xs text-slate-400 font-semibold">{block.content.caption}</p>}
                     </div>
                   );

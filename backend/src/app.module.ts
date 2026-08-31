@@ -28,6 +28,7 @@ import { QueueModule } from './queue/queue.module';
 import { ProviderManagerModule } from './modules/provider-manager/provider-manager.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { CmsModule } from './modules/cms/cms.module';
+import { ImageProcessingModule } from './image-processing/image-processing.module';
 import {
   databaseConfig,
   jwtConfig,
@@ -81,6 +82,7 @@ import {
     ProviderManagerModule,
     MarketplaceModule,
     CmsModule,
+    ImageProcessingModule,
   ],
 })
 export class AppModule {}

@@ -8,9 +8,9 @@ export class LightPromptBuilder implements IPromptBuilder {
   build(options: PromptInputOptions): PromptOutputResult {
     const lightType = options.lighting || 'Warm Ambient Sunlight';
     const timeOfDay = options.timeOfDay || 'Golden Hour Sunset';
-    const warmth = options.mood || 'warm cozy 3000K Kelvin color temperature';
+    const warmth = options.mood || 'warm cozy 3000K Kelvin';
 
-    const finalPrompt = `Architectural lighting transformation, room lit with ${lightType}, illuminated by ${timeOfDay}, ${warmth}, realistic ray-traced shadow diffusion, specular light reflections on surfaces, soft ambient bounce lighting, ${COMMON_PHOTOGRAPHIC_BOOSTERS}`;
+    const finalPrompt = `Architectural lighting redesign. Room is lit with ${lightType} during ${timeOfDay} with a ${warmth} glow. Realistic shadow diffusion and soft ambient bounce lighting. ${COMMON_PHOTOGRAPHIC_BOOSTERS}`;
 
     return {
       finalPrompt,

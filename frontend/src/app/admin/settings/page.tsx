@@ -60,17 +60,20 @@ export default function AdminSettingsPage() {
   const [applePrivateKey, setApplePrivateKey] = useState('');
 
   // 3. AI Model Engine & API Tokens State
-  const [primaryAiProvider, setPrimaryAiProvider] = useState('replicate');
-  const [replicateApiKey, setReplicateApiKey] = useState('');
-  const [openaiApiKey, setOpenaiApiKey] = useState('');
-  const [huggingfaceToken, setHuggingfaceToken] = useState('');
+  const [primaryAiProvider, setPrimaryAiProvider] = useState('manus');
+  const [manusApiKey, setManusApiKey] = useState('sk-i_etowZTbmAKomnjdWFGwZTjKtqqZKJcKuXbbbzq7tABLXcot0bACJn1Nqx5Nhd0l79lYPgRTyc_kaCw0yQqQ-VNMP8P');
+  const [roomwhizApiKey, setRoomwhizApiKey] = useState('sk-BXgV4RDSCZ7FMfjf31UDLy77Y1E_gw2EahLqTbOZYdKni4Kv5X4i2Dq9FSwCWuLvjOWzYQT6dwUKHRJin3pRo1a-4GTh');
   const [aiGenerationTimeout, setAiGenerationTimeout] = useState(60);
 
-  // 4. Stripe Payment Gateway State
+  // 4. Stripe & PayPal Payment Gateways State
   const [stripeTestMode, setStripeTestMode] = useState(true);
   const [stripePublishableKey, setStripePublishableKey] = useState('');
   const [stripeSecretKey, setStripeSecretKey] = useState('');
   const [stripeWebhookSecret, setStripeWebhookSecret] = useState('');
+  const [paypalSandboxMode, setPaypalSandboxMode] = useState(true);
+  const [paypalClientId, setPaypalClientId] = useState('');
+  const [paypalClientSecret, setPaypalClientSecret] = useState('');
+  const [paypalWebhookId, setPaypalWebhookId] = useState('');
 
   // 5. Cloud Storage & Media Delivery State
   const [storageProvider, setStorageProvider] = useState('local');
@@ -124,7 +127,9 @@ export default function AdminSettingsPage() {
 
       const data = await res.json();
 
-      if (!data || !data.success || !data.data || data.data.user?.role !== 'admin') {
+      const isAdminRole = data?.data?.user?.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(data.data.user.role);
+
+      if (!data || !data.success || !data.data || !isAdminRole) {
         setIsAdmin(false);
         setLoading(false);
         setTimeout(() => {
@@ -179,16 +184,19 @@ export default function AdminSettingsPage() {
       setAppleKeyId(s.appleKeyId || '');
       setApplePrivateKey(s.applePrivateKey || '');
 
-      setPrimaryAiProvider(s.primaryAiProvider || 'replicate');
-      setReplicateApiKey(s.replicateApiKey || '');
-      setOpenaiApiKey(s.openaiApiKey || '');
-      setHuggingfaceToken(s.huggingfaceToken || '');
+      setPrimaryAiProvider(s.primaryAiProvider || 'manus');
+      setManusApiKey(s.manusApiKey || 'sk-i_etowZTbmAKomnjdWFGwZTjKtqqZKJcKuXbbbzq7tABLXcot0bACJn1Nqx5Nhd0l79lYPgRTyc_kaCw0yQqQ-VNMP8P');
+      setRoomwhizApiKey(s.roomwhizApiKey || 'sk-BXgV4RDSCZ7FMfjf31UDLy77Y1E_gw2EahLqTbOZYdKni4Kv5X4i2Dq9FSwCWuLvjOWzYQT6dwUKHRJin3pRo1a-4GTh');
       setAiGenerationTimeout(s.aiGenerationTimeout ?? 60);
 
       setStripeTestMode(s.stripeTestMode ?? true);
       setStripePublishableKey(s.stripePublishableKey || '');
       setStripeSecretKey(s.stripeSecretKey || '');
       setStripeWebhookSecret(s.stripeWebhookSecret || '');
+      setPaypalSandboxMode(s.paypalSandboxMode ?? true);
+      setPaypalClientId(s.paypalClientId || '');
+      setPaypalClientSecret(s.paypalClientSecret || '');
+      setPaypalWebhookId(s.paypalWebhookId || '');
 
       setStorageProvider(s.storageProvider || 'local');
       setCloudinaryCloudName(s.cloudinaryCloudName || '');
@@ -245,14 +253,17 @@ export default function AdminSettingsPage() {
           appleKeyId,
           applePrivateKey,
           primaryAiProvider,
-          replicateApiKey,
-          openaiApiKey,
-          huggingfaceToken,
+          manusApiKey,
+          roomwhizApiKey,
           aiGenerationTimeout,
           stripeTestMode,
           stripePublishableKey,
           stripeSecretKey,
           stripeWebhookSecret,
+          paypalSandboxMode,
+          paypalClientId,
+          paypalClientSecret,
+          paypalWebhookId,
           storageProvider,
           cloudinaryCloudName,
           cloudinaryApiKey,
@@ -292,7 +303,7 @@ export default function AdminSettingsPage() {
   if (isAdmin === false) {
     return (
       <div className="min-h-[60vh] text-slate-900 flex flex-col items-center justify-center p-6 text-center">
-        <div className="p-6 rounded-3xl bg-rose-50 border border-rose-200 max-w-md space-y-4">
+        <div className="p-6 rounded-2xl bg-rose-50 border border-rose-200 max-w-md space-y-4">
           <ShieldAlert className="w-12 h-12 text-rose-600 mx-auto" />
           <div className="space-y-2">
             <h1 className="text-xl font-black text-slate-900">Access Denied</h1>
@@ -318,7 +329,7 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6 pb-12">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
@@ -361,7 +372,7 @@ export default function AdminSettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         
         {/* Left Column: Categorized Navigation Tabs */}
-        <div className="lg:col-span-1 bg-white border border-slate-200/80 p-2.5 rounded-3xl shadow-2xs space-y-1">
+        <div className="lg:col-span-1 bg-white border border-slate-200/80 p-2.5 rounded-2xl shadow-2xs space-y-1">
           <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-3 py-2">
             Configuration Modules
           </p>
@@ -387,7 +398,7 @@ export default function AdminSettingsPage() {
 
         {/* Right Columns: Module Settings Panel */}
         <div className="lg:col-span-3">
-          <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 p-6 sm:p-8 rounded-3xl shadow-2xs space-y-6">
+          <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 p-6 sm:p-8 rounded-2xl shadow-2xs space-y-6">
             
             {/* MODULE 1: BRANDING & VISUALS */}
             {activeTab === 'branding' && (
@@ -410,7 +421,7 @@ export default function AdminSettingsPage() {
                       required
                       value={appName}
                       onChange={(e) => setAppName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl font-medium"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-medium"
                     />
                   </div>
 
@@ -419,7 +430,7 @@ export default function AdminSettingsPage() {
                     <select
                       value={activeTheme}
                       onChange={(e) => setActiveTheme(e.target.value as any)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl font-medium"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-medium"
                     >
                       <option value="light">Light Theme</option>
                       <option value="dark">Dark Theme</option>
@@ -436,13 +447,13 @@ export default function AdminSettingsPage() {
                         type="color"
                         value={primaryColor}
                         onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="w-10 h-10 rounded-xl border border-slate-200 bg-white cursor-pointer shrink-0"
+                        className="w-10 h-10 rounded-2xl border border-slate-200 bg-white cursor-pointer shrink-0"
                       />
                       <input
                         type="text"
                         value={primaryColor}
                         onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="w-full px-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none text-slate-900 rounded-xl font-mono text-xs font-semibold"
+                        className="w-full px-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none text-slate-900 rounded-2xl font-mono text-xs font-semibold"
                       />
                     </div>
                   </div>
@@ -454,13 +465,13 @@ export default function AdminSettingsPage() {
                         type="color"
                         value={secondaryColor}
                         onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="w-10 h-10 rounded-xl border border-slate-200 bg-white cursor-pointer shrink-0"
+                        className="w-10 h-10 rounded-2xl border border-slate-200 bg-white cursor-pointer shrink-0"
                       />
                       <input
                         type="text"
                         value={secondaryColor}
                         onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="w-full px-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none text-slate-900 rounded-xl font-mono text-xs font-semibold"
+                        className="w-full px-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none text-slate-900 rounded-2xl font-mono text-xs font-semibold"
                       />
                     </div>
                   </div>
@@ -472,13 +483,13 @@ export default function AdminSettingsPage() {
                         type="color"
                         value={accentColor}
                         onChange={(e) => setAccentColor(e.target.value)}
-                        className="w-10 h-10 rounded-xl border border-slate-200 bg-white cursor-pointer shrink-0"
+                        className="w-10 h-10 rounded-2xl border border-slate-200 bg-white cursor-pointer shrink-0"
                       />
                       <input
                         type="text"
                         value={accentColor}
                         onChange={(e) => setAccentColor(e.target.value)}
-                        className="w-full px-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none text-slate-900 rounded-xl font-mono text-xs font-semibold"
+                        className="w-full px-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none text-slate-900 rounded-2xl font-mono text-xs font-semibold"
                       />
                     </div>
                   </div>
@@ -489,7 +500,7 @@ export default function AdminSettingsPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-slate-800 font-bold">
                       <label>Border Radius</label>
-                      <span className="font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md text-[11px]">{borderRadius}px</span>
+                      <span className="font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-2xl text-[11px]">{borderRadius}px</span>
                     </div>
                     <input
                       type="range"
@@ -497,14 +508,14 @@ export default function AdminSettingsPage() {
                       max="40"
                       value={borderRadius}
                       onChange={(e) => setBorderRadius(Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      className="w-full h-1.5 bg-slate-200 rounded-2xl appearance-none cursor-pointer accent-indigo-600"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-slate-800 font-bold">
                       <label>Glass Opacity</label>
-                      <span className="font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md text-[11px]">{Math.round(glassOpacity * 100)}%</span>
+                      <span className="font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-2xl text-[11px]">{Math.round(glassOpacity * 100)}%</span>
                     </div>
                     <input
                       type="range"
@@ -513,7 +524,7 @@ export default function AdminSettingsPage() {
                       step="0.05"
                       value={glassOpacity}
                       onChange={(e) => setGlassOpacity(Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      className="w-full h-1.5 bg-slate-200 rounded-2xl appearance-none cursor-pointer accent-indigo-600"
                     />
                   </div>
                 </div>
@@ -527,7 +538,7 @@ export default function AdminSettingsPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-xs"
+                        className="w-8 h-8 rounded-2xl flex items-center justify-center text-white font-bold text-xs shadow-xs"
                         style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
                       >
                         <Sparkles className="w-4 h-4" />
@@ -539,7 +550,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <button
                       type="button"
-                      className="px-3 py-1.5 rounded-lg text-white text-[10px] font-bold shadow-xs"
+                      className="px-3 py-1.5 rounded-2xl text-white text-[10px] font-bold shadow-xs"
                       style={{ backgroundColor: primaryColor }}
                     >
                       Action
@@ -586,7 +597,7 @@ export default function AdminSettingsPage() {
                         placeholder="...apps.googleusercontent.com"
                         value={googleClientId}
                         onChange={(e) => setGoogleClientId(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl font-mono text-xs"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-mono text-xs"
                       />
                     </div>
                     <div className="space-y-1">
@@ -596,7 +607,7 @@ export default function AdminSettingsPage() {
                         placeholder="GOCSPX-..."
                         value={googleClientSecret}
                         onChange={(e) => setGoogleClientSecret(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl font-mono text-xs"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-mono text-xs"
                       />
                     </div>
                     <div className="space-y-1">
@@ -606,7 +617,7 @@ export default function AdminSettingsPage() {
                         placeholder="https://yourdomain.com/api/v1/auth/google/callback"
                         value={googleCallbackUrl}
                         onChange={(e) => setGoogleCallbackUrl(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl font-mono text-xs"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-mono text-xs"
                       />
                     </div>
                   </div>
@@ -638,7 +649,7 @@ export default function AdminSettingsPage() {
                         placeholder="com.domain.service"
                         value={appleClientId}
                         onChange={(e) => setAppleClientId(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl font-mono text-xs"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-2xl font-mono text-xs"
                       />
                     </div>
                     <div className="space-y-1">
@@ -648,7 +659,7 @@ export default function AdminSettingsPage() {
                         placeholder="10-char Team ID"
                         value={appleTeamId}
                         onChange={(e) => setAppleTeamId(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl font-mono text-xs"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-2xl font-mono text-xs"
                       />
                     </div>
                     <div className="space-y-1">
@@ -658,7 +669,7 @@ export default function AdminSettingsPage() {
                         placeholder="Key Identifier"
                         value={appleKeyId}
                         onChange={(e) => setAppleKeyId(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl font-mono text-xs"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-2xl font-mono text-xs"
                       />
                     </div>
                   </div>
@@ -670,7 +681,7 @@ export default function AdminSettingsPage() {
                       placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
                       value={applePrivateKey}
                       onChange={(e) => setApplePrivateKey(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl font-mono text-xs resize-none"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-2xl font-mono text-xs resize-none"
                     />
                   </div>
                 </div>
@@ -682,10 +693,12 @@ export default function AdminSettingsPage() {
               <div className="space-y-6 text-xs font-semibold text-slate-600">
                 <div className="border-b border-slate-150 pb-4">
                   <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <Wand2 className="w-5 h-5 text-cyan-600" />
-                    <span>AI Model Engine & Generation API Tokens</span>
+                    <Wand2 className="w-5 h-5 text-indigo-600" />
+                    <span>AI Model Engine & Generation API Key</span>
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Manage API keys for Replicate (SDXL/ControlNet), OpenAI (GPT-4o Vision), and HuggingFace.</p>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Configure the primary AI Engine API key used for room redesigns, AI renders, and transformations.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -694,11 +707,10 @@ export default function AdminSettingsPage() {
                     <select
                       value={primaryAiProvider}
                       onChange={(e) => setPrimaryAiProvider(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none text-slate-900 rounded-xl font-medium"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none text-slate-900 rounded-2xl font-medium"
                     >
-                      <option value="replicate">Replicate API (SDXL & ControlNet)</option>
-                      <option value="openai">OpenAI API (GPT-4o Vision)</option>
-                      <option value="huggingface">HuggingFace Inference API</option>
+                      <option value="manus">Primary AI Engine (Generation Engine)</option>
+                      <option value="roomwhiz">RoomWhiz AI (Upscaling & Feature Engine)</option>
                     </select>
                   </div>
 
@@ -710,128 +722,181 @@ export default function AdminSettingsPage() {
                       max={300}
                       value={aiGenerationTimeout}
                       onChange={(e) => setAiGenerationTimeout(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-mono font-bold"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono font-bold"
                     />
                   </div>
                 </div>
 
-                {/* Replicate Key */}
-                <div className="space-y-1.5">
+                {/* Primary AI API Key */}
+                <div className="space-y-2 p-5 rounded-2xl bg-indigo-50/60 border border-indigo-150">
                   <div className="flex items-center justify-between">
-                    <label className="text-slate-800 font-bold block">Replicate API Token</label>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-indigo-600" />
+                      <label className="text-slate-900 font-extrabold text-xs block">Primary AI API Key (AI_ENGINE_KEY)</label>
+                      <span className="px-2 py-0.5 rounded-2xl bg-emerald-100 text-emerald-800 font-extrabold text-[10px]">ACTIVE ENGINE</span>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => toggleShowMask('replicate')}
-                      className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px] font-bold"
+                      onClick={() => toggleShowMask('manus')}
+                      className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px] font-bold cursor-pointer"
                     >
-                      {showMaskedKeys['replicate'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      <span>{showMaskedKeys['replicate'] ? 'Mask' : 'Reveal'}</span>
+                      {showMaskedKeys['manus'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      <span>{showMaskedKeys['manus'] ? 'Mask Key' : 'Reveal Key'}</span>
                     </button>
                   </div>
                   <input
-                    type={showMaskedKeys['replicate'] ? 'text' : 'password'}
-                    placeholder="r8_..."
-                    value={replicateApiKey}
-                    onChange={(e) => setReplicateApiKey(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 text-slate-900 rounded-xl font-mono text-xs"
+                    type={showMaskedKeys['manus'] ? 'text' : 'password'}
+                    placeholder="sk-i_etowZTbmAKomnjdWFG..."
+                    value={manusApiKey}
+                    onChange={(e) => setManusApiKey(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-indigo-200 focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-mono text-xs shadow-2xs font-bold"
                   />
+                  <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                    Main API credentials used by RoomAI to execute room redesigns, image transformations, and AI renders.
+                  </p>
                 </div>
 
-                {/* OpenAI Key */}
-                <div className="space-y-1.5">
+                {/* RoomWhiz Key */}
+                <div className="space-y-1.5 p-4 rounded-2xl bg-slate-50 border border-slate-200">
                   <div className="flex items-center justify-between">
-                    <label className="text-slate-800 font-bold block">OpenAI API Key (Vision & Enhancements)</label>
+                    <label className="text-slate-800 font-bold block">RoomWhiz API Key (ROOMWHIZ_API_KEY)</label>
                     <button
                       type="button"
-                      onClick={() => toggleShowMask('openai')}
-                      className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px] font-bold"
+                      onClick={() => toggleShowMask('roomwhiz')}
+                      className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px] font-bold cursor-pointer"
                     >
-                      {showMaskedKeys['openai'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      <span>{showMaskedKeys['openai'] ? 'Mask' : 'Reveal'}</span>
+                      {showMaskedKeys['roomwhiz'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      <span>{showMaskedKeys['roomwhiz'] ? 'Mask Key' : 'Reveal Key'}</span>
                     </button>
                   </div>
                   <input
-                    type={showMaskedKeys['openai'] ? 'text' : 'password'}
-                    placeholder="sk-..."
-                    value={openaiApiKey}
-                    onChange={(e) => setOpenaiApiKey(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 text-slate-900 rounded-xl font-mono text-xs"
+                    type={showMaskedKeys['roomwhiz'] ? 'text' : 'password'}
+                    placeholder="sk-BXgV4RDSCZ7FM..."
+                    value={roomwhizApiKey}
+                    onChange={(e) => setRoomwhizApiKey(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-indigo-500 text-slate-900 rounded-2xl font-mono text-xs"
                   />
-                </div>
-
-                {/* HuggingFace Token */}
-                <div className="space-y-1.5">
-                  <label className="text-slate-800 font-bold block">HuggingFace Access Token (Backup)</label>
-                  <input
-                    type="password"
-                    placeholder="hf_..."
-                    value={huggingfaceToken}
-                    onChange={(e) => setHuggingfaceToken(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-mono text-xs"
-                  />
+                  <p className="text-[11px] text-slate-400 font-medium">Secondary key for room feature enhancements and upscaling pipeline.</p>
                 </div>
               </div>
             )}
 
-            {/* MODULE 4: STRIPE PAYMENT GATEWAY */}
+            {/* MODULE 4: STRIPE & PAYPAL PAYMENT GATEWAYS */}
             {activeTab === 'stripe' && (
               <div className="space-y-6 text-xs font-semibold text-slate-600">
                 <div className="border-b border-slate-150 pb-4">
                   <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-emerald-600" />
-                    <span>Stripe Payment Gateway Configurations</span>
+                    <span>Payment Gateways (Stripe & PayPal)</span>
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Configure Stripe publishable & secret keys, webhook signatures, and sandbox mode.</p>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">Configure API credentials, webhook signatures, and sandbox test modes for Stripe and PayPal.</p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-black text-slate-900">Sandbox Test Mode</p>
-                    <p className="text-[11px] text-slate-500 font-medium">Use Stripe test keys (`pk_test_...`, `sk_test_...`) instead of live keys.</p>
+                {/* Section A: Stripe Configuration */}
+                <div className="space-y-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div>
+                      <p className="text-xs font-black text-slate-900">1. Stripe Payment Gateway</p>
+                      <p className="text-[11px] text-slate-500 font-medium">Use Stripe test keys (`pk_test_...`, `sk_test_...`) in Sandbox mode.</p>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={stripeTestMode}
+                        onChange={(e) => setStripeTestMode(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 rounded cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-800">{stripeTestMode ? 'Test Mode' : 'Live Mode'}</span>
+                    </label>
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={stripeTestMode}
-                      onChange={(e) => setStripeTestMode(e.target.checked)}
-                      className="w-4 h-4 text-indigo-600 rounded cursor-pointer"
-                    />
-                    <span className="text-xs font-bold text-slate-800">{stripeTestMode ? 'Test Mode' : 'Live Mode'}</span>
-                  </label>
+
+                  <div className="space-y-3 pt-1">
+                    <div className="space-y-1">
+                      <label className="text-slate-800 font-bold block">Stripe Publishable Key</label>
+                      <input
+                        type="text"
+                        placeholder="pk_test_..."
+                        value={stripePublishableKey}
+                        onChange={(e) => setStripePublishableKey(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-slate-800 font-bold block">Stripe Secret Key</label>
+                      <input
+                        type="password"
+                        placeholder="sk_test_..."
+                        value={stripeSecretKey}
+                        onChange={(e) => setStripeSecretKey(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-slate-800 font-bold block">Stripe Webhook Secret Signature</label>
+                      <input
+                        type="password"
+                        placeholder="whsec_..."
+                        value={stripeWebhookSecret}
+                        onChange={(e) => setStripeWebhookSecret(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-slate-800 font-bold block">Stripe Publishable Key</label>
-                    <input
-                      type="text"
-                      placeholder="pk_test_..."
-                      value={stripePublishableKey}
-                      onChange={(e) => setStripePublishableKey(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-mono text-xs"
-                    />
+                {/* Section B: PayPal Configuration */}
+                <div className="space-y-4 p-4 rounded-2xl bg-blue-50/50 border border-blue-200/80">
+                  <div className="flex items-center justify-between border-b border-blue-200/80 pb-3">
+                    <div>
+                      <p className="text-xs font-black text-slate-900">2. PayPal Express Gateway</p>
+                      <p className="text-[11px] text-slate-500 font-medium">Use PayPal Developer Sandbox credentials for testing.</p>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={paypalSandboxMode}
+                        onChange={(e) => setPaypalSandboxMode(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-800">{paypalSandboxMode ? 'Sandbox Mode' : 'Live Mode'}</span>
+                    </label>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-slate-800 font-bold block">Stripe Secret Key</label>
-                    <input
-                      type="password"
-                      placeholder="sk_test_..."
-                      value={stripeSecretKey}
-                      onChange={(e) => setStripeSecretKey(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-mono text-xs"
-                    />
-                  </div>
+                  <div className="space-y-3 pt-1">
+                    <div className="space-y-1">
+                      <label className="text-slate-800 font-bold block">PayPal Client ID</label>
+                      <input
+                        type="text"
+                        placeholder="A... or Client ID"
+                        value={paypalClientId}
+                        onChange={(e) => setPaypalClientId(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
+                      />
+                    </div>
 
-                  <div className="space-y-1">
-                    <label className="text-slate-800 font-bold block">Stripe Webhook Secret Signature</label>
-                    <input
-                      type="password"
-                      placeholder="whsec_..."
-                      value={stripeWebhookSecret}
-                      onChange={(e) => setStripeWebhookSecret(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-mono text-xs"
-                    />
+                    <div className="space-y-1">
+                      <label className="text-slate-800 font-bold block">PayPal Client Secret</label>
+                      <input
+                        type="password"
+                        placeholder="E... or Client Secret"
+                        value={paypalClientSecret}
+                        onChange={(e) => setPaypalClientSecret(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-slate-800 font-bold block">PayPal Webhook ID</label>
+                      <input
+                        type="password"
+                        placeholder="Webhook ID signature"
+                        value={paypalWebhookId}
+                        onChange={(e) => setPaypalWebhookId(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -853,7 +918,7 @@ export default function AdminSettingsPage() {
                   <select
                     value={storageProvider}
                     onChange={(e) => setStorageProvider(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-medium"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-medium"
                   >
                     <option value="local">Local Filesystem (/uploads)</option>
                     <option value="cloudinary">Cloudinary Media CDN</option>
@@ -872,7 +937,7 @@ export default function AdminSettingsPage() {
                           placeholder="cloud_name"
                           value={cloudinaryCloudName}
                           onChange={(e) => setCloudinaryCloudName(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl font-mono text-xs"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-2xl font-mono text-xs"
                         />
                       </div>
                       <div className="space-y-1">
@@ -882,7 +947,7 @@ export default function AdminSettingsPage() {
                           placeholder="API Key"
                           value={cloudinaryApiKey}
                           onChange={(e) => setCloudinaryApiKey(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl font-mono text-xs"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-2xl font-mono text-xs"
                         />
                       </div>
                       <div className="space-y-1">
@@ -892,7 +957,7 @@ export default function AdminSettingsPage() {
                           placeholder="Secret"
                           value={cloudinaryApiSecret}
                           onChange={(e) => setCloudinaryApiSecret(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl font-mono text-xs"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-2xl font-mono text-xs"
                         />
                       </div>
                     </div>
@@ -910,7 +975,7 @@ export default function AdminSettingsPage() {
                           placeholder="my-roomai-bucket"
                           value={awsS3Bucket}
                           onChange={(e) => setAwsS3Bucket(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl font-mono text-xs"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-2xl font-mono text-xs"
                         />
                       </div>
                       <div className="space-y-1">
@@ -920,7 +985,7 @@ export default function AdminSettingsPage() {
                           placeholder="us-east-1"
                           value={awsRegion}
                           onChange={(e) => setAwsRegion(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-xl font-mono text-xs"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-900 rounded-2xl font-mono text-xs"
                         />
                       </div>
                     </div>
@@ -948,7 +1013,7 @@ export default function AdminSettingsPage() {
                       placeholder="smtp.sendgrid.net or smtp.gmail.com"
                       value={smtpHost}
                       onChange={(e) => setSmtpHost(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-mono text-xs"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
                     />
                   </div>
                   <div className="space-y-1">
@@ -958,7 +1023,7 @@ export default function AdminSettingsPage() {
                       placeholder="587"
                       value={smtpPort}
                       onChange={(e) => setSmtpPort(Number(e.target.value))}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-mono text-xs"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
                     />
                   </div>
                 </div>
@@ -971,7 +1036,7 @@ export default function AdminSettingsPage() {
                       placeholder="user@domain.com"
                       value={smtpUser}
                       onChange={(e) => setSmtpUser(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl text-xs"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl text-xs"
                     />
                   </div>
                   <div className="space-y-1">
@@ -981,7 +1046,7 @@ export default function AdminSettingsPage() {
                       placeholder="App Password"
                       value={smtpPass}
                       onChange={(e) => setSmtpPass(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl text-xs"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl text-xs"
                     />
                   </div>
                 </div>
@@ -994,7 +1059,7 @@ export default function AdminSettingsPage() {
                       placeholder="noreply@yourdomain.com"
                       value={smtpFromEmail}
                       onChange={(e) => setSmtpFromEmail(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl text-xs"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl text-xs"
                     />
                   </div>
                   <div className="space-y-1">
@@ -1004,7 +1069,7 @@ export default function AdminSettingsPage() {
                       placeholder="RoomAI Official"
                       value={smtpFromName}
                       onChange={(e) => setSmtpFromName(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl text-xs"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl text-xs"
                     />
                   </div>
                 </div>
@@ -1030,7 +1095,7 @@ export default function AdminSettingsPage() {
                       min={0}
                       value={defaultUserCredits}
                       onChange={(e) => setDefaultUserCredits(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-mono font-bold"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono font-bold"
                     />
                   </div>
 
@@ -1041,7 +1106,7 @@ export default function AdminSettingsPage() {
                       min={1}
                       value={creditsPerGeneration}
                       onChange={(e) => setCreditsPerGeneration(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-mono font-bold"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono font-bold"
                     />
                   </div>
 
@@ -1052,7 +1117,7 @@ export default function AdminSettingsPage() {
                       min={1}
                       value={maxRoomsPerProject}
                       onChange={(e) => setMaxRoomsPerProject(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl font-mono font-bold"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono font-bold"
                     />
                   </div>
                 </div>
@@ -1063,7 +1128,7 @@ export default function AdminSettingsPage() {
                     type="email"
                     value={supportEmail}
                     onChange={(e) => setSupportEmail(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-xl text-xs font-semibold"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl text-xs font-semibold"
                   />
                 </div>
 

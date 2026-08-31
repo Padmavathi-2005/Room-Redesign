@@ -11,6 +11,9 @@ export class RoomGeneration {
   @Prop({ required: false, default: '' })
   generatedImage: string; // Generated file path or URL
 
+  @Prop({ type: Array, default: [] })
+  generatedImages?: string[]; // Array of generated file paths/URLs
+
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'MediaFile', required: false })
   originalImageId?: MongooseSchema.Types.ObjectId;
 
@@ -54,6 +57,15 @@ export class RoomGeneration {
   lighting?: string;
 
   @Prop({ required: false, default: '' })
+  flooringMaterial?: string;
+
+  @Prop({ required: false, default: '' })
+  flooringFinish?: string;
+
+  @Prop({ required: false, default: '' })
+  flooringGrout?: string;
+
+  @Prop({ required: false, default: '' })
   customInstructions?: string;
 
   @Prop({ required: false, default: '' })
@@ -79,6 +91,17 @@ export class RoomGeneration {
 
   @Prop({ required: false })
   error?: string;
+
+  @Prop({ required: false, default: '' })
+  stepStatus?: string;
+
+  @Prop({ type: Array, default: [] })
+  workflowSteps?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    status: 'pending' | 'running' | 'completed' | 'error';
+  }>;
 }
 
 export const RoomSchema = SchemaFactory.createForClass(RoomGeneration);

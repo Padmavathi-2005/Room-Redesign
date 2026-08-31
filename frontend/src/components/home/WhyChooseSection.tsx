@@ -47,7 +47,7 @@ export default function WhyChooseSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative bg-white/95 border border-slate-200/90 rounded-3xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 overflow-hidden"
+          className="relative bg-white/95 border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             {/* LEFT: Stacked UI Previews */}
@@ -57,10 +57,10 @@ export default function WhyChooseSection() {
                   <img
                     src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=200&auto=format&fit=crop&q=80"
                     alt="AI Interior Design"
-                    className="w-16 h-16 rounded-xl object-cover"
+                    className="w-16 h-16 rounded-2xl object-cover"
                   />
                   <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-2xl">
                       Free AI Interior Design
                     </span>
                     <h4 className="text-xs font-bold text-slate-900 mt-1">Living Room & Bedroom Redesign</h4>
@@ -72,10 +72,10 @@ export default function WhyChooseSection() {
                   <img
                     src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=200&auto=format&fit=crop&q=80"
                     alt="AI Sketch to Render"
-                    className="w-16 h-16 rounded-xl object-cover"
+                    className="w-16 h-16 rounded-2xl object-cover"
                   />
                   <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-2xl">
                       Free AI Sketch to Render
                     </span>
                     <h4 className="text-xs font-bold text-slate-900 mt-1">Convert Sketches to 4K Renders</h4>
@@ -87,10 +87,10 @@ export default function WhyChooseSection() {
                   <img
                     src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=200&auto=format&fit=crop&q=80"
                     alt="AI Exterior Design"
-                    className="w-16 h-16 rounded-xl object-cover"
+                    className="w-16 h-16 rounded-2xl object-cover"
                   />
                   <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-2xl">
                       Free AI Exterior Design
                     </span>
                     <h4 className="text-xs font-bold text-slate-900 mt-1">Facade & Architecture Redesign</h4>
@@ -134,7 +134,7 @@ export default function WhyChooseSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative bg-white/95 border border-slate-200/90 rounded-3xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 overflow-hidden"
+          className="relative bg-white/95 border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             
@@ -172,7 +172,7 @@ export default function WhyChooseSection() {
                   className="w-full h-72 sm:h-80 object-cover group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-blue-900/20 pointer-events-none" />
-                <div className="absolute bottom-3 right-3 p-2 bg-white/90 backdrop-blur-md rounded-xl text-[11px] font-bold text-slate-800 border border-slate-200 flex items-center gap-1.5 shadow-md">
+                <div className="absolute bottom-3 right-3 p-2 bg-white/90 backdrop-blur-md rounded-2xl text-[11px] font-bold text-slate-800 border border-slate-200 flex items-center gap-1.5 shadow-md">
                   <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                   <span>AI 3D Mesh Active</span>
                 </div>
@@ -189,7 +189,7 @@ export default function WhyChooseSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative bg-white/95 border border-slate-200/90 rounded-3xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 overflow-hidden"
+          className="relative bg-white/95 border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             
@@ -201,7 +201,7 @@ export default function WhyChooseSection() {
                   alt="No Design Knowledge Required"
                   className="w-full h-72 sm:h-80 object-cover group-hover:scale-105 transition-transform duration-700"
                 />
-                <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-md rounded-xl text-xs font-bold text-slate-800 border border-slate-200 flex items-center gap-1.5 shadow-md">
+                <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-md rounded-2xl text-xs font-bold text-slate-800 border border-slate-200 flex items-center gap-1.5 shadow-md">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>Beginner Friendly</span>
                 </div>
@@ -243,7 +243,7 @@ export default function WhyChooseSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative bg-white/95 border border-slate-200/90 rounded-3xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 overflow-hidden"
+          className="relative bg-white/95 border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-8 sm:p-12 overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             
@@ -280,7 +280,7 @@ export default function WhyChooseSection() {
                   alt="Save Time and Reduce Costs"
                   className="w-full h-72 sm:h-80 object-cover group-hover:scale-105 transition-transform duration-700"
                 />
-                <div className="absolute top-3 right-3 px-3 py-1 bg-white/90 backdrop-blur-md rounded-xl text-xs font-bold text-slate-800 border border-slate-200 flex items-center gap-1.5 shadow-md">
+                <div className="absolute top-3 right-3 px-3 py-1 bg-white/90 backdrop-blur-md rounded-2xl text-xs font-bold text-slate-800 border border-slate-200 flex items-center gap-1.5 shadow-md">
                   <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                   <span>Exterior AI Renders</span>
                 </div>

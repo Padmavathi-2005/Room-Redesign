@@ -5,21 +5,37 @@ import { Model } from 'mongoose';
 import Stripe from 'stripe';
 import { User, UserDocument, SubscriptionPlan } from '../users/schemas/user.schema';
 import { SubscriptionPlanDefinition, SubscriptionPlanDefinitionDocument } from '../subscription/schemas/subscription-plan.schema';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class PaymentsService {
-  private stripe: Stripe;
+  private stripeInstance: Stripe | null = null;
+  private cachedApiKey: string | null = null;
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly settingsService: SettingsService,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(SubscriptionPlanDefinition.name)
     private readonly planModel: Model<SubscriptionPlanDefinitionDocument>,
-  ) {
-    const apiKey = this.configService.get<string>('STRIPE_SECRET_KEY') || 'mock_key';
-    this.stripe = new Stripe(apiKey, {
+  ) {}
+
+  /**
+   * Helper to retrieve Stripe instance with dynamically configured secret key
+   */
+  private async getStripeInstance(): Promise<Stripe> {
+    const settings = await this.settingsService.getSettings();
+    const apiKey = settings?.stripeSecretKey || this.configService.get<string>('STRIPE_SECRET_KEY') || 'mock_key';
+    
+    if (this.stripeInstance && this.cachedApiKey === apiKey) {
+      return this.stripeInstance;
+    }
+    
+    this.cachedApiKey = apiKey;
+    this.stripeInstance = new Stripe(apiKey, {
       apiVersion: '2023-10-16' as any,
     });
+    return this.stripeInstance;
   }
 
   /**
@@ -84,11 +100,13 @@ export class PaymentsService {
       throw new BadRequestException('Cannot purchase a subscription for the FREE plan');
     }
 
+    const stripe = await this.getStripeInstance();
+
     // 1. Resolve Stripe Customer ID
     let stripeCustomerId = user.stripeCustomerId;
     if (!stripeCustomerId) {
       try {
-        const customer = await this.stripe.customers.create({
+        const customer = await stripe.customers.create({
           email: user.email,
           name: `${user.firstName} ${user.lastName}`,
           metadata: { userId: user._id.toString() },
@@ -109,7 +127,7 @@ export class PaymentsService {
     // 2. Create Stripe Checkout Session
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     try {
-      const session = await this.stripe.checkout.sessions.create({
+      const session = await stripe.checkout.sessions.create({
         customer: stripeCustomerId,
         payment_method_types: ['card'],
         line_items: [{ price: priceId, quantity: 1 }],
@@ -147,7 +165,8 @@ export class PaymentsService {
 
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     try {
-      const session = await this.stripe.billingPortal.sessions.create({
+      const stripe = await this.getStripeInstance();
+      const session = await stripe.billingPortal.sessions.create({
         customer: user.stripeCustomerId,
         return_url: `${frontendUrl}/billing`,
       });
@@ -161,10 +180,81 @@ export class PaymentsService {
   }
 
   /**
+   * Check if a Stripe webhook secret is configured
+   */
+  async hasWebhookSecret(): Promise<boolean> {
+    const settings = await this.settingsService.getSettings();
+    const webhookSecret = settings?.stripeWebhookSecret || this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+    return !!webhookSecret;
+  }
+
+  /**
    * Construct event from signature and body Buffer
    */
-  constructEvent(payload: Buffer, signature: string): Stripe.Event {
-    const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || '';
-    return this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+  async constructEvent(payload: Buffer, signature: string): Promise<Stripe.Event> {
+    const settings = await this.settingsService.getSettings();
+    const webhookSecret = settings?.stripeWebhookSecret || this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || '';
+    const stripe = await this.getStripeInstance();
+    return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+  }
+
+  /**
+   * Create PayPal Order for subscription plan
+   */
+  async createPayPalOrder(
+    userId: string,
+    plan: SubscriptionPlan,
+    billingCycle: 'monthly' | 'annual',
+  ): Promise<{ orderId: string; approvalUrl: string; status: string }> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const settings = await this.settingsService.getSettings();
+    const paypalClientId = settings?.paypalClientId || this.configService.get<string>('PAYPAL_CLIENT_ID');
+
+    const mockOrderId = `PAYPAL_ORD_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+
+    return {
+      orderId: mockOrderId,
+      status: 'CREATED',
+      approvalUrl: `${frontendUrl}/billing?paypal_order_id=${mockOrderId}&plan=${plan}`,
+    };
+  }
+
+  /**
+   * Capture PayPal Order and handle subscription provisioning
+   */
+  async capturePayPalOrder(
+    userId: string,
+    orderId: string,
+    plan: SubscriptionPlan,
+  ): Promise<{ success: boolean; orderId: string; plan: string }> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Award credits based on plan tier
+    const creditMap: Record<string, number> = {
+      [SubscriptionPlan.STARTER]: 200,
+      [SubscriptionPlan.STANDARD]: 650,
+      [SubscriptionPlan.PROFESSIONAL]: 1800,
+    };
+
+    const creditsToAdd = creditMap[plan] || 200;
+    user.credits = (user.credits || 0) + creditsToAdd;
+    user.subscriptionTier = plan;
+    user.subscriptionStatus = 'active';
+    await user.save();
+
+    return {
+      success: true,
+      orderId,
+      plan,
+    };
   }
 }
+

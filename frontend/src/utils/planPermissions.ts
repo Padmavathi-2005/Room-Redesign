@@ -58,7 +58,7 @@ export function isModelAllowedForUser(modelSlug: string, user?: any): boolean {
     return PLAN_MODEL_PERMISSIONS.FREE.includes(modelSlug);
   }
 
-  if (user.role === 'admin' || user.role === 'ADMIN') {
+  if (user.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(user.role)) {
     return true;
   }
 

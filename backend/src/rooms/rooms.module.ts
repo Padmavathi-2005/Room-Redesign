@@ -8,6 +8,7 @@ import { UploadsModule } from '../modules/uploads/uploads.module';
 import { ProviderManagerModule } from '../modules/provider-manager/provider-manager.module';
 import { ProjectsModule } from '../modules/projects/projects.module';
 import { UsersModule } from '../modules/users/users.module';
+import { QueueModule } from '../queue/queue.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { UsersModule } from '../modules/users/users.module';
     ProviderManagerModule,
     ProjectsModule,
     UsersModule,
+    QueueModule,
   ],
   controllers: [RoomsController],
   providers: [RoomsService],

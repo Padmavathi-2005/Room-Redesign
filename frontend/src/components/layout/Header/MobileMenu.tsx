@@ -13,7 +13,7 @@ interface MobileMenuProps {
 }
 
 const PUBLIC_NAV_LINKS = [
-  { label: 'Features', href: '/#features' },
+  { label: 'Designs', href: '/designs' },
   { label: 'AI Models', href: '/tools' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'About', href: '/about' },
@@ -23,10 +23,14 @@ const PUBLIC_NAV_LINKS = [
 
 const DASHBOARD_NAV_LINKS = [
   { label: 'Dashboard', href: '/dashboard' },
+  { label: 'My Designs', href: '/designs' },
   { label: 'Projects', href: '/projects' },
-  { label: 'Generate', href: '/generate' },
-  { label: 'Subscription Plans', href: '/pricing' },
-  { label: 'Profile', href: '/settings' },
+  { label: 'AI Tools', href: '/generate' },
+  { label: 'Templates', href: '/templates' },
+  { label: 'Wishlist', href: '/wishlist' },
+  { label: 'Shopping List', href: '/shopping-list' },
+  { label: 'Credits & Plans', href: '/pricing' },
+  { label: 'Profile Settings', href: '/profile' },
 ];
 
 export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
@@ -34,13 +38,16 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
   const pathname = usePathname();
 
   const isDashboardRoute =
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/generate') ||
-    pathname.startsWith('/projects') ||
-    pathname.startsWith('/history') ||
-    pathname.startsWith('/settings') ||
-    pathname.startsWith('/billing') ||
-    pathname.startsWith('/upload');
+    pathname !== '/' &&
+    (pathname.startsWith('/dashboard') ||
+     pathname.startsWith('/generate') ||
+     pathname.startsWith('/designs') ||
+     pathname.startsWith('/projects') ||
+     pathname.startsWith('/templates') ||
+     pathname.startsWith('/wishlist') ||
+     pathname.startsWith('/shopping-list') ||
+     pathname.startsWith('/profile') ||
+     pathname.startsWith('/pricing'));
 
   const navLinks = isDashboardRoute ? DASHBOARD_NAV_LINKS : PUBLIC_NAV_LINKS;
 
@@ -85,7 +92,7 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
                   <Logo />
                   <button
                     onClick={toggleMenu}
-                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    className="p-2 rounded-2xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -103,7 +110,7 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
                     <Search className="w-4 h-4 text-blue-600" />
                     <span>Search RoomAI...</span>
                   </div>
-                  <kbd className="px-2 py-0.5 text-[10px] bg-white dark:bg-slate-900 rounded-md border text-slate-400">
+                  <kbd className="px-2 py-0.5 text-[10px] bg-white dark:bg-slate-900 rounded-2xl border text-slate-400">
                     ⌘K
                   </kbd>
                 </button>

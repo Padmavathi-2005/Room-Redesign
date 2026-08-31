@@ -49,6 +49,18 @@ export class PublishProjectDto {
   @IsOptional()
   totalImageCount?: number;
 
+  @IsNumber()
+  @IsOptional()
+  originalPrice?: number;
+
+  @IsNumber()
+  @IsOptional()
+  discount?: number;
+
+  @IsString()
+  @IsOptional()
+  beforeImageUrl?: string;
+
   @IsArray()
   @IsOptional()
   tags?: string[];

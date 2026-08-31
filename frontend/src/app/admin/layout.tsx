@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, LayoutGrid, Shield, User, ChevronRight, Settings, LayoutDashboard, CreditCard, Search, Bell, Menu, X, Wand2, FileText } from 'lucide-react';
+import { LogOut, LayoutGrid, Shield, User, ChevronRight, Settings, LayoutDashboard, CreditCard, Search, Bell, Menu, X, Wand2, FileText, BarChart3, Receipt, ShieldCheck, Users } from 'lucide-react';
 import Link from 'next/link';
 
 interface AdminUserProfile {
@@ -56,54 +56,108 @@ export default function AdminLayout({
     return <>{children}</>;
   }
 
-  const navItems = [
+  const navSections = [
     {
-      label: 'Dashboard',
-      href: '/admin/dashboard',
-      icon: <LayoutDashboard className="w-4 h-4" />,
-      active: pathname === '/admin/dashboard',
+      category: 'OVERVIEW',
+      items: [
+        {
+          label: 'Dashboard',
+          href: '/admin/dashboard',
+          icon: <LayoutDashboard className="w-4 h-4" />,
+          active: pathname === '/admin/dashboard',
+        },
+        {
+          label: 'Analytics & Revenue',
+          href: '/admin/analytics',
+          icon: <BarChart3 className="w-4 h-4" />,
+          active: pathname === '/admin/analytics',
+        },
+      ],
     },
     {
-      label: 'AI Models & Tools',
-      href: '/admin/models',
-      icon: <Wand2 className="w-4 h-4" />,
-      active: pathname === '/admin/models',
+      category: 'AI & ENGINE',
+      items: [
+        {
+          label: 'AI Models & Tools',
+          href: '/admin/models',
+          icon: <Wand2 className="w-4 h-4" />,
+          active: pathname === '/admin/models',
+        },
+        {
+          label: 'Converted Images',
+          href: '/admin/images',
+          icon: <Shield className="w-4 h-4" />,
+          active: pathname === '/admin/images',
+        },
+      ],
     },
     {
-      label: 'Users Management',
-      href: '/admin/users',
-      icon: <User className="w-4 h-4" />,
-      active: pathname === '/admin/users',
+      category: 'USERS & ACCESS',
+      items: [
+        {
+          label: 'Users Console',
+          href: '/admin/users',
+          icon: <User className="w-4 h-4" />,
+          active: pathname === '/admin/users',
+        },
+        {
+          label: 'Projects & Rooms',
+          href: '/admin/projects',
+          icon: <LayoutGrid className="w-4 h-4" />,
+          active: pathname === '/admin/projects',
+        },
+        {
+          label: 'Admin Team & Roles',
+          href: '/admin/admins',
+          icon: <Users className="w-4 h-4" />,
+          active: pathname === '/admin/admins',
+        },
+      ],
     },
     {
-      label: 'Projects Management',
-      href: '/admin/projects',
-      icon: <LayoutGrid className="w-4 h-4" />,
-      active: pathname === '/admin/projects',
+      category: 'MONETIZATION',
+      items: [
+        {
+          label: 'Subscription Plans',
+          href: '/admin/plans',
+          icon: <CreditCard className="w-4 h-4" />,
+          active: pathname === '/admin/plans',
+        },
+        {
+          label: 'Transactions & Invoices',
+          href: '/admin/transactions',
+          icon: <Receipt className="w-4 h-4" />,
+          active: pathname === '/admin/transactions',
+        },
+      ],
     },
     {
-      label: 'CMS & Custom Pages',
-      href: '/admin/cms',
-      icon: <FileText className="w-4 h-4" />,
-      active: pathname.startsWith('/admin/cms'),
+      category: 'CONTENT',
+      items: [
+        {
+          label: 'CMS & Custom Pages',
+          href: '/admin/cms',
+          icon: <FileText className="w-4 h-4" />,
+          active: pathname.startsWith('/admin/cms'),
+        },
+      ],
     },
     {
-      label: 'Converted Images',
-      href: '/admin/images',
-      icon: <Shield className="w-4 h-4" />,
-      active: pathname === '/admin/images',
-    },
-    {
-      label: 'Subscription Plans',
-      href: '/admin/plans',
-      icon: <CreditCard className="w-4 h-4" />,
-      active: pathname === '/admin/plans',
-    },
-    {
-      label: 'Admin Settings',
-      href: '/admin/settings',
-      icon: <Settings className="w-4 h-4" />,
-      active: pathname === '/admin/settings',
+      category: 'SYSTEM',
+      items: [
+        {
+          label: 'Admin Settings',
+          href: '/admin/settings',
+          icon: <Settings className="w-4 h-4" />,
+          active: pathname === '/admin/settings',
+        },
+        {
+          label: 'Audit & API Logs',
+          href: '/admin/logs',
+          icon: <ShieldCheck className="w-4 h-4" />,
+          active: pathname === '/admin/logs',
+        },
+      ],
     },
   ];
 
@@ -113,18 +167,26 @@ export default function AdminLayout({
     switch (pathname) {
       case '/admin/dashboard':
         return 'Dashboard Overview';
+      case '/admin/analytics':
+        return 'Analytics & Revenue Dashboard';
       case '/admin/models':
         return 'AI Models & Image Catalog';
       case '/admin/users':
         return 'Users Management Console';
       case '/admin/projects':
         return 'Project & Room Management';
+      case '/admin/admins':
+        return 'Admin Team & Roles Control';
       case '/admin/images':
         return 'Converted Images Gallery';
       case '/admin/plans':
         return 'Subscription Plans Manager';
+      case '/admin/transactions':
+        return 'Transactions & Payment Records';
       case '/admin/settings':
         return 'Admin Settings Console';
+      case '/admin/logs':
+        return 'Audit & System API Logs';
       default:
         return 'Admin Control Panel';
     }
@@ -154,68 +216,73 @@ export default function AdminLayout({
       >
 
         
-        {/* Top brand & navigation portion */}
-        <div className="p-4 flex-1 overflow-y-auto">
-          {/* Brand Header */}
-          <div className="flex items-center justify-between px-2 py-1">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 flex items-center justify-center shadow-md border border-indigo-400/20 shrink-0">
-                <Shield className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <span className="text-sm font-black text-slate-900 tracking-tight block leading-tight">
-                  RoomAI
-                </span>
-                <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest block">
-                  Admin Control
-                </span>
-              </div>
+        {/* Fixed Top Brand Header */}
+        <div className="h-16 px-4 border-b border-slate-200/80 shrink-0 bg-white z-10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 flex items-center justify-center shadow-md border border-indigo-400/20 shrink-0">
+              <Shield className="w-4 h-4 text-white" />
             </div>
-
-            {/* Mobile Sidebar Close Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-              aria-label="Close menu"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div>
+              <span className="text-sm font-black text-slate-900 tracking-tight block leading-tight">
+                RoomAI
+              </span>
+              <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest block">
+                Admin Control
+              </span>
+            </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="mt-6 space-y-1">
-            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-2.5 mb-2">
-              Workspace
-            </p>
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-150 group ${
-                  item.active
-                    ? 'bg-indigo-600 text-white shadow-sm font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 font-semibold'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className={`shrink-0 transition-colors ${item.active ? 'text-white' : 'text-slate-400 group-hover:text-indigo-600'}`}>
-                    {item.icon}
-                  </div>
-                  <span className="truncate">{item.label}</span>
+          {/* Mobile Sidebar Close Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="lg:hidden p-1.5 rounded-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Scrollable Navigation Links Grouped by Category */}
+        <div className="p-4 flex-1 overflow-y-auto">
+          <nav className="space-y-4">
+            {navSections.map((section) => (
+              <div key={section.category}>
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-2.5 mb-1.5">
+                  {section.category}
+                </p>
+                <div className="space-y-1">
+                  {section.items.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl text-xs transition-all duration-150 group ${
+                        item.active
+                          ? 'bg-indigo-600 text-white shadow-sm font-bold'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 font-semibold'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className={`shrink-0 transition-colors ${item.active ? 'text-white' : 'text-slate-400 group-hover:text-indigo-600'}`}>
+                          {item.icon}
+                        </div>
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      {!item.active && (
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-350 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500" />
+                      )}
+                    </Link>
+                  ))}
                 </div>
-                {!item.active && (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-350 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500" />
-                )}
-              </Link>
+              </div>
             ))}
           </nav>
         </div>
 
         {/* Bottom Profile and Sign Out portion */}
-        <div className="p-3 border-t border-slate-150 space-y-2 bg-slate-50/50">
+        <div className="p-3 border-t border-slate-200/80 space-y-2 bg-slate-50/50">
           {/* Profile Card */}
-          <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white border border-slate-200/70 shadow-2xs">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 font-bold text-xs">
+          <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-white border border-slate-200/70 shadow-2xs">
+            <div className="w-8 h-8 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 font-bold text-xs">
               AD
             </div>
             <div className="min-w-0 flex-1">
@@ -227,7 +294,7 @@ export default function AdminLayout({
           {/* Sign Out Button */}
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all cursor-pointer"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5 shrink-0 text-rose-500" />
             <span>Sign Out</span>
@@ -240,13 +307,13 @@ export default function AdminLayout({
       <div className="flex-1 min-w-0 h-screen flex flex-col relative overflow-hidden">
         
         {/* Sticky Attached Header (Top Bar) */}
-        <header className="sticky top-0 z-10 bg-[#FCFCFD] border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3 shadow-2xs">
+        <header className="h-16 shrink-0 sticky top-0 z-20 bg-[#FCFCFD]/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-3 min-w-0">
 
             {/* Mobile Menu Toggle Button */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs shrink-0"
+              className="lg:hidden p-2 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs shrink-0"
               aria-label="Open navigation menu"
             >
               <Menu className="w-4 h-4" />
@@ -265,18 +332,18 @@ export default function AdminLayout({
                 type="text"
                 placeholder="Search resources..."
                 disabled
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none placeholder-slate-450 opacity-80"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none placeholder-slate-450 opacity-80"
               />
             </div>
 
             {/* Notification Bell */}
-            <button className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition-all relative">
+            <button className="p-2 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition-all relative">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
             </button>
 
             {/* Avatar indicator */}
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-black text-indigo-600 uppercase shadow-2xs shrink-0">
+            <div className="w-8 h-8 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-black text-indigo-600 uppercase shadow-2xs shrink-0">
               AD
             </div>
           </div>

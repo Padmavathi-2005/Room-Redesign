@@ -217,9 +217,25 @@ export class ProjectsService {
   }
 
   /**
-   * Update Chat Session ID
+   * Update Chat Session ID while preserving session history
    */
   async updateChatId(id: string, manusChatId: string): Promise<any> {
+    if (!manusChatId) return null;
+    if (Types.ObjectId.isValid(id)) {
+      const project = await this.projectModel.findById(id).exec();
+      if (project) {
+        const history: string[] = Array.isArray(project.manusChatHistory) ? [...project.manusChatHistory] : [];
+        if (project.manusChatId && !history.includes(project.manusChatId)) {
+          history.push(project.manusChatId);
+        }
+        if (!history.includes(manusChatId)) {
+          history.push(manusChatId);
+        }
+        project.manusChatId = manusChatId;
+        project.manusChatHistory = history;
+        return project.save();
+      }
+    }
     return this.update(id, { manusChatId } as any);
   }
 

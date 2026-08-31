@@ -51,7 +51,7 @@ export default function AdminImagesPage() {
           {/* Original Thumbnail */}
           <div className="space-y-0.5">
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Original</span>
-            <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-2xs shrink-0">
+            <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-2xs shrink-0">
               <img src={img.originalImage} alt="Original" className="w-full h-full object-cover" />
             </div>
           </div>
@@ -61,7 +61,7 @@ export default function AdminImagesPage() {
           {/* AI Result Thumbnail */}
           <div className="space-y-0.5">
             <span className="text-[9px] font-bold text-purple-600 uppercase tracking-wider block font-heading">AI Result</span>
-            <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-slate-900 border border-purple-300 shadow-2xs shrink-0">
+            <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-900 border border-purple-300 shadow-2xs shrink-0">
               <img
                 src={img.generatedImage || img.originalImage}
                 alt="AI Result"
@@ -81,7 +81,7 @@ export default function AdminImagesPage() {
           <span className="font-extrabold text-slate-900 font-heading block text-xs">
             {img.roomType || 'Room Redesign'}
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-extrabold font-heading">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-2xl bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-extrabold font-heading">
             <Sparkles className="w-2.5 h-2.5 text-purple-600" />
             {img.theme || 'Modern'}
           </span>
@@ -151,7 +151,7 @@ export default function AdminImagesPage() {
               href={resultUrl}
               target="_blank"
               download="converted_room_hd.jpg"
-              className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-xs transition-all flex items-center gap-1 cursor-pointer font-heading"
+              className="px-3 py-1.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-xs transition-all flex items-center gap-1 cursor-pointer font-heading"
             >
               <Download className="w-3.5 h-3.5" />
               <span>HD Download</span>
@@ -165,7 +165,7 @@ export default function AdminImagesPage() {
   return (
     <div className="space-y-6">
       {/* PAGE HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs">
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-extrabold rounded-full font-heading">
             <ImageIcon className="w-3.5 h-3.5" />
@@ -183,7 +183,7 @@ export default function AdminImagesPage() {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer font-heading ${
+              className={`px-3 py-1.5 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer font-heading ${
                 viewMode === 'table' ? 'bg-white text-purple-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -193,7 +193,7 @@ export default function AdminImagesPage() {
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer font-heading ${
+              className={`px-3 py-1.5 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer font-heading ${
                 viewMode === 'grid' ? 'bg-white text-purple-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -237,12 +237,12 @@ export default function AdminImagesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading
             ? Array.from({ length: 6 }).map((_, idx) => (
-                <div key={idx} className="h-64 bg-slate-100 rounded-3xl animate-pulse" />
+                <div key={idx} className="h-64 bg-slate-100 rounded-2xl animate-pulse" />
               ))
             : images.map((img) => (
                 <div
                   key={img._id || img.id}
-                  className="bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all space-y-4 p-4"
+                  className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all space-y-4 p-4"
                 >
                   <div className="relative h-48 bg-slate-900 rounded-2xl overflow-hidden border border-slate-200">
                     <img
@@ -250,10 +250,10 @@ export default function AdminImagesPage() {
                       alt={img.roomType || 'Converted Room'}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-3 left-3 px-2.5 py-1 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-extrabold rounded-lg font-heading">
+                    <div className="absolute top-3 left-3 px-2.5 py-1 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-extrabold rounded-2xl font-heading">
                       {img.roomType || 'Room'}
                     </div>
-                    <div className="absolute top-3 right-3 px-2.5 py-1 bg-purple-600 text-white text-[10px] font-extrabold rounded-lg font-heading shadow-xs">
+                    <div className="absolute top-3 right-3 px-2.5 py-1 bg-purple-600 text-white text-[10px] font-extrabold rounded-2xl font-heading shadow-xs">
                       {img.theme || 'Modern'}
                     </div>
                   </div>
@@ -280,7 +280,7 @@ export default function AdminImagesPage() {
                       href={img.generatedImage || img.originalImage}
                       target="_blank"
                       download="converted_room.jpg"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-xs font-heading cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-xs font-heading cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Download HD</span>

@@ -23,8 +23,11 @@ export class EditingPromptBuilder implements IPromptBuilder {
       subject = `transform room lighting atmosphere to ${lighting} ambient warm glow`;
     } else if (slug === 'ai-room-cleaner') {
       subject = 'de-clutter and clean room interior, removing all stray boxes, mess, and trash to reveal pristine empty room space';
-    } else if (slug === 'ai-flooring-design') {
-      subject = `replace room floor material with high quality premium ${palette || 'herringbone oak hardwood'} flooring`;
+    } else if (slug === 'ai-flooring-design' || slug === 'flooring-visualizer') {
+      const material = options.flooringMaterial || options.colorPalette || 'herringbone oak hardwood';
+      const finish = options.flooringFinish || 'high gloss polished';
+      const grout = options.flooringGrout || 'clean joints';
+      subject = `replace room floor surface material with high quality premium ${material} flooring, ${finish} finish with ${grout}`;
     }
 
     const preservationClause = 'preserve all furniture locations, window openings, doors, and original room structural boundaries';

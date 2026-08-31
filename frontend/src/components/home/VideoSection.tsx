@@ -60,13 +60,13 @@ export default function VideoSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative max-w-4xl mx-auto aspect-[16/9] w-full rounded-3xl overflow-hidden bg-slate-900 border border-indigo-100 shadow-2xl group"
+          className="relative max-w-4xl mx-auto aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-900 border border-indigo-100 shadow-2xl group"
         >
           {/* Before & After Overlays */}
-          <div className="absolute top-4 left-4 px-3 py-1 bg-slate-900/80 backdrop-blur-md rounded-xl text-[10px] font-extrabold uppercase tracking-wider text-white border border-white/20 z-20 pointer-events-none">
+          <div className="absolute top-4 left-4 px-3 py-1 bg-slate-900/80 backdrop-blur-md rounded-2xl text-[10px] font-extrabold uppercase tracking-wider text-white border border-white/20 z-20 pointer-events-none">
             BEFORE
           </div>
-          <div className="absolute top-4 right-4 px-3 py-1 bg-indigo-600/90 backdrop-blur-md rounded-xl text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md border border-white/30 z-20 pointer-events-none">
+          <div className="absolute top-4 right-4 px-3 py-1 bg-indigo-600/90 backdrop-blur-md rounded-2xl text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md border border-white/30 z-20 pointer-events-none">
             AFTER
           </div>
 

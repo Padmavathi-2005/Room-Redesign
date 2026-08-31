@@ -42,7 +42,9 @@ export default function AdminDashboardPage() {
 
       const profileData = await profileRes.json();
       
-      if (!profileData || !profileData.success || !profileData.data || profileData.data.user?.role !== 'admin') {
+      const isAdminRole = profileData?.data?.user?.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(profileData.data.user.role);
+
+      if (!profileData || !profileData.success || !profileData.data || !isAdminRole) {
         setIsAdmin(false);
         setLoading(false);
         setTimeout(() => {
@@ -94,7 +96,7 @@ export default function AdminDashboardPage() {
   if (isAdmin === false) {
     return (
       <div className="min-h-[50vh] bg-transparent text-slate-900 flex flex-col items-center justify-center p-6 text-center">
-        <div className="p-6 rounded-3xl bg-red-50 border border-red-200 max-w-md space-y-6">
+        <div className="p-6 rounded-2xl bg-red-50 border border-red-200 max-w-md space-y-6">
           <ShieldAlert className="w-16 h-16 text-red-650 mx-auto" />
           <div className="space-y-2">
             <h1 className="text-xl font-black text-slate-900">Access Denied</h1>
@@ -163,9 +165,9 @@ export default function AdminDashboardPage() {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((kpi) => (
-          <div key={kpi.title} className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition-all">
+          <div key={kpi.title} className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition-all">
             <div className="flex items-center justify-between">
-              <div className="p-2.5 bg-slate-50 border border-slate-200/60 rounded-xl">
+              <div className="p-2.5 bg-slate-50 border border-slate-200/60 rounded-2xl">
                 {kpi.icon}
               </div>
               <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${kpi.badgeColor}`}>
@@ -185,7 +187,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Tier Distribution Graph */}
-        <div className="lg:col-span-2 p-8 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-6">
+        <div className="lg:col-span-2 p-8 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-6">
           <div>
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Subscribers Tier Distribution</h3>
             <p className="text-[10px] font-semibold text-slate-500 mt-1">Breakdown of active subscription memberships per pricing plan.</p>
@@ -210,7 +212,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Integration Status Panel */}
-        <div className="p-8 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-6">
+        <div className="p-8 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-6">
           <div>
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-indigo-600" />
@@ -249,7 +251,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Recent Activity Log Feed */}
-      <div className="p-8 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-6">
+      <div className="p-8 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-6">
         <div>
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Recent Workspace logs</h3>
           <p className="text-[10px] font-semibold text-slate-500 mt-1">Real-time audit log of system tasks and administrator changes.</p>

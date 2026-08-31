@@ -90,16 +90,16 @@ export default function Footer() {
 
             {/* Social Icons */}
             <div className="flex items-center gap-3 pt-2">
-              <a href="#" className="p-2.5 rounded-xl bg-slate-900 text-slate-200 hover:text-white hover:bg-blue-600 border border-slate-700 transition-colors">
+              <a href="#" className="p-2.5 rounded-2xl bg-slate-900 text-slate-200 hover:text-white hover:bg-blue-600 border border-slate-700 transition-colors">
                 <Twitter className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2.5 rounded-xl bg-slate-900 text-slate-200 hover:text-white hover:bg-blue-600 border border-slate-700 transition-colors">
+              <a href="#" className="p-2.5 rounded-2xl bg-slate-900 text-slate-200 hover:text-white hover:bg-blue-600 border border-slate-700 transition-colors">
                 <Linkedin className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2.5 rounded-xl bg-slate-900 text-slate-200 hover:text-white hover:bg-blue-600 border border-slate-700 transition-colors">
+              <a href="#" className="p-2.5 rounded-2xl bg-slate-900 text-slate-200 hover:text-white hover:bg-blue-600 border border-slate-700 transition-colors">
                 <Github className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2.5 rounded-xl bg-slate-900 text-slate-200 hover:text-white hover:bg-blue-600 border border-slate-700 transition-colors">
+              <a href="#" className="p-2.5 rounded-2xl bg-slate-900 text-slate-200 hover:text-white hover:bg-blue-600 border border-slate-700 transition-colors">
                 <MessageSquare className="w-4 h-4" />
               </a>
             </div>
@@ -145,7 +145,7 @@ export default function Footer() {
                 <button
                   type="submit"
                   aria-label="Subscribe"
-                  className="absolute right-1.5 top-1.5 bottom-1.5 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl transition-all flex items-center justify-center shadow-md shadow-blue-500/20"
+                  className="absolute right-1.5 top-1.5 bottom-1.5 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl transition-all flex items-center justify-center shadow-md shadow-blue-500/20"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>

@@ -250,12 +250,12 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <div className="min-h-screen bg-slate-100/70 pt-24 pb-16">
-        <div className="max-w-xl mx-auto px-4 text-center bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+        <div className="max-w-xl mx-auto px-4 text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <h2 className="text-lg font-extrabold text-slate-900 font-heading">Project Not Found</h2>
           <p className="text-xs text-slate-500">The requested project could not be found or was removed.</p>
           <Link
             href="/projects"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold font-heading"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-purple-600 text-white text-xs font-bold font-heading"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Projects Workspace
@@ -272,7 +272,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="min-h-screen mesh-bg blueprint-grid pt-20 pb-16 text-slate-900 selection:bg-purple-600 selection:text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <div className="max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 space-y-6">
         
         {/* TOP NAVIGATION LINK */}
         <div>
@@ -286,7 +286,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* UNIFIED HERO HEADER & STUDIO STATS */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             {/* LEFT: PROJECT TITLE & DESCRIPTION */}
             <div className="space-y-2">
@@ -392,13 +392,13 @@ export default function ProjectDetailPage() {
 
           <div className="flex items-center gap-2 flex-wrap shrink-0">
             <span
-              className="px-3 py-1 rounded-xl text-[11px] font-extrabold font-heading border bg-white/90 shadow-2xs"
+              className="px-3 py-1 rounded-2xl text-[11px] font-extrabold font-heading border bg-white/90 shadow-2xs"
               style={themeColors.primaryBorderStyle}
             >
               🪵 {(designTheme.materials || ['Light Oak', 'Linen']).join(', ')}
             </span>
             <span
-              className="px-3 py-1 rounded-xl text-[11px] font-extrabold font-heading border bg-white/90 shadow-2xs"
+              className="px-3 py-1 rounded-2xl text-[11px] font-extrabold font-heading border bg-white/90 shadow-2xs"
               style={themeColors.primaryBorderStyle}
             >
               💡 {designTheme.lighting || 'Warm Ambient 3000K'}
@@ -433,7 +433,7 @@ export default function ProjectDetailPage() {
           </div>
 
           {rooms.length === 0 ? (
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-12 text-center space-y-4 shadow-sm">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-12 text-center space-y-4 shadow-sm">
               <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mx-auto">
                 <ImageIcon className="w-6 h-6" />
               </div>
@@ -446,7 +446,7 @@ export default function ProjectDetailPage() {
               <button
                 type="button"
                 onClick={() => setIsRoomModalOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 text-white font-extrabold text-xs shadow-md font-heading"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-purple-600 text-white font-extrabold text-xs shadow-md font-heading"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add First Room</span>
@@ -463,7 +463,7 @@ export default function ProjectDetailPage() {
                   <Link
                     key={roomId}
                     href={`/projects/${projectId}/rooms/${roomId}`}
-                    className="bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
+                    className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
                   >
                     <div>
                       <div className="relative h-44 bg-slate-900 overflow-hidden">
@@ -472,7 +472,7 @@ export default function ProjectDetailPage() {
                           alt={room.name || room.roomType}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute top-3 left-3 px-3 py-1 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-extrabold rounded-xl">
+                        <div className="absolute top-3 left-3 px-3 py-1 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-extrabold rounded-2xl">
                           {room.roomType || 'Room'}
                         </div>
                       </div>
@@ -508,7 +508,7 @@ export default function ProjectDetailPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 max-w-5xl w-full max-h-[88vh] overflow-y-auto overflow-x-hidden shadow-2xl space-y-6 relative text-left custom-modal-scroll"
+              className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 max-w-5xl w-full max-h-[88vh] overflow-y-auto overflow-x-hidden shadow-2xl space-y-6 relative text-left custom-modal-scroll"
             >
               {/* MODAL HEADER */}
               <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
@@ -559,7 +559,7 @@ export default function ProjectDetailPage() {
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
                         <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Design Style</label>
-                        <div className="px-2.5 py-1.5 bg-white/90 border rounded-xl font-bold text-slate-800 text-[11px] flex items-center justify-between shadow-2xs" style={themeColors.primaryBorderStyle}>
+                        <div className="px-2.5 py-1.5 bg-white/90 border rounded-2xl font-bold text-slate-800 text-[11px] flex items-center justify-between shadow-2xs" style={themeColors.primaryBorderStyle}>
                           <span className="truncate">{project?.theme || 'Modern Minimalist'}</span>
                           <Lock className="w-3 h-3 shrink-0 ml-1" style={themeColors.primaryTextStyle} />
                         </div>
@@ -567,7 +567,7 @@ export default function ProjectDetailPage() {
 
                       <div>
                         <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Color Palette</label>
-                        <div className="px-2.5 py-1.5 bg-white/90 border rounded-xl font-bold text-slate-800 text-[11px] flex items-center justify-between shadow-2xs" style={themeColors.primaryBorderStyle}>
+                        <div className="px-2.5 py-1.5 bg-white/90 border rounded-2xl font-bold text-slate-800 text-[11px] flex items-center justify-between shadow-2xs" style={themeColors.primaryBorderStyle}>
                           <span className="truncate">{project?.colorPalette || 'Warm White & Brass'}</span>
                           <Lock className="w-3 h-3 shrink-0 ml-1" style={themeColors.primaryTextStyle} />
                         </div>
@@ -603,7 +603,7 @@ export default function ProjectDetailPage() {
                               setSelectedMaterials(['Light Oak Hardwood']);
                             }
                           }}
-                          className={`px-2.5 py-2 rounded-xl text-xs font-extrabold transition-all border flex items-center justify-center gap-1 cursor-pointer font-heading ${
+                          className={`px-2.5 py-2 rounded-2xl text-xs font-extrabold transition-all border flex items-center justify-center gap-1 cursor-pointer font-heading ${
                             domainScope === scope.id
                               ? 'border-transparent shadow-sm'
                               : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
@@ -667,7 +667,7 @@ export default function ProjectDetailPage() {
                           ? 'e.g. Ground Floor Master Layout'
                           : 'e.g. Master Bedroom'
                       }
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600"
                     />
                   </div>
 
@@ -679,7 +679,7 @@ export default function ProjectDetailPage() {
                     <select
                       value={roomType}
                       onChange={(e) => setRoomType(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 cursor-pointer"
                     >
                       {getCategoryOptions().map((type) => (
                         <option key={type} value={type}>
@@ -707,7 +707,7 @@ export default function ProjectDetailPage() {
                             key={mat}
                             type="button"
                             onClick={() => toggleMaterial(mat)}
-                            className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold transition-all border cursor-pointer font-heading flex items-center gap-1 ${
+                            className={`px-2.5 py-1 rounded-2xl text-[10px] font-extrabold transition-all border cursor-pointer font-heading flex items-center gap-1 ${
                               isSelected
                                 ? 'border-transparent shadow-2xs'
                                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -737,7 +737,7 @@ export default function ProjectDetailPage() {
                           key={opt.id}
                           type="button"
                           onClick={() => setFurnitureHandling(opt.id as any)}
-                          className={`px-2 py-2 rounded-xl text-[10px] font-extrabold border transition-all text-center cursor-pointer font-heading ${
+                          className={`px-2 py-2 rounded-2xl text-[10px] font-extrabold border transition-all text-center cursor-pointer font-heading ${
                             furnitureHandling === opt.id
                               ? 'border-transparent shadow-2xs'
                               : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -761,7 +761,7 @@ export default function ProjectDetailPage() {
                           key={b}
                           type="button"
                           onClick={() => setBudgetLevel(b as any)}
-                          className={`px-2 py-2 rounded-xl text-[10px] font-extrabold border transition-all text-center cursor-pointer font-heading ${
+                          className={`px-2 py-2 rounded-2xl text-[10px] font-extrabold border transition-all text-center cursor-pointer font-heading ${
                             budgetLevel === b
                               ? 'border-transparent shadow-2xs'
                               : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -790,7 +790,7 @@ export default function ProjectDetailPage() {
                           ? 'e.g. Convert 2D draft drawing into photorealistic 3D interior render with oak hardwood flooring...'
                           : 'e.g. Add a velvet emerald sofa, oak wall slats, and warm 3000K ambient illumination...'
                       }
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 resize-none font-semibold"
+                      className="w-full p-3 bg-white border border-slate-200 rounded-2xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 resize-none font-semibold"
                     />
                   </div>
 
@@ -806,7 +806,7 @@ export default function ProjectDetailPage() {
                     <button
                       type="submit"
                       disabled={isAddingRoom}
-                      className="px-5 py-2.5 rounded-xl text-white font-extrabold text-xs shadow-md hover:shadow-lg transition-all font-heading cursor-pointer flex items-center gap-2"
+                      className="px-5 py-2.5 rounded-2xl text-white font-extrabold text-xs shadow-md hover:shadow-lg transition-all font-heading cursor-pointer flex items-center gap-2"
                       style={themeColors.primaryStyle}
                     >
                       <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
@@ -876,11 +876,11 @@ export default function ProjectDetailPage() {
                           <span className="font-bold text-slate-700 font-heading">
                             {showcaseMode === 'slider' ? '↔ Drag Line to Compare' : 'Side-by-Side View'}
                           </span>
-                          <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg text-[10px] font-bold font-heading">
+                          <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-2xl text-[10px] font-bold font-heading">
                             <button
                               type="button"
                               onClick={() => setShowcaseMode('slider')}
-                              className={`px-2 py-0.5 rounded-md transition-all ${
+                              className={`px-2 py-0.5 rounded-2xl transition-all ${
                                 showcaseMode === 'slider' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600'
                               }`}
                             >
@@ -889,7 +889,7 @@ export default function ProjectDetailPage() {
                             <button
                               type="button"
                               onClick={() => setShowcaseMode('sideBySide')}
-                              className={`px-2 py-0.5 rounded-md transition-all ${
+                              className={`px-2 py-0.5 rounded-2xl transition-all ${
                                 showcaseMode === 'sideBySide' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600'
                               }`}
                             >
@@ -969,13 +969,13 @@ export default function ProjectDetailPage() {
                           <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
                               <span className="text-[10px] font-bold text-slate-600 block">Original</span>
-                              <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-200 aspect-square">
+                              <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 aspect-square">
                                 <img src={uploadedRoomImage} alt="Original" className="w-full h-full object-cover" />
                               </div>
                             </div>
                             <div className="space-y-1">
                               <span className="text-[10px] font-bold text-purple-700 block">AI Redesign Canvas</span>
-                              <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950/90 to-slate-900 border border-purple-300 aspect-square flex flex-col items-center justify-center p-3 text-center">
+                              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950/90 to-slate-900 border border-purple-300 aspect-square flex flex-col items-center justify-center p-3 text-center">
                                 <Sparkles className="w-6 h-6 text-amber-300 mb-1 animate-pulse" />
                                 <span className="text-xs font-extrabold text-white font-heading">AI Canvas</span>
                                 <span className="text-[9px] text-purple-200 mt-0.5">Ready to Generate</span>
@@ -987,7 +987,7 @@ export default function ProjectDetailPage() {
                     ) : (
                       /* NO IMAGE UPLOADED PLACEHOLDER */
                       <div className="space-y-3">
-                        <div className="relative h-32 rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner flex flex-col items-center justify-center text-slate-400 p-3 text-center">
+                        <div className="relative h-32 rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner flex flex-col items-center justify-center text-slate-400 p-3 text-center">
                           <ImageIcon className="w-6 h-6 mb-1 opacity-50 text-purple-400" />
                           <span className="text-xs font-bold text-slate-300 font-heading">Upload a Photo</span>
                           <span className="text-[10px] text-slate-400 mt-0.5">Supports Square, Landscape & Portrait</span>
@@ -996,7 +996,7 @@ export default function ProjectDetailPage() {
                     )}
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-purple-50/90 border border-purple-200 text-[10px] font-semibold text-purple-900 font-heading leading-relaxed">
+                  <div className="p-2.5 rounded-2xl bg-purple-50/90 border border-purple-200 text-[10px] font-semibold text-purple-900 font-heading leading-relaxed">
                     ⚡ <strong>Same Aspect Ratio Guarantee:</strong> Generated redesign images dynamically match the exact square/rectangle dimensions of your uploaded photo.
                   </div>
                 </div>

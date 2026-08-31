@@ -113,7 +113,7 @@ export default function SubscriptionPlans() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative flex flex-col justify-between p-7 rounded-3xl transition-all duration-300 ${
+              className={`relative flex flex-col justify-between p-7 rounded-2xl transition-all duration-300 ${
                 plan.popular
                   ? 'bg-white dark:bg-slate-900 border-2 border-blue-600 shadow-2xl shadow-blue-500/15 scale-105 z-10'
                   : 'bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-black/40 hover:shadow-2xl'
@@ -140,7 +140,7 @@ export default function SubscriptionPlans() {
                       {plan.price}
                     </span>
                     {plan.discountBadge && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded-md">
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded-2xl">
                         {plan.discountBadge}
                       </span>
                     )}

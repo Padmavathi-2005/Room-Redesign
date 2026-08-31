@@ -9,6 +9,7 @@ import {
 import { MarketplaceService } from './marketplace.service';
 import { PublishProjectDto } from './dto/publish-project.dto';
 import { PurchaseProjectDto } from './dto/purchase-project.dto';
+import { AddReviewDto } from './dto/add-review.dto';
 
 @Controller('marketplace')
 export class MarketplaceController {
@@ -78,5 +79,13 @@ export class MarketplaceController {
   @Post(':id/wishlist')
   toggleWishlist(@Param('id') id: string, @Body('userId') userId: string) {
     return this.marketplaceService.toggleWishlist(userId, id);
+  }
+
+  /**
+   * POST /api/v1/marketplace/:id/review - Submit rating & review for published project
+   */
+  @Post(':id/review')
+  addReview(@Param('id') id: string, @Body() addReviewDto: AddReviewDto) {
+    return this.marketplaceService.addReview(id, addReviewDto);
   }
 }

@@ -72,7 +72,7 @@ export default async function PublicCmsPage({ params }: PageProps) {
                   return (
                     <section
                       key={block.id || idx}
-                      className="text-center space-y-6 py-12 px-6 sm:px-12 rounded-3xl bg-gradient-to-tr from-indigo-900 via-indigo-800 to-slate-900 text-white shadow-2xl relative overflow-hidden"
+                      className="text-center space-y-6 py-12 px-6 sm:px-12 rounded-2xl bg-gradient-to-tr from-indigo-900 via-indigo-800 to-slate-900 text-white shadow-2xl relative overflow-hidden"
                     >
                       <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -111,7 +111,7 @@ export default async function PublicCmsPage({ params }: PageProps) {
                 // 2. RICH TEXT BLOCK
                 if (block.type === 'text') {
                   return (
-                    <section key={block.id || idx} className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+                    <section key={block.id || idx} className="bg-white p-8 sm:p-10 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
                       {block.content?.title && (
                         <h2 className="text-2xl font-black text-slate-900 tracking-tight">
                           {block.content.title}
@@ -138,7 +138,7 @@ export default async function PublicCmsPage({ params }: PageProps) {
                         {block.content?.items?.map((item: any, i: number) => (
                           <div
                             key={i}
-                            className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs text-left space-y-3 hover:border-indigo-200 transition-all"
+                            className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs text-left space-y-3 hover:border-indigo-200 transition-all"
                           >
                             <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
                               <CheckCircle2 className="w-5 h-5" />
@@ -157,7 +157,7 @@ export default async function PublicCmsPage({ params }: PageProps) {
                   return (
                     <section
                       key={block.id || idx}
-                      className="p-8 sm:p-10 rounded-3xl bg-indigo-600 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-xl"
+                      className="p-8 sm:p-10 rounded-2xl bg-indigo-600 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-xl"
                     >
                       <div className="space-y-1.5">
                         <h3 className="text-xl font-black">{block.content?.headline || 'Ready to Get Started?'}</h3>
@@ -209,7 +209,7 @@ export default async function PublicCmsPage({ params }: PageProps) {
                       <img
                         src={block.content?.imageUrl}
                         alt="Showcase"
-                        className="w-full max-h-[500px] object-cover rounded-3xl border border-slate-200 shadow-xl"
+                        className="w-full max-h-[500px] object-cover rounded-2xl border border-slate-200 shadow-xl"
                       />
                       {block.content?.caption && (
                         <p className="text-xs text-slate-500 font-semibold">{block.content.caption}</p>
@@ -230,7 +230,7 @@ export default async function PublicCmsPage({ params }: PageProps) {
                 return null;
               })
             ) : (
-              <div className="p-12 text-center bg-white rounded-3xl border border-slate-200/80 text-slate-500">
+              <div className="p-12 text-center bg-white rounded-2xl border border-slate-200/80 text-slate-500">
                 <h1 className="text-2xl font-black text-slate-900">{page.title}</h1>
                 <p className="text-xs text-slate-500 mt-2 font-medium">This custom page is currently empty.</p>
               </div>

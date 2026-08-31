@@ -107,7 +107,7 @@ export default function RoomDetailPage() {
 
   return (
     <div className="min-h-screen mesh-bg blueprint-grid pt-20 pb-16 text-slate-900 selection:bg-purple-600 selection:text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <div className="max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 space-y-6">
         
         {/* BACK NAVIGATION */}
         <div>
@@ -121,7 +121,7 @@ export default function RoomDetailPage() {
         </div>
 
         {/* ROOM HEADER CARD */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
@@ -165,7 +165,7 @@ export default function RoomDetailPage() {
         </div>
 
         {/* BEFORE & AFTER IMAGE COMPARISON CARD */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-5">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -183,11 +183,11 @@ export default function RoomDetailPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold font-heading">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl text-xs font-bold font-heading">
                 <button
                   type="button"
                   onClick={() => setViewMode('slider')}
-                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-2xl transition-all cursor-pointer ${
                     viewMode === 'slider' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -196,7 +196,7 @@ export default function RoomDetailPage() {
                 <button
                   type="button"
                   onClick={() => setViewMode('sideBySide')}
-                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-2xl transition-all cursor-pointer ${
                     viewMode === 'sideBySide' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -209,7 +209,7 @@ export default function RoomDetailPage() {
                   href={room.coverImage}
                   target="_blank"
                   download="room_redesign_hd.jpg"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 text-white text-xs font-extrabold hover:bg-purple-700 transition-colors shadow-xs shrink-0 font-heading"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-purple-600 text-white text-xs font-extrabold hover:bg-purple-700 transition-colors shadow-xs shrink-0 font-heading"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download HD</span>
@@ -221,7 +221,7 @@ export default function RoomDetailPage() {
           {viewMode === 'slider' ? (
             /* INTERACTIVE SPLIT SLIDER WITH CLIP-PATH (ZERO OVERFLOW, PERFECT MATCH) */
             <div
-              className={`relative rounded-3xl overflow-hidden border-2 border-purple-200 shadow-lg select-none cursor-ew-resize mx-auto max-w-4xl w-full ${
+              className={`relative rounded-2xl overflow-hidden border-2 border-purple-200 shadow-lg select-none cursor-ew-resize mx-auto max-w-4xl w-full ${
                 aspectRatio === 'square'
                   ? 'aspect-square max-h-[440px]'
                   : aspectRatio === 'portrait'
@@ -319,14 +319,14 @@ export default function RoomDetailPage() {
         </div>
 
         {/* ROOM CONVERSATION / GENERATION HISTORY LOG STREAM */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-4">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-sm font-extrabold text-slate-900 font-heading flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-indigo-600" />
               <span>Room Generation & Conversation History</span>
             </h3>
             <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-              Synced with Manus Session
+              Synced with AI Session
             </span>
           </div>
 
@@ -336,7 +336,7 @@ export default function RoomDetailPage() {
                 <span>Generation #1 Completed</span>
                 <span className="text-[10px] text-slate-400 font-normal">Recently</span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed font-mono bg-white p-3 rounded-xl border border-slate-200">
+              <p className="text-xs text-slate-600 leading-relaxed font-mono bg-white p-3 rounded-2xl border border-slate-200">
                 Prompt compiled with <strong>{projectTheme}</strong> shared design theme consistency. Preserved 1:1 structural bounds of windows, doors, and floor plan.
               </p>
             </div>

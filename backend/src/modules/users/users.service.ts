@@ -19,30 +19,10 @@ export class UsersService implements OnModuleInit {
   }
 
   private async seedAdminUser() {
-    // 1. Seed System Admin Account
-    const adminEmail = 'admin@gmail.com';
-    const existingAdmin = await this.userModel.findOne({ email: adminEmail });
-    if (!existingAdmin) {
-      await this.userModel.create({
-        email: adminEmail,
-        password: '12345678',
-        firstName: 'Admin',
-        lastName: 'User',
-        role: UserRole.ADMIN,
-        isActive: true,
-        credits: 1000,
-        subscriptionTier: 'PROFESSIONAL',
-      });
-      console.log('----------------------------------------------------');
-      console.log('Seeded default admin account: admin@gmail.com / 12345678');
-      console.log('----------------------------------------------------');
-    } else if (existingAdmin.role !== UserRole.ADMIN) {
-      existingAdmin.role = UserRole.ADMIN;
-      await existingAdmin.save();
-      console.log('----------------------------------------------------');
-      console.log('Promoted existing user to ADMIN role: admin@gmail.com');
-      console.log('----------------------------------------------------');
-    }
+    // 1. Ensure Admin accounts do NOT exist in the User table
+    await this.userModel.deleteMany({
+      $or: [{ email: 'admin@gmail.com' }, { role: UserRole.ADMIN }],
+    });
 
     // 2. Seed Default User Account: test@yopmail.com
     const testUserEmail = 'test@yopmail.com';

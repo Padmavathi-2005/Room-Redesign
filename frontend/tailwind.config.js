@@ -9,10 +9,16 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        heading: ['Outfit', 'sans-serif'],
+        sans: ['Manrope', 'sans-serif'],
+        manrope: ['Manrope', 'sans-serif'],
+        heading: ['IBM Plex Serif', 'serif'],
+        outfit: ['IBM Plex Serif', 'serif'],
+        ibm: ['IBM Plex Serif', 'serif'],
       },
       colors: {
+        primary: 'var(--primary)',
+        secondary: 'var(--secondary)',
+        accent: 'var(--accent)',
         brand: {
           50: '#f0f4ff',
           100: '#e0e9ff',

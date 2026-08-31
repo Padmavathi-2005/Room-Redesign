@@ -82,11 +82,11 @@ export const PublishModal: React.FC<PublishModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
-      <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+      <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
@@ -121,7 +121,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({
                 placeholder="e.g. Modern Scandinavian Living Room Redesign"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
               />
             </div>
 
@@ -138,7 +138,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({
                   <div
                     key={idx}
                     onClick={() => setSelectedSampleIndex(idx)}
-                    className={`relative aspect-square cursor-pointer overflow-hidden rounded-xl border-2 transition-all ${
+                    className={`relative aspect-square cursor-pointer overflow-hidden rounded-2xl border-2 transition-all ${
                       selectedSampleIndex === idx
                         ? 'border-indigo-500 shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-500/50'
                         : 'border-slate-800 opacity-60 hover:opacity-100'
@@ -169,7 +169,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({
                   required
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 pl-9 pr-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-2xl border border-slate-800 bg-slate-950 pl-9 pr-4 py-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
                 />
               </div>
               <p className="mt-1 text-[11px] text-indigo-400">
@@ -185,7 +185,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({
                 placeholder="Include architectural details, color palettes, or furniture materials..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
               />
             </div>
 
@@ -196,7 +196,7 @@ export const PublishModal: React.FC<PublishModalProps> = ({
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
-                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
               />
             </div>
 
@@ -205,14 +205,14 @@ export const PublishModal: React.FC<PublishModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white"
+                className="rounded-2xl px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 hover:from-indigo-500 hover:to-violet-500 transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 hover:from-indigo-500 hover:to-violet-500 transition-all disabled:opacity-50"
               >
                 {isSubmitting ? 'Publishing...' : 'Publish Project'}
               </button>

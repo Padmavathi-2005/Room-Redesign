@@ -16,7 +16,7 @@ export default function ErpHero() {
   }, []);
 
   return (
-    <section className="relative w-full pt-4 pb-4 flex flex-col justify-between bg-transparent selection:bg-blue-600 selection:text-white">
+    <section className="relative w-full pt-4 pb-4 flex flex-col justify-between bg-transparent selection:bg-purple-600 selection:text-white">
       {/* MAIN TWO-COLUMN CONTAINER */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 w-full pt-2 pb-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
@@ -44,7 +44,7 @@ export default function ErpHero() {
             >
               Build Better.
               <br />
-              <span className="bg-gradient-to-r from-[#1D4ED8] dark:from-blue-400 to-[#0D9488] dark:to-teal-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[var(--secondary)] to-[var(--primary)] bg-clip-text text-transparent">
                 Manage Smarter.
               </span>
               <br />
@@ -56,7 +56,7 @@ export default function ErpHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed max-w-md"
+              className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed tracking-wide max-w-lg"
             >
               The only digital craftsmanship platform designed to unite your field and office. Seamlessly manage budgets, logistics, and labor in one high-performance interface.
             </motion.p>
@@ -72,7 +72,7 @@ export default function ErpHero() {
                 <motion.button
                   whileHover={{ scale: 1.03, y: -1 }}
                   whileTap={{ scale: 0.97 }}
-                  className="px-7 py-3.5 text-sm font-semibold text-white bg-[#1D4ED8] hover:bg-blue-700 rounded-full shadow-lg shadow-blue-600/25 transition-all focus:outline-none"
+                  className="px-7 py-3.5 text-sm font-semibold text-white bg-[var(--primary)] hover:opacity-90 rounded-full shadow-lg transition-all focus:outline-none"
                 >
                   Start Free Trial
                 </motion.button>

@@ -13,25 +13,20 @@ export class KitchenPromptBuilder implements IPromptBuilder {
     const styleKey = (options.designStyle || options.theme || 'Modern').toLowerCase();
     const userMsg = options.customRequirements || options.customInstructions || '';
 
-    const subject = `a high-end luxury kitchen redesign in ${styleKey} architectural style`;
-    const kitchenFeatures =
-      'featuring custom seamless cabinetry, polished marble island countertop, pendant island lights, tile backsplash, built-in stainless steel appliances, under-cabinet warm LED lighting';
-    const preservationClause =
-      'preserve original kitchen window locations, door frames, and plumbing layout position, update cabinets countertops and finishes only';
-
-    const colorClause = options.colorPalette ? `color palette of ${options.colorPalette}` : 'neutral oak and white marble tones';
-    const userConstraints = userMsg ? `user requirements: ${userMsg}` : '';
+    const subject = `8k UHD photo of a kitchen redesign in ${styleKey} style.`;
+    const kitchenFeatures = `Features ${options.colorPalette || 'neutral oak and white marble tones'} palette, custom cabinetry, marble countertops, and warm LED lighting.`;
+    const preservationClause = `Preserve original windows, door frames, and plumbing positions, updating cabinets and finishes only.`;
+    const userConstraints = userMsg ? `User requirements: ${userMsg}.` : '';
 
     const finalPrompt = [
-      COMMON_PHOTOGRAPHIC_BOOSTERS,
       subject,
       kitchenFeatures,
       preservationClause,
-      colorClause,
       userConstraints,
+      COMMON_PHOTOGRAPHIC_BOOSTERS
     ]
       .filter(Boolean)
-      .join(', ');
+      .join(' ');
 
     const negativePrompt = `${COMMON_NEGATIVE_PROMPT}, dirty stove, broken cabinets, missing countertops, floating appliances, removed kitchen window`;
 

@@ -53,7 +53,7 @@ export default function SignupForm() {
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="w-full max-w-md mx-auto"
     >
-      <div className="glass-card p-7 sm:p-9 border border-white/80 shadow-2xl backdrop-blur-2xl bg-white/85 rounded-3xl space-y-6">
+      <div className="glass-card p-7 sm:p-9 border border-white/80 shadow-2xl backdrop-blur-2xl bg-white/85 rounded-2xl space-y-6">
 
         {/* Card Top Branding Badge & Header */}
         <div className="text-center space-y-2">

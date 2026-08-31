@@ -19,7 +19,7 @@ export default function NavItem({ href, label, onClick }: NavItemProps) {
     <Link
       href={href}
       onClick={onClick}
-      className={`relative py-1 text-sm font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md group ${
+      className={`relative py-1 text-sm font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl group ${
         isActive
           ? 'text-[#2563EB] font-semibold'
           : 'text-[#0F172A] hover:text-[#2563EB]'

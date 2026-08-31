@@ -41,7 +41,13 @@ export class WallDesignPromptBuilder implements IPromptBuilder {
     const styleTheme = options.theme ? `, locked theme: ${options.theme}` : '';
     const colorPalette = options.colorPalette ? `, color palette: ${options.colorPalette}` : '';
 
-    const finalPrompt = `${scopeDirective}, room type: ${options.roomType || 'Living Room'}${styleTheme}${colorPalette}, featured materials: ${matList}, layout instruction: ${furnitureDirective}, quality tier: ${budgetDirective}${customInstructions}, ${COMMON_PHOTOGRAPHIC_BOOSTERS}`;
+    const finalPrompt = [
+      `${scopeDirective} for a ${options.roomType || 'Living Room'}.`,
+      options.theme || options.colorPalette ? `Theme: ${[options.theme, options.colorPalette].filter(Boolean).join(', ')}.` : '',
+      `Featured materials: ${matList}. Layout: ${furnitureDirective}. Quality: ${budgetDirective}.`,
+      options.customInstructions ? `User requirements: ${options.customInstructions}.` : '',
+      COMMON_PHOTOGRAPHIC_BOOSTERS
+    ].filter(Boolean).join(' ');
 
     return {
       finalPrompt,

@@ -104,7 +104,7 @@ export default function AdminProjectsPage() {
       accessor: (proj) => {
         return (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 flex items-center justify-center border border-indigo-200 shrink-0">
+            <div className="w-9 h-9 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 flex items-center justify-center border border-indigo-200 shrink-0">
               <Folder className="w-4 h-4" />
             </div>
             <div className="min-w-0 space-y-0.5">
@@ -181,7 +181,7 @@ export default function AdminProjectsPage() {
             <button
               type="button"
               onClick={() => handleOpenDetailModal(proj)}
-              className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
             >
               <Eye className="w-3.5 h-3.5" />
               <span>View</span>
@@ -190,7 +190,7 @@ export default function AdminProjectsPage() {
             <button
               type="button"
               onClick={() => handleOpenDeleteModal(proj)}
-              className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer"
+              className="p-1.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer"
               title="Delete Project"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export default function AdminProjectsPage() {
   return (
     <div className="space-y-6">
       {/* PAGE HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs">
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-extrabold rounded-full font-heading border border-indigo-100">
             <Layers className="w-3.5 h-3.5 text-indigo-600" />
@@ -278,7 +278,7 @@ export default function AdminProjectsPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.97 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
+                  className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
                 >
                   {/* Modal Header */}
                   <div className="flex items-center justify-between pb-4 border-b border-slate-200/80">
@@ -377,7 +377,7 @@ export default function AdminProjectsPage() {
                                 <img
                                   src={img.originalImage}
                                   alt="Original"
-                                  className="h-28 w-full object-cover rounded-xl border border-slate-200"
+                                  className="h-28 w-full object-cover rounded-2xl border border-slate-200"
                                 />
                               </div>
                               <div className="space-y-1">
@@ -385,14 +385,14 @@ export default function AdminProjectsPage() {
                                 <img
                                   src={img.generatedImage || img.originalImage}
                                   alt="AI Result"
-                                  className="h-28 w-full object-cover rounded-xl border border-indigo-200"
+                                  className="h-28 w-full object-cover rounded-2xl border border-indigo-200"
                                 />
                               </div>
                             </div>
 
                             <div className="flex items-center justify-between text-xs">
                               <span className="font-extrabold text-slate-900 font-heading">{img.roomType || 'Room Redesign'}</span>
-                              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-md font-bold text-[10px]">
+                              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-2xl font-bold text-[10px]">
                                 {img.theme || selectedProject.theme}
                               </span>
                             </div>
@@ -406,7 +406,7 @@ export default function AdminProjectsPage() {
                                 href={img.generatedImage || img.originalImage}
                                 target="_blank"
                                 download="converted_room.jpg"
-                                className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition-colors"
+                                className="px-3.5 py-1.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition-colors"
                               >
                                 <Download className="w-3 h-3" />
                                 <span>Download HD</span>
@@ -426,7 +426,7 @@ export default function AdminProjectsPage() {
                         setIsDetailModalOpen(false);
                         handleOpenDeleteModal(selectedProject);
                       }}
-                      className="px-4 py-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs border border-rose-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                      className="px-4 py-2 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs border border-rose-200 transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Delete Project</span>
@@ -435,7 +435,7 @@ export default function AdminProjectsPage() {
                     <button
                       type="button"
                       onClick={() => setIsDetailModalOpen(false)}
-                      className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+                      className="px-5 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
                     >
                       Close
                     </button>
@@ -457,7 +457,7 @@ export default function AdminProjectsPage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white border border-slate-200 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 text-center"
+                  className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-center"
                 >
                   <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
                     <Trash2 className="w-6 h-6" />
@@ -475,7 +475,7 @@ export default function AdminProjectsPage() {
                     <button
                       type="button"
                       onClick={() => setIsDeleteModalOpen(false)}
-                      className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer"
+                      className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -483,7 +483,7 @@ export default function AdminProjectsPage() {
                       type="button"
                       onClick={handleConfirmDelete}
                       disabled={isActionSubmitting}
-                      className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50 cursor-pointer"
+                      className="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50 cursor-pointer"
                     >
                       {isActionSubmitting ? 'Deleting...' : 'Permanently Delete'}
                     </button>

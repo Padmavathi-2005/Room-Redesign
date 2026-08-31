@@ -91,7 +91,7 @@ export class Setting {
   @Prop({ default: 60 })
   aiGenerationTimeout: number;
 
-  // 4. Stripe Payment Gateway
+  // 4. Stripe & PayPal Payment Gateways
   @Prop({ default: true })
   stripeTestMode: boolean;
 
@@ -103,6 +103,18 @@ export class Setting {
 
   @Prop({ default: '' })
   stripeWebhookSecret?: string;
+
+  @Prop({ default: true })
+  paypalSandboxMode: boolean;
+
+  @Prop({ default: '' })
+  paypalClientId?: string;
+
+  @Prop({ default: '' })
+  paypalClientSecret?: string;
+
+  @Prop({ default: '' })
+  paypalWebhookId?: string;
 
   // 5. Cloud Storage & Media Delivery
   @Prop({ default: 'local' })

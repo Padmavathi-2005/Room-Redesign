@@ -90,4 +90,40 @@ export class AdminController {
   async uploadToolImage(@UploadedFile() file: any) {
     return this.adminService.saveToolImage(file);
   }
+
+  @Get('analytics')
+  async getAnalytics() {
+    return this.adminService.getAnalyticsData();
+  }
+
+  @Get('transactions')
+  async getTransactions() {
+    return this.adminService.getTransactionsList();
+  }
+
+  @Get('logs')
+  async getLogs() {
+    return this.adminService.getAuditLogs();
+  }
+
+  @Get('team')
+  async getAdminTeam() {
+    return this.adminService.getAdminTeam();
+  }
+
+  @Post('team')
+  async createAdminTeamMember(@Body() body: any) {
+    return this.adminService.createAdminTeamMember(body);
+  }
+
+  @Patch('team/:id')
+  async updateAdminTeamMember(@Param('id') id: string, @Body() body: any) {
+    return this.adminService.updateAdminTeamMember(id, body);
+  }
+
+  @Delete('team/:id')
+  @HttpCode(HttpStatus.OK)
+  async deleteAdminTeamMember(@Param('id') id: string) {
+    return this.adminService.deleteAdminTeamMember(id);
+  }
 }

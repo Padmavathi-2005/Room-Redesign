@@ -136,7 +136,7 @@ export default function ReviewsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.08 }}
-              className="relative bg-white dark:bg-slate-900/90 border border-indigo-100 dark:border-slate-800 rounded-3xl p-7 shadow-lg shadow-indigo-500/5 dark:shadow-black/40 hover:shadow-xl hover:border-indigo-300 dark:hover:border-slate-700 transition-all duration-300 flex flex-col justify-between"
+              className="relative bg-white dark:bg-slate-900/90 border border-indigo-100 dark:border-slate-800 rounded-2xl p-7 shadow-lg shadow-indigo-500/5 dark:shadow-black/40 hover:shadow-xl hover:border-indigo-300 dark:hover:border-slate-700 transition-all duration-300 flex flex-col justify-between"
             >
               <div className="space-y-4">
                 {/* Top Rating & Quote Icon */}

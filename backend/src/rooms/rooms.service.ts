@@ -1,13 +1,13 @@
-import { Injectable, Logger, NotFoundException, GatewayTimeoutException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, GatewayTimeoutException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RoomGeneration, RoomDocument } from './schemas/room.schema';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UploadsService } from '../modules/uploads/uploads.service';
 import { ProviderManagerService } from '../modules/provider-manager/provider-manager.service';
-
 import { ProjectsService } from '../modules/projects/projects.service';
 import { User, UserDocument } from '../modules/users/schemas/user.schema';
+import { QueueWorkerService } from '../queue/queue-worker.service';
 
 @Injectable()
 export class RoomsService {
@@ -35,6 +35,7 @@ export class RoomsService {
     private readonly uploadsService: UploadsService,
     private readonly providerManagerService: ProviderManagerService,
     private readonly projectsService: ProjectsService,
+    private readonly queueWorkerService: QueueWorkerService,
   ) {}
 
   /**
@@ -62,6 +63,32 @@ export class RoomsService {
     }
 
     if (targetUser) {
+      // 1. Verify requested tool / AI model accessibility based on active subscription plan
+      const requestedTool = toolSlug || 'interior-design';
+      const userPlanCode = targetUser.plan || 'free';
+      
+      try {
+        const planDefinition = await this.userModel.db.model('SubscriptionPlanDefinition').findOne({
+          code: userPlanCode.toLowerCase(),
+          isActive: true,
+        }).exec();
+
+        if (planDefinition) {
+          const allowedModels = planDefinition.accessibleModels || [];
+          if (!allowedModels.includes(requestedTool)) {
+            throw new ForbiddenException(
+              `Your active ${userPlanCode.toUpperCase()} subscription tier does not have access to the "${requestedTool}" tool. Please upgrade your plan in the billing tab to unlock this feature.`
+            );
+          }
+        }
+      } catch (err: any) {
+        if (err instanceof ForbiddenException) {
+          throw err;
+        }
+        this.logger.warn(`Failed to verify model access boundaries for user plan ${userPlanCode}: ${err.message}`);
+      }
+
+      // 2. Credit Verification & Deduction Logic
       const userCredits = targetUser.credits ?? 0;
       if (userCredits < cost) {
         throw new BadRequestException(
@@ -122,6 +149,9 @@ export class RoomsService {
       theme: targetTheme,
       colorPalette: targetColorPalette,
       lighting: targetLighting,
+      flooringMaterial: dto.flooringMaterial || '',
+      flooringFinish: dto.flooringFinish || '',
+      flooringGrout: dto.flooringGrout || '',
       customInstructions: customInstructions || userPrompt || '',
       prompt: '',
       negativePrompt: '',
@@ -141,6 +171,11 @@ export class RoomsService {
       if (projectId) {
         await this.projectsService.addRoomToProject(projectId, createdRoom._id);
       }
+
+      // Trigger immediate worker execution for instant response
+      this.queueWorkerService.triggerJobDirectly(createdRoom).catch((err) => {
+        this.logger.error(`Direct worker execution encountered error: ${err.message}`);
+      });
     } catch (e: any) {
       // Memory store fallback
       const memoryItem = {
@@ -155,12 +190,12 @@ export class RoomsService {
       return memoryItem;
     }
 
-    // 3. Blocking Wait: Poll the database for worker completion
+    // 3. Blocking Wait: Poll the database for worker completion (up to 10 minutes limit for Manus AI agent operations)
     const startTime = Date.now();
-    const timeoutMs = 70000; // 70 seconds limit for Replicate / OpenAI API operations
-    const pollIntervalMs = 1500;
+    const timeoutMs = 600000; // 10 minutes (600,000 ms) limit
+    const pollIntervalMs = 2000;
 
-    this.logger.log(`Job enqueued (ID: ${createdRoom._id}). Waiting for QueueWorker...`);
+    this.logger.log(`Job enqueued (ID: ${createdRoom._id}). Triggered QueueWorker directly.`);
 
     while (Date.now() - startTime < timeoutMs) {
       await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
@@ -222,6 +257,38 @@ export class RoomsService {
   /**
    * Returns all room design records
    */
+  async testManusDirectly(body: { imageUrl?: string; prompt?: string }) {
+    const startTime = Date.now();
+    const prompt = body.prompt || 'Photorealistic 8K UHD architectural interior redesign of a Living Room in Modern Japandi style';
+    const imageUrl = body.imageUrl || 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop';
+
+    const useVertex = !!(process.env.VERTEX_API_KEY || process.env.GEMINI_API_KEY || process.env.GCP_PROJECT_ID);
+    this.logger.log(`Direct Test requested using ${useVertex ? 'Google Vertex AI (Imagen 3)' : 'RoomWhiz AI'}. Prompt: "${prompt.slice(0, 60)}..."`);
+
+    try {
+      const output = useVertex
+        ? await this.providerManagerService.generateImageWithVertex({ prompt, imageUrl })
+        : await this.providerManagerService.generateImageWithRoomWhiz({ prompt, imageUrl });
+
+      return {
+        success: true,
+        outputImageUrl: output.imageUrl,
+        chatId: output.chatId,
+        providerName: output.providerName,
+        modelName: output.modelName,
+        timeTakenMs: Date.now() - startTime,
+      };
+    } catch (err: any) {
+      const errorDetail = err.response?.data?.error?.message || err.response?.data?.message || err.message;
+      this.logger.error(`Direct Test failed: ${errorDetail}`);
+      return {
+        success: false,
+        error: errorDetail,
+        timeTakenMs: Date.now() - startTime,
+      };
+    }
+  }
+
   async findAll(): Promise<any[]> {
     try {
       const mongoRooms = await this.roomModel.find().sort({ createdAt: -1 }).exec();
@@ -275,15 +342,14 @@ export class RoomsService {
   private resolveDirectImageUrl(url: string): string {
     if (!url) return url;
 
-    // Matches Unsplash photo page patterns
-    // e.g. https://unsplash.com/photos/hWwP4LTGEQA or https://unsplash.com/photos/some-slug-hWwP4LTGEQA
+    // Matches Unsplash photo page patterns e.g. https://unsplash.com/photos/shT_LaGUmYI
     const unsplashMatch = url.match(/unsplash\.com\/photos\/([a-zA-Z0-9_-]+)$/);
     if (unsplashMatch) {
       const segment = unsplashMatch[1];
       const id = segment.includes('-') ? segment.split('-').pop() : segment;
-      const downloadUrl = `https://unsplash.com/photos/${id}/download`;
-      this.logger.log(`Auto-resolved Unsplash page link to direct download: ${downloadUrl}`);
-      return downloadUrl;
+      const cdnUrl = `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1200&q=80`;
+      this.logger.log(`Auto-resolved Unsplash page link to direct CDN image: ${cdnUrl}`);
+      return cdnUrl;
     }
 
     return url;

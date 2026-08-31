@@ -1,0 +1,258 @@
+[
+  {
+    "id": "interior-design-ai",
+    "name": "Interior Design AI",
+    "category": "interiors",
+    "description": "Perform full structural interior redesigns, geometry transformations, and style changes.",
+    "enabled": true,
+    "widgets": [
+      {
+        "id": "room-type",
+        "type": "Select Dropdown",
+        "label": "Room Type",
+        "options": ["Living Room", "Bedroom", "Kitchen", "Bathroom", "Office", "Dining Room", "Kids Room"],
+        "required": true
+      },
+      {
+        "id": "design-style",
+        "type": "Select Dropdown",
+        "label": "Design Style",
+        "options": ["Modern", "Minimalist", "Scandinavian", "Japandi", "Industrial", "Bohemian", "Cyberpunk", "Traditional"],
+        "required": true
+      },
+      {
+        "id": "color-palette",
+        "type": "Color Swatch",
+        "label": "Color Palette Theme",
+        "options": ["Beige", "Charcoal Gray", "Sage Green", "Navy Blue", "Pure White", "Warm Terracotta", "Gold & Black"],
+        "required": false
+      },
+      {
+        "id": "lighting",
+        "type": "Select Dropdown",
+        "label": "Lighting Atmosphere",
+        "options": ["Warm Ambient", "Bright Daylight", "Soft Studio", "Dim Accent", "Neon Cyber"],
+        "required": false
+      },
+      {
+        "id": "control-strength",
+        "type": "Range Slider",
+        "label": "Structure Preservation Weight",
+        "min": 0.5,
+        "max": 1.0,
+        "step": 0.05,
+        "defaultValue": 0.8
+      }
+    ]
+  },
+  {
+    "id": "ai-room-decorator",
+    "name": "AI Room Decorator",
+    "category": "interiors",
+    "description": "Dress up your room with accessories, plants, paintings, and coordinate styling.",
+    "enabled": true,
+    "widgets": [
+      {
+        "id": "room-type",
+        "type": "Select Dropdown",
+        "label": "Room Type",
+        "dataSource": "room-types",
+        "options": ["Living Room", "Open Kitchen Living Room", "Bedroom", "Guest Bedroom", "Kids Room", "Nursery", "Bathroom", "Dining Room", "Kitchen", "Home Office", "Outdoor Patio"],
+        "required": true
+      },
+      {
+        "id": "design-style",
+        "type": "Select Dropdown",
+        "label": "Design Style",
+        "dataSource": "design-styles",
+        "options": ["Modern", "Scandinavian", "Bohemian", "Japandi", "Minimalist", "Industrial", "Luxury", "Traditional"],
+        "required": true
+      },
+      {
+        "id": "decor-mode",
+        "type": "Option Grid",
+        "label": "Decoration Mode",
+        "options": ["Decorate Only", "Refurnish & Decorate", "Furnish Empty Space"],
+        "required": true
+      },
+      {
+        "id": "decor-accents",
+        "type": "Option Grid",
+        "label": "Decorative Textures & Accents",
+        "options": ["Bouclé Fabric", "Warm Wood", "Matte Black Metal", "Brass & Gold", "Premium Leather"]
+      },
+      {
+        "id": "decor-items",
+        "type": "Check Grid",
+        "label": "Select Decor Items to Add",
+        "options": ["Floor Rug", "Indoor Greenery", "Abstract Wall Art", "Throw Pillows", "Mirror", "Staging Books"]
+      }
+    ]
+  },
+  {
+    "id": "ai-room-cleaner",
+    "name": "AI Room Cleaner",
+    "category": "interiors",
+    "description": "Clean up cluttered rooms, organize objects, and sweep floors.",
+    "enabled": true,
+    "widgets": [
+      {
+        "id": "clean-level",
+        "type": "Option Grid",
+        "label": "Declutter Level",
+        "options": ["Light Tidy-up", "Deep Clean Floors & Surfaces", "Complete Empty Space"],
+        "required": true
+      },
+      {
+        "id": "items-to-remove",
+        "type": "Check Grid",
+        "label": "Select Items to Remove",
+        "options": ["Trash & Clutter", "Loose Cables & Wires", "Personal Photos", "Clothes & Laundry"]
+      }
+    ]
+  },
+  {
+    "id": "paint-color-visualizer",
+    "name": "Paint Color Visualizer",
+    "category": "interiors",
+    "description": "Visualize different colors and finishes on your walls.",
+    "enabled": true,
+    "widgets": [
+      {
+        "id": "paint-color",
+        "type": "Color Swatch",
+        "label": "Select Wall Paint Color",
+        "options": ["Warm Beige", "Sage Green", "Charcoal Gray", "Navy Blue", "Soft Lavender", "Terracotta Red"],
+        "required": true
+      },
+      {
+        "id": "paint-finish",
+        "type": "Select Dropdown",
+        "label": "Paint Finish",
+        "options": ["Matte", "Satin (Low Sheen)", "Eggshell", "Glossy"],
+        "required": true
+      },
+      {
+        "id": "target-area",
+        "type": "Option Grid",
+        "label": "Target Area",
+        "options": ["All Walls", "Accent Wall Only", "Ceiling Only"]
+      }
+    ]
+  },
+  {
+    "id": "flooring-tile-redesign",
+    "name": "Flooring & Tile Redesign",
+    "category": "interiors",
+    "description": "Replace flooring textures, tiles, carpets, and patterns.",
+    "enabled": true,
+    "widgets": [
+      {
+        "id": "floor-material",
+        "type": "Select Dropdown",
+        "label": "Floor Material",
+        "options": ["Light Oak Hardwood", "Walnut Parquet", "Marble Tiles", "Polished Concrete", "Cozy Carpet"],
+        "required": true
+      },
+      {
+        "id": "pattern",
+        "type": "Option Grid",
+        "label": "Layout Pattern",
+        "options": ["Straight Plank", "Herringbone Pattern", "Chevron Pattern", "Subway Grid"]
+      }
+    ]
+  },
+  {
+    "id": "style-transfer",
+    "name": "Style Transfer",
+    "category": "interiors",
+    "description": "Transfer the aesthetic, material palettes, and styling vectors from a reference design.",
+    "enabled": true,
+    "widgets": [
+      {
+        "id": "style-reference",
+        "type": "Asset Picker",
+        "label": "Upload Style Reference Image",
+        "required": true
+      },
+      {
+        "id": "blend-strength",
+        "type": "Range Slider",
+        "label": "Style Blend Strength",
+        "min": 0.1,
+        "max": 1.0,
+        "step": 0.1,
+        "defaultValue": 0.7
+      }
+    ]
+  },
+  {
+    "id": "change-room-light",
+    "name": "Change Room Light",
+    "category": "interiors",
+    "description": "Change natural sunlight, shadows, temperature, and artificial lights.",
+    "enabled": true,
+    "widgets": [
+      {
+        "id": "sunlight",
+        "type": "Option Grid",
+        "label": "Time of Day (Sunlight)",
+        "options": ["Bright Morning Sun", "Golden Hour Sunset", "Overcast Gloomy Day", "Midnight Moonlight"],
+        "required": true
+      },
+      {
+        "id": "temp",
+        "type": "Range Slider",
+        "label": "Color Temperature (Warm to Cool)",
+        "min": 2000,
+        "max": 8000,
+        "step": 500,
+        "defaultValue": 4000
+      },
+      {
+        "id": "lamps",
+        "type": "Check Grid",
+        "label": "Artificial Lamp Lights",
+        "options": ["LED Ceiling Strips", "Wall Spotlights", "Warm Floor Lamp", "Neon Colors"]
+      }
+    ]
+  },
+  {
+    "id": "ai-wall-design",
+    "name": "AI Wall Design",
+    "category": "interiors",
+    "description": "Configure wallpapers, wood slat accents, brick walls, and custom moldings.",
+    "enabled": true,
+    "widgets": [
+      {
+        "id": "wall-treatment",
+        "type": "Select Dropdown",
+        "label": "Wall Accent Material",
+        "options": ["Vertical Wood Slats", "Exposed Brick Wall", "Decorative Paneling", "Polished Concrete Plaster", "Floral Wallpaper"],
+        "required": true
+      },
+      {
+        "id": "accent-color",
+        "type": "Color Swatch",
+        "label": "Accent Trim Color",
+        "options": ["Natural Wood Tone", "Matte Black", "Bright White", "Classic Brick Red"]
+      }
+    ]
+  },
+  {
+    "id": "ai-flooring-design",
+    "name": "AI Flooring Design",
+    "category": "interiors",
+    "description": "Specialized flooring design, custom tiles, and layout patterns.",
+    "enabled": true,
+    "widgets": [
+      {
+        "id": "flooring",
+        "type": "Select Dropdown",
+        "label": "Flooring Accent",
+        "options": ["Terrazzo Tiles", "Slate Gray Stone", "Vintage Floral Cement", "Textured Runner Rug"],
+        "required": true
+      }
+    ]
+  }
+]

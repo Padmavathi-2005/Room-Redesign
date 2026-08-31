@@ -59,7 +59,7 @@ export default function AdminModal({
 
       {/* Modal Panel */}
       <div
-        className={`relative w-full ${maxWidth} bg-white border border-slate-200/80 rounded-3xl shadow-2xl shadow-slate-900/10 flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp`}
+        className={`relative w-full ${maxWidth} bg-white border border-slate-200/80 rounded-2xl shadow-2xl shadow-slate-900/10 flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -67,7 +67,7 @@ export default function AdminModal({
           <h2 className="text-base font-black text-slate-900">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 border border-slate-200 transition-all cursor-pointer focus:outline-none"
+            className="p-2 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 border border-slate-200 transition-all cursor-pointer focus:outline-none"
             aria-label="Close modal"
           >
             <X className="w-4 h-4" />

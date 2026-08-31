@@ -17,14 +17,15 @@ export interface AppSettings {
   favicon?: string;
   maintenanceMode: boolean;
   creditsPerGeneration: number;
+  tablePaginationLimit: number;
   activeTheme?: 'light' | 'dark';
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   applicationName: 'RoomAI',
   theme: 'light',
-  primaryColor: '#6366F1',
-  secondaryColor: '#8B5CF6',
+  primaryColor: '#1D4ED8',
+  secondaryColor: '#7C3AED',
   accentColor: '#06B6D4',
   backgroundColor: '#FFFFFF',
   textColor: '#111827',
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   blurStrength: 20,
   maintenanceMode: false,
   creditsPerGeneration: 1,
+  tablePaginationLimit: 10,
 };
 
 interface SettingsContextType {

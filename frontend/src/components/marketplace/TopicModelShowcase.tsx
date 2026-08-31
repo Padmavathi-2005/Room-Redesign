@@ -84,7 +84,7 @@ export const TopicModelShowcase: React.FC<TopicModelShowcaseProps> = ({
   };
 
   return (
-    <section className="mt-12 rounded-3xl border border-slate-800/80 bg-slate-950/60 p-6 backdrop-blur-2xl">
+    <section className="mt-12 rounded-2xl border border-slate-800/80 bg-slate-950/60 p-6 backdrop-blur-2xl">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-slate-800/80">
         <div>
@@ -105,7 +105,7 @@ export const TopicModelShowcase: React.FC<TopicModelShowcaseProps> = ({
             <button
               key={type}
               onClick={() => setSelectedRoomFilter(type)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${
+              className={`rounded-2xl px-3 py-1.5 text-xs font-medium transition-all ${
                 selectedRoomFilter === type
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                   : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'

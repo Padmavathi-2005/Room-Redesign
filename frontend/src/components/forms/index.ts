@@ -1,4 +1,4 @@
 /**
  * Forms Components Barrel Export
  */
-export {};
+export { default as FloorPlanCanvas } from './FloorPlanCanvas';

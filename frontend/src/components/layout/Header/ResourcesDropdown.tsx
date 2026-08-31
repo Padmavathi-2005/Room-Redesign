@@ -15,12 +15,24 @@ const RESOURCE_ITEMS = [
 
 export default function ResourcesDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 150);
+  };
 
   return (
     <div
       className="relative"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -37,8 +49,9 @@ export default function ResourcesDropdown() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-2 bg-white/90 dark:bg-slate-900/90 border border-white/80 dark:border-slate-800 rounded-2xl shadow-xl backdrop-blur-2xl z-50 space-y-1"
+            className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-64 z-50 before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-4"
           >
+            <div className="p-2 bg-white/90 dark:bg-slate-900/90 border border-white/80 dark:border-slate-800 rounded-2xl shadow-xl backdrop-blur-2xl space-y-1">
             {RESOURCE_ITEMS.map((item) => {
               const Icon = item.icon;
               return (
@@ -46,9 +59,9 @@ export default function ResourcesDropdown() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-indigo-50/70 dark:hover:bg-indigo-950/40 transition-colors group"
+                  className="flex items-start gap-3 p-2.5 rounded-2xl hover:bg-indigo-50/70 dark:hover:bg-indigo-950/40 transition-colors group"
                 >
-                  <div className="p-1.5 rounded-lg bg-indigo-100/60 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
+                  <div className="p-1.5 rounded-2xl bg-indigo-100/60 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
@@ -60,6 +73,7 @@ export default function ResourcesDropdown() {
                 </Link>
               );
             })}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

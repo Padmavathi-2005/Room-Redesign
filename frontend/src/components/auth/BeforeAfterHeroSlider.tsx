@@ -87,7 +87,7 @@ export default function BeforeAfterHeroSlider() {
   return (
     <div className="relative w-full max-w-xl mx-auto">
       {/* Subtle Background Glow Ring */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-blue-500/20 rounded-3xl opacity-20 blur-lg pointer-events-none" />
+      <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-blue-500/20 rounded-2xl opacity-20 blur-lg pointer-events-none" />
 
       {/* Main Container Card */}
       <motion.div
@@ -99,7 +99,7 @@ export default function BeforeAfterHeroSlider() {
         onTouchStart={() => setIsDragging(true)}
         onTouchEnd={() => setIsDragging(false)}
         onTouchMove={handleTouchMove}
-        className="relative w-full h-[380px] sm:h-[430px] rounded-3xl overflow-hidden glass-card shadow-lg shadow-slate-900/10 select-none cursor-ew-resize border border-white/80 group"
+        className="relative w-full h-[380px] sm:h-[430px] rounded-2xl overflow-hidden glass-card shadow-lg shadow-slate-900/10 select-none cursor-ew-resize border border-white/80 group"
       >
         <AnimatePresence mode="wait">
           <motion.div

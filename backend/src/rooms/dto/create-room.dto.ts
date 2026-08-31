@@ -103,6 +103,18 @@ export class CreateRoomDto {
 
   @IsString()
   @IsOptional()
+  flooringMaterial?: string;
+
+  @IsString()
+  @IsOptional()
+  flooringFinish?: string;
+
+  @IsString()
+  @IsOptional()
+  flooringGrout?: string;
+
+  @IsString()
+  @IsOptional()
   projectId?: string;
 
   @IsString()

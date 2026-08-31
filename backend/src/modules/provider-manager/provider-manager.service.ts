@@ -1,5 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { IAIProvider, ImageGenerationInput, ImageGenerationOutput } from '../../common/interfaces/ai-provider.interface';
+import { RoomWhizProvider } from './providers/roomwhiz.provider';
+import { VertexAiProvider } from './providers/vertex-ai.provider';
 import { ManusProvider } from './providers/manus.provider';
 
 @Injectable()
@@ -9,11 +11,13 @@ export class ProviderManagerService implements OnModuleInit {
   private providerHealthStatus = new Map<string, { healthy: boolean; lastChecked: Date }>();
 
   constructor(
+    private readonly roomWhizProvider: RoomWhizProvider,
+    private readonly vertexAiProvider: VertexAiProvider,
     private readonly manusProvider: ManusProvider,
   ) {}
 
   onModuleInit() {
-    // Register Manus AI as the primary provider
+    // Manus AI is the primary provider for main room redesign features
     this.providers = [
       this.manusProvider,
     ];
@@ -24,36 +28,24 @@ export class ProviderManagerService implements OnModuleInit {
   }
 
   async generateImage(input: ImageGenerationInput): Promise<ImageGenerationOutput> {
-    this.logger.log(`Routing image generation request...`);
-    const errors: string[] = [];
+    this.logger.log(`Routing image generation request exclusively via Manus AI Provider...`);
+    return this.manusProvider.generateImage(input);
+  }
 
-    for (const provider of this.providers) {
-      // Health check filter: Only skip if structurally unconfigured (invalid/missing key)
-      const isProviderHealthy = await provider.isHealthy();
-      if (!isProviderHealthy) {
-        this.logger.warn(`Skipping provider ${provider.name} (unconfigured).`);
-        continue;
-      }
+  /**
+   * Dedicated generator using Google Vertex AI Imagen 3.
+   */
+  async generateImageWithVertex(input: ImageGenerationInput): Promise<ImageGenerationOutput> {
+    this.logger.log(`Executing request directly via Google Vertex AI Imagen 3 Provider...`);
+    return this.vertexAiProvider.generateImage(input);
+  }
 
-      this.logger.log(`Attempting image generation using provider: ${provider.name}`);
-      try {
-        const result = await provider.generateImage(input);
-        
-        // Mark as healthy on success
-        this.providerHealthStatus.set(provider.id, { healthy: true, lastChecked: new Date() });
-        this.logger.log(`Successfully generated image using provider ${provider.name}`);
-        return result;
-      } catch (err: any) {
-        const errMsg = err.response?.data?.error?.message || err.message;
-        this.logger.error(`Generation failed for provider ${provider.name}. Error: ${errMsg}`);
-        errors.push(`${provider.name}: ${errMsg}`);
-
-        // Mark as unhealthy on failure
-        this.providerHealthStatus.set(provider.id, { healthy: false, lastChecked: new Date() });
-      }
-    }
-
-    throw new Error(`All AI image generation providers failed: [${errors.join(', ')}]`);
+  /**
+   * Dedicated generator for RoomWhiz AI.
+   */
+  async generateImageWithRoomWhiz(input: ImageGenerationInput): Promise<ImageGenerationOutput> {
+    this.logger.log(`Executing test request directly via RoomWhiz AI Provider...`);
+    return this.roomWhizProvider.generateImage(input);
   }
 
   async checkProviderHealth(): Promise<Record<string, boolean>> {

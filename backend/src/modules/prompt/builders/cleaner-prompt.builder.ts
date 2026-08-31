@@ -7,9 +7,9 @@ import { PromptInputOptions } from '../interfaces/prompt-input.interface';
 export class CleanerPromptBuilder implements IPromptBuilder {
   build(options: PromptInputOptions): PromptOutputResult {
     const intensity = options.aiIntervention || 'Deep Clean';
-    const customInstructions = options.customInstructions ? `, ${options.customInstructions}` : '';
+    const customInstructions = options.customInstructions ? ` User requirements: ${options.customInstructions}.` : '';
 
-    const finalPrompt = `Architectural decluttering and room cleaning transformation, ${intensity} decluttering, pristine spotless interior, completely organized space, remove trash clutter and unwanted mess, tidy pristine surfaces, elegant staging${customInstructions}, ${COMMON_PHOTOGRAPHIC_BOOSTERS}`;
+    const finalPrompt = `Architectural room cleaning and ${intensity} decluttering. Pristine spotless interior, completely organized space, all trash and mess removed.${customInstructions} ${COMMON_PHOTOGRAPHIC_BOOSTERS}`;
 
     return {
       finalPrompt,

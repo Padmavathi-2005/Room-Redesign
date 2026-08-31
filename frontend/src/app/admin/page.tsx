@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
       if (adminToken && adminUser) {
         try {
           const parsed = JSON.parse(adminUser);
-          if (parsed && parsed.role === 'admin') {
+          if (parsed && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(parsed.role)) {
             router.push('/admin/dashboard');
           }
         } catch (e) {}
@@ -55,17 +55,14 @@ export default function AdminLoginPage() {
 
       const { user, tokens } = data.data;
 
-      if (user.role !== 'admin') {
+      if (!user || !['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(user.role)) {
         throw new Error('Access Denied: Standard user accounts cannot log in to the administrator portal.');
       }
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('admin_token', tokens.accessToken);
-        localStorage.setItem('token', tokens.accessToken);
         localStorage.setItem('admin_user', JSON.stringify(user));
-        localStorage.setItem('user', JSON.stringify(user));
-        document.cookie = `admin_token=${tokens.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-        document.cookie = `token=${tokens.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+        document.cookie = `admin_token=${tokens.accessToken}; path=/; max-age=604800; SameSite=Lax`;
       }
 
       router.push('/admin/dashboard');
@@ -92,12 +89,12 @@ export default function AdminLoginPage() {
         className="w-full max-w-md relative z-10"
       >
         {/* Admin Login Glass Card */}
-        <div className="p-8 sm:p-10 rounded-3xl bg-white/95 border border-slate-200/80 shadow-xl shadow-slate-900/5 backdrop-blur-2xl relative overflow-hidden text-left">
+        <div className="p-8 sm:p-10 rounded-2xl bg-white/95 border border-slate-200/80 shadow-xl shadow-slate-900/5 backdrop-blur-2xl relative overflow-hidden text-left">
           
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 mb-4 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 shadow-inner">
-              <div className="w-5 h-5 rounded-lg bg-indigo-600 flex items-center justify-center shadow">
+              <div className="w-5 h-5 rounded-2xl bg-indigo-600 flex items-center justify-center shadow">
                 <Sparkles className="w-3 h-3 text-white" />
               </div>
               <span className="text-xs font-black text-indigo-600 tracking-wider uppercase">
@@ -118,7 +115,7 @@ export default function AdminLoginPage() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-2.5"
+                className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-2.5"
               >
                 <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
                 <span>{errorMsg}</span>

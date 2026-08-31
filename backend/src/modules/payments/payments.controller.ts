@@ -68,6 +68,58 @@ export class PaymentsController {
   }
 
   /**
+   * POST /api/v1/payments/paypal/create-order
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('paypal/create-order')
+  @HttpCode(HttpStatus.OK)
+  async createPayPalOrder(
+    @CurrentUser('_id') userId: string,
+    @Body('plan') plan: SubscriptionPlan,
+    @Body('billingCycle') billingCycle: 'monthly' | 'annual',
+  ) {
+    if (!plan || !billingCycle) {
+      throw new BadRequestException('Plan type and billing cycle are required.');
+    }
+    const orderData = await this.paymentsService.createPayPalOrder(
+      userId.toString(),
+      plan,
+      billingCycle,
+    );
+    return {
+      success: true,
+      message: 'PayPal Order Created',
+      data: orderData,
+    };
+  }
+
+  /**
+   * POST /api/v1/payments/paypal/capture-order
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('paypal/capture-order')
+  @HttpCode(HttpStatus.OK)
+  async capturePayPalOrder(
+    @CurrentUser('_id') userId: string,
+    @Body('orderId') orderId: string,
+    @Body('plan') plan: SubscriptionPlan,
+  ) {
+    if (!orderId || !plan) {
+      throw new BadRequestException('PayPal order ID and plan are required.');
+    }
+    const captureData = await this.paymentsService.capturePayPalOrder(
+      userId.toString(),
+      orderId,
+      plan,
+    );
+    return {
+      success: true,
+      message: 'PayPal Order Captured Successfully',
+      data: captureData,
+    };
+  }
+
+  /**
    * POST /api/v1/payments/mock-activate
    * Auth-protected helper endpoint for testing/sandbox mode without real Stripe keys
    */
@@ -132,8 +184,14 @@ export class PaymentsController {
 
     let event;
     try {
-      event = this.paymentsService.constructEvent(payload, signature);
+      event = await this.paymentsService.constructEvent(payload, signature);
     } catch (err: any) {
+      const hasSecret = await this.paymentsService.hasWebhookSecret();
+      if (hasSecret) {
+        console.error(`❌ Webhook signature validation failed strictly: ${err.message}`);
+        return res.status(400).send(`Stripe Webhook Signature Verification Failed: ${err.message}`);
+      }
+
       console.warn(`⚠️ Webhook signature validation failed: ${err.message}. processing unsafe fallback...`);
       // Optional fallback in sandbox/dev environments if keys are unconfigured
       try {
@@ -208,6 +266,33 @@ export class PaymentsController {
     } catch (dbErr: any) {
       console.error(`Database operations in Webhook failed: ${dbErr.message}`);
       return res.status(500).send(`Internal database error: ${dbErr.message}`);
+    }
+
+    res.json({ received: true });
+  }
+
+  /**
+   * POST /api/v1/payments/paypal/webhook
+   * Public PayPal Webhook / IPN Notification Endpoint
+   */
+  @Post('paypal/webhook')
+  @HttpCode(HttpStatus.OK)
+  async handlePayPalWebhook(
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const event = req.body;
+    console.log(`📩 Received PayPal Webhook Event: ${event?.event_type || 'UNKNOWN'}`);
+
+    try {
+      const eventType = event?.event_type;
+      if (eventType === 'PAYMENT.CAPTURE.COMPLETED' || eventType === 'CHECKOUT.ORDER.APPROVED') {
+        const resource = event?.resource;
+        const customId = resource?.custom_id || resource?.purchase_units?.[0]?.custom_id;
+        console.log(`✅ PayPal Webhook: Completed payment capture for custom ID: ${customId}`);
+      }
+    } catch (err: any) {
+      console.error(`PayPal Webhook Processing Error: ${err.message}`);
     }
 
     res.json({ received: true });

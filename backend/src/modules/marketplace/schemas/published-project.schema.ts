@@ -3,6 +3,16 @@ import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export type PublishedProjectDocument = PublishedProject & Document;
 
+export interface ReviewItem {
+  id?: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  rating: number;
+  comment: string;
+  createdAt: Date;
+}
+
 @Schema({ timestamps: true, collection: 'published_projects' })
 export class PublishedProject {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true, index: true })
@@ -20,6 +30,12 @@ export class PublishedProject {
   @Prop({ required: true, default: 0 }) // Price in USD ($0 = free)
   price: number;
 
+  @Prop({ default: 0 })
+  originalPrice?: number;
+
+  @Prop({ default: 0 })
+  discount?: number; // Discount percentage e.g. 40% OFF
+
   @Prop({ required: true, index: true }) // e.g., 'interior-design', 'floor-plan-generator'
   toolSlug: string;
 
@@ -31,6 +47,9 @@ export class PublishedProject {
 
   @Prop({ required: true }) // Cloudinary URL for the single free sample preview display image
   sampleImageUrl: string;
+
+  @Prop({ default: '' }) // Original before image URL
+  beforeImageUrl?: string;
 
   @Prop({ type: [String], default: [] }) // Cloudinary URLs locked until project is purchased
   lockedImageUrls: string[];
@@ -49,6 +68,15 @@ export class PublishedProject {
 
   @Prop({ default: 0 })
   wishlistCount: number;
+
+  @Prop({ default: 4.8 })
+  rating?: number;
+
+  @Prop({ default: 0 })
+  reviewCount?: number;
+
+  @Prop({ type: Array, default: [] })
+  reviews?: ReviewItem[];
 
   @Prop({ default: 'published', enum: ['published', 'draft', 'archived'] })
   status: string;

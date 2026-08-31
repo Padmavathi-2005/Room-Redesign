@@ -91,39 +91,36 @@ export class ExteriorDesignPromptBuilder implements IPromptBuilder {
     const colorClause = colorPalette ? `accentuated with ${colorPalette.toLowerCase()} exterior color palette` : '';
 
     const toolClause = tool === 'Sky & Weather Swap' 
-      ? 'dramatic golden hour sunset sky with soft warm ambient outdoor weather swap lighting'
+      ? 'golden hour sunset sky swap'
       : tool === 'Sketch to Render'
-      ? 'hyper-realistic architectural 3D render transformed from line drawing sketch'
+      ? 'architectural 3D render from sketch'
       : tool === 'Video Walkthrough'
-      ? 'cinematic drone sweep architectural camera walkthrough perspective'
-      : `complete exterior architectural ${styleKey} ${buildingType.toLowerCase()} redesign`;
+      ? 'architectural drone walkthrough'
+      : `exterior architectural ${styleKey} ${buildingType.toLowerCase()} redesign`;
 
-    const interventionClause = `AI intervention strength set to ${aiIntervention.toLowerCase()}`;
-    const imageAnalysis =
-      'analyzing facade structural lines, roofline geometry, main entrance placement, and window aperture grid';
-    const preservationRule =
-      'preserve original building silhouette, retains structural wall boundaries, door framing, and window grid geometry; update exterior facade materials, wood slat cladding, and architectural lighting only';
+    const preservationRule = 'Preserve original building silhouette, wall structure, entrance, and window grid; update exterior materials and lighting only.';
+    const subject = `8k UHD photo of a ${styleKey} ${buildingType.toLowerCase()} exterior, ${angleClause}.`;
+    const details = [
+      styleDetails ? `Design: ${styleDetails}.` : '',
+      roofClause ? `Roof: ${roofClause}.` : '',
+      colorClause ? `Colors: ${colorClause}.` : '',
+      lightingClause ? `Lighting: ${lightingClause}.` : '',
+      envClause ? `Environment: ${envClause}.` : '',
+      todClause ? `Time: ${todClause}.` : '',
+      toolClause ? `Task: ${toolClause}.` : '',
+    ].filter(Boolean).join(' ');
 
-    const subject = `a high-end 8k architectural exterior photograph of a ${styleKey} ${buildingType.toLowerCase()} facade, ${angleClause}`;
-    const userConstraints = userMsg ? `incorporating custom exterior instructions: ${userMsg}` : '';
+    const userConstraints = userMsg ? `User requirements: ${userMsg}.` : '';
 
     const finalPrompt = [
-      COMMON_PHOTOGRAPHIC_BOOSTERS,
-      imageAnalysis,
       subject,
-      styleDetails,
-      roofClause,
-      colorClause,
-      lightingClause,
-      envClause,
-      todClause,
-      toolClause,
-      interventionClause,
+      details,
       preservationRule,
       userConstraints,
+      COMMON_PHOTOGRAPHIC_BOOSTERS
     ]
       .filter(Boolean)
-      .join(', ');
+      .join(' ');
 
     const negativePrompt = `${COMMON_NEGATIVE_PROMPT}, collapsed building, warped windows, floating roof, distorted facade geometry, altered entrance placement`;
 

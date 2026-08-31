@@ -10,7 +10,7 @@ export class PaintColorPromptBuilder implements IPromptBuilder {
     const finish = options.mood || 'Matte';
     const wallTarget = options.buildingType || 'accent feature wall';
 
-    const finalPrompt = `Architectural wall repaint visualization, repainting ${wallTarget} in ${color} paint color with ${finish} finish, flawless smooth wall texture, uniform coat of paint, professional interior painting, ${COMMON_PHOTOGRAPHIC_BOOSTERS}`;
+    const finalPrompt = `Architectural wall repaint. Repaint the ${wallTarget} in a smooth, uniform ${color} paint color with a ${finish} finish. Professional interior painting work. ${COMMON_PHOTOGRAPHIC_BOOSTERS}`;
 
     return {
       finalPrompt,

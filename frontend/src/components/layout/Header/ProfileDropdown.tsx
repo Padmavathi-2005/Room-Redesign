@@ -84,10 +84,10 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
           <img
             src={user.avatar}
             alt={capitalizedName}
-            className="w-7 h-7 rounded-xl object-cover border border-white/60 shadow-xs"
+            className="w-7 h-7 rounded-2xl object-cover border border-white/60 shadow-xs"
           />
         ) : (
-          <div className="w-7 h-7 rounded-xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white text-xs font-extrabold shadow-inner">
+          <div className="w-7 h-7 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white text-xs font-extrabold shadow-inner">
             {initials}
           </div>
         )}
@@ -114,12 +114,12 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.95 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 mt-4 sm:mt-5 w-64 p-3 z-50 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl backdrop-blur-2xl space-y-2 text-xs text-slate-700 dark:text-slate-200"
+            className="absolute right-0 mt-4 sm:mt-5 w-64 p-3 z-50 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-2xl backdrop-blur-2xl space-y-2 text-xs text-slate-700 dark:text-slate-200"
           >
             {/* Premium Top User Card Box */}
             <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-purple-50/40 dark:from-blue-950/70 dark:via-indigo-950/40 dark:to-slate-900 border border-blue-100 dark:border-blue-900/60 rounded-2xl p-3 space-y-2.5">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-extrabold shadow-sm">
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-extrabold shadow-sm">
                   {initials}
                 </div>
                 <div className="flex flex-col min-w-0">
@@ -133,7 +133,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
               </div>
 
               {/* Credit Balance Highlight with Upgrade Link Button */}
-              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white px-3 py-2 rounded-xl shadow-xs text-[11px] font-bold flex items-center justify-between">
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white px-3 py-2 rounded-2xl shadow-xs text-[11px] font-bold flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-[9px] text-blue-100/90 font-medium">Credit Balance</span>
                   <span className="flex items-center gap-1 font-extrabold text-xs">
@@ -144,7 +144,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
                 <Link
                   href="/pricing"
                   onClick={() => setIsOpen(false)}
-                  className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold rounded-lg text-[10px] shadow-xs flex items-center gap-1 transition-all"
+                  className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold rounded-2xl text-[10px] shadow-xs flex items-center gap-1 transition-all"
                 >
                   <Sparkles className="w-2.5 h-2.5" />
                   <span>Upgrade</span>
@@ -157,7 +157,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
               <Link
                 href="/dashboard"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold text-slate-800 dark:text-slate-200"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold text-slate-800 dark:text-slate-200"
               >
                 <LayoutDashboard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>Dashboard</span>
@@ -166,7 +166,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
               <Link
                 href="/generate"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold text-slate-800 dark:text-slate-200"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold text-slate-800 dark:text-slate-200"
               >
                 <Wand2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 <span>AI Room Redesign</span>
@@ -175,7 +175,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
               <Link
                 href="/pricing"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold text-slate-800 dark:text-slate-200"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold text-slate-800 dark:text-slate-200"
               >
                 <CreditCard className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 <span>Billing & Plans</span>
@@ -184,7 +184,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
               <Link
                 href="/settings"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold text-slate-800 dark:text-slate-200"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold text-slate-800 dark:text-slate-200"
               >
                 <Settings className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 <span>Account Settings</span>
@@ -199,7 +199,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
                 setIsOpen(false);
                 onSignOut();
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors border-t border-slate-100 dark:border-slate-800 mt-1 font-bold"
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors border-t border-slate-100 dark:border-slate-800 mt-1 font-bold"
             >
               <LogOut className="w-4 h-4" />
               <span>Sign Out</span>
