@@ -100,8 +100,7 @@ export default function DashboardSidebar() {
   const mainNavItems = [
     { label: 'Home', href: '/dashboard', icon: Home },
     { label: 'Projects Workspace', href: '/projects', icon: Folder },
-    { label: 'My Designs', href: '/history', icon: LayoutGrid },
-    { label: 'Wishlist', href: '/dashboard/wishlist', icon: Heart },
+    { label: 'My Designs', href: '/designs', icon: LayoutGrid },
     { label: 'Interior Design', href: '/generate?tool=interior-design', icon: Wand2 },
     { label: 'Exterior Design', href: '/generate?tool=exterior-design', icon: Building2 },
     { label: 'Floor Plan', href: '/generate?tool=floor-plan-generator', icon: Ruler },

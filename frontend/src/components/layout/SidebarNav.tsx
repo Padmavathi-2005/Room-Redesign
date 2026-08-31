@@ -31,9 +31,8 @@ export default function SidebarNav({ className = '', onToggleCollapse }: Sidebar
     { label: 'Projects', href: '/projects', icon: FolderKanban },
     { label: 'AI Tools', href: '/generate', icon: Wand2, badge: 'New' },
     { label: 'Templates', href: '/templates', icon: Layers },
-    { label: 'Wishlist', href: '/wishlist', icon: Heart },
     { label: 'Shopping List', href: '/shopping-list', icon: ShoppingCart },
-    { label: 'Credits & Plans', href: '/pricing', icon: Zap },
+    { label: 'Credits & Plans', href: '/billing', icon: Zap },
     { label: 'Profile Settings', href: '/profile', icon: Settings },
   ];
 

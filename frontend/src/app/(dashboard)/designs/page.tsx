@@ -410,8 +410,6 @@ export default function DesignsPage() {
                   <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     <th className="py-3.5 px-4">Design Render</th>
                     <th className="py-3.5 px-4">Category & Style</th>
-                    <th className="py-3.5 px-4">Rating</th>
-                    <th className="py-3.5 px-4">Wishlist</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -437,27 +435,6 @@ export default function DesignsPage() {
                           </span>
                           <p className="text-slate-400 font-medium text-[11px]">{proj.style}</p>
                         </div>
-                      </td>
-
-                      {/* Rating */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1 font-bold text-amber-500">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                          <span>{(proj.rating || 4.8).toFixed(1)}</span>
-                          <span className="text-[10px] text-slate-400 font-normal">({proj.reviewCount || 12})</span>
-                        </div>
-                      </td>
-
-                      {/* Wishlist */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleWishlistToggle(proj._id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-rose-500 hover:border-rose-500 transition-all"
-                        >
-                          <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-                          <span>{proj.wishlistCount || 0}</span>
-                        </button>
                       </td>
 
                       {/* Download & Actions */}

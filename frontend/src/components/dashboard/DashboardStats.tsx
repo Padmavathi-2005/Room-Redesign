@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Image as ImageIcon, FolderKanban, Zap, Heart, ArrowUpRight } from 'lucide-react';
+import { Image as ImageIcon, FolderKanban, Zap, Heart, ArrowUpRight, Sparkles } from 'lucide-react';
 
 interface DashboardStatsProps {
   totalDesigns?: number;
@@ -46,13 +46,13 @@ export default function DashboardStats({
       badgeBg: 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
     },
     {
-      title: 'Wishlist Items',
-      value: wishlistCount,
-      subtitle: 'Saved Inspirations',
-      href: '/wishlist',
-      icon: Heart,
-      gradient: 'from-rose-500/10 via-rose-500/5 to-transparent',
-      badgeBg: 'bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800',
+      title: 'AI Studio Tools',
+      value: 12,
+      subtitle: 'Interior & Exterior',
+      href: '/generate',
+      icon: Sparkles,
+      gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
+      badgeBg: 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
     },
   ];
 
