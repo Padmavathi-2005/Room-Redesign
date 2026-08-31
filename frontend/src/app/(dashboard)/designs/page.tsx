@@ -51,7 +51,6 @@ export default function DesignsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [showcaseSearch, setShowcaseSearch] = useState<string>('');
   const [sortBy, setSortBy] = useState<'rating' | 'newest'>('newest');
-  const [viewMode, setViewMode] = useState<'masonry' | 'table'>('masonry');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // Mounted state for body portal rendering
@@ -300,36 +299,6 @@ export default function DesignsPage() {
           </div>
 
           <div className="flex items-center gap-3 self-end lg:self-auto">
-            {/* View Mode Toggle Buttons */}
-            <div className="flex items-center p-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setViewMode('masonry')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                  viewMode === 'masonry'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-                title="Unsplash-Style Masonry Cards Layout"
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span>Masonry Cards</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('table')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                  viewMode === 'table'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-                title="Compact Table View"
-              >
-                <Table className="w-3.5 h-3.5" />
-                <span>Table View</span>
-              </button>
-            </div>
-
             {/* Sort Dropdown */}
             <select
               value={sortBy}
@@ -375,7 +344,7 @@ export default function DesignsPage() {
               Try clearing search filters or category selections above!
             </p>
           </div>
-        ) : viewMode === 'masonry' ? (
+        ) : (
           /* UNSPLASH / PINTEREST STYLE MASONRY CARDS GRID (2 PER ROW WITH ROUNDED-LG BORDER RADIUS) */
           <div className="space-y-6">
             <div className="columns-1 md:columns-2 gap-6 space-y-6">
@@ -441,79 +410,6 @@ export default function DesignsPage() {
               pageSize={pageSize}
               onPageChange={setCurrentPage}
               className="bg-transparent border-0 shadow-none px-0 py-2"
-            />
-          </div>
-        ) : (
-          /* Sleek Admin-Style Data Table Container */
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    <th className="py-3.5 px-4">Design Render</th>
-                    <th className="py-3.5 px-4">Category & Style</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                  {paginatedShowcase.map((proj) => (
-                    <tr key={proj._id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group">
-                      {/* Image & Title */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <img src={proj.sampleImageUrl} alt={proj.title} className="w-14 h-11 rounded-2xl object-cover border border-slate-200 dark:border-slate-800 shadow-2xs shrink-0" />
-                          <div>
-                            <h4 className="font-bold text-slate-900 dark:text-white font-heading line-clamp-1 max-w-[200px] sm:max-w-[300px]">{proj.title}</h4>
-                            <p className="text-[11px] text-slate-400 line-clamp-1 max-w-[200px] sm:max-w-[300px]">{proj.description}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Room Category & Style */}
-                      <td className="py-3.5 px-4">
-                        <div className="space-y-1">
-                          <span className="px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 font-extrabold text-[10px] border border-purple-200 dark:border-purple-800 inline-block">
-                            {proj.roomType}
-                          </span>
-                          <p className="text-slate-400 font-medium text-[11px]">{proj.style}</p>
-                        </div>
-                      </td>
-
-                      {/* Download & Actions */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
-                          <a
-                            href={proj.sampleImageUrl}
-                            download={`${proj.title}.jpg`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-600 hover:text-white transition-all shadow-2xs"
-                            title="Download Render Image"
-                          >
-                            <Download className="w-4 h-4" />
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetailModal(proj)}
-                            className="px-3 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-all"
-                          >
-                            <span>View Showcase</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Common Pagination Component attached to bottom of Admin-style Table */}
-            <CommonPagination
-              currentPage={currentPage}
-              totalItems={filteredShowcase.length}
-              pageSize={pageSize}
-              onPageChange={setCurrentPage}
             />
           </div>
         )}
