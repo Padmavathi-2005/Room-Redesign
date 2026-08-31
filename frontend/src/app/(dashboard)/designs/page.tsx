@@ -546,10 +546,10 @@ export default function DesignsPage() {
 
                   <Link
                     href={`/generate?roomType=${encodeURIComponent(selectedDetailDesign.roomType || '')}&style=${encodeURIComponent(selectedDetailDesign.style || '')}&presetImage=${encodeURIComponent(selectedDetailDesign.beforeImageUrl || selectedDetailDesign.sampleImageUrl || '')}&generatedImage=${encodeURIComponent(selectedDetailDesign.sampleImageUrl || '')}&desc=${encodeURIComponent(selectedDetailDesign.description || '')}&autoView=true`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-extrabold shadow-sm hover:opacity-90 transition-all font-heading"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-purple-600/30 transition-all font-heading"
                     title="Open Full Studio Generation View with Pre-filled Form & Output Gallery"
                   >
-                    <Eye className="w-3.5 h-3.5 text-purple-400 dark:text-purple-600" />
+                    <Eye className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
                     <span>View Generation Details</span>
                   </Link>
                 </div>
@@ -582,17 +582,17 @@ export default function DesignsPage() {
                       alt="Before Photo"
                       className="absolute inset-0 w-full h-full object-cover rounded-lg"
                     />
-                    <span className="absolute top-4 left-4 z-20 px-3 py-1 rounded-md bg-slate-950/85 backdrop-blur-md text-xs font-extrabold text-white border border-white/20 uppercase tracking-wider font-heading">
+                    <span className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-md bg-purple-950/85 backdrop-blur-md text-xs font-extrabold text-purple-200 border border-purple-400/40 uppercase tracking-wider font-heading shadow-md">
                       Before Photo
                     </span>
                   </div>
                 ) : (
-                  <span className="absolute top-4 left-4 z-20 px-3 py-1 rounded-md bg-slate-950/85 backdrop-blur-md text-xs font-extrabold text-white border border-white/20 uppercase tracking-wider font-heading">
+                  <span className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-md bg-purple-950/85 backdrop-blur-md text-xs font-extrabold text-purple-200 border border-purple-400/40 uppercase tracking-wider font-heading shadow-md">
                     Original Source Render
                   </span>
                 )}
 
-                <span className="absolute top-4 right-4 z-20 px-3 py-1 rounded-md bg-purple-600 text-white font-extrabold text-xs shadow-md uppercase tracking-wider font-heading">
+                <span className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-md bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold text-xs shadow-md border border-purple-400/30 uppercase tracking-wider font-heading">
                   After Redesign
                 </span>
 
