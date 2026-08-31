@@ -563,6 +563,76 @@ export default function DesignsPage() {
                   </Link>
                 </div>
               </div>
+
+              {/* Rating & Review Feedback Section for this Generated Image */}
+              <div className="p-5 rounded-lg bg-purple-50/50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40 space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-purple-200/50 dark:border-purple-800/40 pb-3">
+                  <div>
+                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider font-heading flex items-center gap-2">
+                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                      <span>Rate & Review This AI Render</span>
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                      How accurate and high-quality is this {selectedDetailDesign.style} {selectedDetailDesign.roomType} transformation?
+                    </p>
+                  </div>
+
+                  {/* 5-Star Selector */}
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className="p-1 transition-transform hover:scale-125 focus:outline-none"
+                        title={`Rate ${star} Stars`}
+                      >
+                        <Star
+                          className={`w-5 h-5 ${
+                            star <= reviewRating
+                              ? 'text-amber-400 fill-amber-400'
+                              : 'text-slate-300 dark:text-slate-600'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ml-1 font-heading">
+                      {reviewRating}.0 / 5.0
+                    </span>
+                  </div>
+                </div>
+
+                {/* Review Message Form */}
+                <form onSubmit={handleSubmitReview} className="space-y-3">
+                  <textarea
+                    rows={2}
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Write a review message or feedback for this generated image..."
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                  />
+                  <div className="flex items-center justify-between">
+                    {reviewMessage ? (
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        {reviewMessage}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-400">
+                        Your rating & review helps improve site AI design quality.
+                      </span>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isSubmittingReview || !reviewComment.trim()}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-extrabold transition-all shadow-sm font-heading cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{isSubmittingReview ? 'Submitting...' : 'Submit Review'}</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
             </motion.div>
           </div>
         </AnimatePresence>,
