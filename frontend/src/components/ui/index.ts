@@ -3,3 +3,4 @@
  */
 export { default as CustomSelect } from './CustomSelect';
 export type { SelectOption } from './CustomSelect';
+export { CreditTokenIcon } from './CreditTokenIcon';
