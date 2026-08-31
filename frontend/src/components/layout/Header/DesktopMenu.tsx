@@ -25,6 +25,7 @@ export default function DesktopMenu() {
   if (isDashboardRoute) {
     return (
       <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-bold">
+        <NavItem href="/tools" label="AI Tools" />
         <NavItem href="/dashboard" label="Dashboard" />
         <NavItem href="/projects" label="Projects" />
         <NavItem href="/generate" label="Generate" />
