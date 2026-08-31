@@ -385,12 +385,13 @@ export default function DesignsPage() {
                   onClick={() => handleOpenDetailModal(proj)}
                   className="break-inside-avoid relative rounded-lg overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-2xl transition-all duration-300 group cursor-pointer"
                 >
-                  {/* NATURAL ASPECT RATIO IMAGE (NO CROPPING!) */}
-                  <div className="relative w-full overflow-hidden bg-slate-100 dark:bg-slate-800 rounded-lg">
+                  {/* NATURAL ASPECT RATIO IMAGE (WITH SMOOTH SKELETON LOADING BACKGROUND!) */}
+                  <div className="relative w-full min-h-[220px] overflow-hidden bg-slate-200 dark:bg-slate-800/80 rounded-lg">
                     <img
                       src={proj.sampleImageUrl}
                       alt={proj.title}
-                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg"
+                      loading="lazy"
+                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg relative z-10"
                     />
 
                     {/* TOP FLOATING OVERLAY: Room Type Badge */}
@@ -557,9 +558,10 @@ export default function DesignsPage() {
 
                   <Link
                     href={`/generate?roomType=${encodeURIComponent(selectedDetailDesign.roomType || '')}&style=${encodeURIComponent(selectedDetailDesign.style || '')}&presetImage=${encodeURIComponent(selectedDetailDesign.beforeImageUrl || selectedDetailDesign.sampleImageUrl || '')}&generatedImage=${encodeURIComponent(selectedDetailDesign.sampleImageUrl || '')}&desc=${encodeURIComponent(selectedDetailDesign.description || '')}&autoView=true`}
-                    onClick={handleCloseDetailModal}
+                    target="_blank"
+                    rel="noreferrer"
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-purple-600/30 transition-all font-heading cursor-pointer"
-                    title="Open Full Studio Generation View with Pre-filled Form & Output Gallery"
+                    title="Open Full Studio Generation View in New Tab"
                   >
                     <span>View Generation Details</span>
                   </Link>
@@ -656,7 +658,8 @@ export default function DesignsPage() {
                   </a>
                   <Link
                     href={`/generate?roomType=${encodeURIComponent(selectedDetailDesign.roomType || '')}&style=${encodeURIComponent(selectedDetailDesign.style || '')}&presetImage=${encodeURIComponent(selectedDetailDesign.beforeImageUrl || selectedDetailDesign.sampleImageUrl || '')}&desc=${encodeURIComponent(selectedDetailDesign.description || '')}`}
-                    onClick={handleCloseDetailModal}
+                    target="_blank"
+                    rel="noreferrer"
                     className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold transition-colors shadow-md shadow-purple-600/30 font-heading cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
