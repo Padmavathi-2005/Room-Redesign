@@ -29,7 +29,7 @@ export default function DesktopMenu() {
         <NavItem href="/dashboard" label="Dashboard" />
         <NavItem href="/projects" label="Projects" />
         <NavItem href="/generate" label="Generate" />
-        <NavItem href="/pricing" label="Subscription Plans" />
+        <NavItem href="/billing" label="Credits & Plan" />
         <NavItem href="/settings" label="Profile" />
       </nav>
     );
