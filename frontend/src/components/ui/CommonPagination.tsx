@@ -45,8 +45,11 @@ export default function CommonPagination({
 
   if (totalItems === 0) return null;
 
+  const isStandalone = className.includes('bg-transparent') || className.includes('border-0');
+  const baseStyle = isStandalone ? '' : 'bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800';
+
   return (
-    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-3.5 px-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 ${className}`}>
+    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-3.5 px-4 text-xs text-slate-600 dark:text-slate-400 ${baseStyle} ${className}`}>
       {/* Left: Range Info & Items Per Page Selector */}
       <div className="flex items-center gap-3">
         <span className="font-medium">

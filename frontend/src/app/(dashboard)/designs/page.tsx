@@ -495,6 +495,7 @@ export default function DesignsPage() {
               totalItems={filteredShowcase.length}
               pageSize={pageSize}
               onPageChange={setCurrentPage}
+              className="bg-transparent border-0 shadow-none px-0 py-2"
             />
           </div>
         ) : (
