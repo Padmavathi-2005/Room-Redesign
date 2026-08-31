@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -52,7 +53,11 @@ export default function DesignsPage() {
   const [viewMode, setViewMode] = useState<'masonry' | 'table'>('masonry');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Detail Modal state
+  // Mounted state for body portal rendering
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const [selectedDetailDesign, setSelectedDetailDesign] = useState<PublishedProjectData | null>(null);
   const [detailBeforeSlider, setDetailBeforeSlider] = useState<number>(50);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
@@ -501,12 +506,12 @@ export default function DesignsPage() {
         )}
       </div>
 
-      {/* DESIGN SHOWCASE LIGHTBOX POPUP MODAL */}
-      <AnimatePresence>
-        {isDetailModalOpen && selectedDetailDesign && (
+      {/* DESIGN SHOWCASE LIGHTBOX POPUP MODAL (PORTALED DIRECTLY TO BODY TO ELIMINATE TOP BLEED) */}
+      {isMounted && isDetailModalOpen && selectedDetailDesign && createPortal(
+        <AnimatePresence>
           <div
             onClick={handleCloseDetailModal}
-            className="fixed top-0 left-0 w-screen h-screen z-[999999] flex items-center justify-center p-4 sm:p-6 sm:p-10 overflow-hidden bg-slate-950/90 backdrop-blur-2xl"
+            className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[9999999] flex items-center justify-center p-4 sm:p-6 sm:p-8 overflow-y-auto bg-slate-950/95 backdrop-blur-2xl"
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0, y: 10 }}
@@ -514,7 +519,7 @@ export default function DesignsPage() {
               exit={{ scale: 0.96, opacity: 0, y: 10 }}
               transition={{ type: 'spring', stiffness: 350, damping: 30 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6 scrollbar-none no-scrollbar"
+              className="relative w-full max-w-4xl max-h-[88vh] overflow-y-auto rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6 scrollbar-none no-scrollbar my-auto"
             >
               {/* Close Button */}
               <button
@@ -635,8 +640,9 @@ export default function DesignsPage() {
               </div>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
