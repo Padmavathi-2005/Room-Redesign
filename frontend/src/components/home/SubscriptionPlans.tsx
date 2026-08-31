@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { Check, Sparkles, Zap, Shield, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
+import { CreditTokenIcon } from '../ui';
+
 interface Plan {
   id: string;
   name: string;
@@ -149,9 +151,9 @@ export default function SubscriptionPlans() {
                 </div>
 
                 {/* Credits Badge */}
-                <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-center flex items-center justify-center gap-2">
-                  <Zap className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-bold text-slate-800">{plan.creditsBadge}</span>
+                <div className="p-2.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 text-center flex items-center justify-center gap-2">
+                  <CreditTokenIcon size="sm" />
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{plan.creditsBadge}</span>
                 </div>
 
                 {/* Features Checklist */}

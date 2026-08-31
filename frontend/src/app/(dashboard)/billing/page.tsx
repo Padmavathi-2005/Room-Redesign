@@ -21,6 +21,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { paymentService } from '../../../services/payment.service';
+import { CreditTokenIcon } from '@/components/ui';
 
 interface SubscriptionData {
   plan: string;
@@ -649,9 +650,9 @@ export default function BillingPage() {
                     <span className="text-xs font-bold text-slate-400"> / month</span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/50 text-purple-700 dark:text-purple-300 text-xs font-extrabold font-heading flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-                    <span>{plan.credits} AI Credits / month</span>
+                  <div className="p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 text-slate-900 dark:text-slate-100 text-xs font-extrabold font-heading flex items-center gap-2">
+                    <CreditTokenIcon size="sm" />
+                    <span>{plan.credits} AI Tokens / month</span>
                   </div>
 
                   {/* FEATURES LIST */}
