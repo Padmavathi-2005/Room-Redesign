@@ -553,21 +553,24 @@ export default function DesignsPage() {
                   className="absolute inset-0 w-full h-full object-cover rounded-lg"
                 />
 
-                {selectedDetailDesign.beforeImageUrl && (
+                {selectedDetailDesign.beforeImageUrl && selectedDetailDesign.beforeImageUrl !== selectedDetailDesign.sampleImageUrl ? (
                   <div
-                    className="absolute inset-0 overflow-hidden"
-                    style={{ width: `${detailBeforeSlider}%` }}
+                    className="absolute inset-0 overflow-hidden rounded-lg z-10"
+                    style={{ clipPath: `polygon(0 0, ${detailBeforeSlider}% 0, ${detailBeforeSlider}% 100%, 0 100%)` }}
                   >
                     <img
                       src={selectedDetailDesign.beforeImageUrl}
                       alt="Before Photo"
-                      className="absolute inset-0 w-full h-full object-cover max-w-none rounded-lg"
-                      style={{ width: '100%' }}
+                      className="absolute inset-0 w-full h-full object-cover rounded-lg"
                     />
-                    <span className="absolute top-4 left-4 z-20 px-3 py-1 rounded-md bg-slate-950/80 backdrop-blur-md text-xs font-extrabold text-white border border-white/20 uppercase tracking-wider font-heading">
+                    <span className="absolute top-4 left-4 z-20 px-3 py-1 rounded-md bg-slate-950/85 backdrop-blur-md text-xs font-extrabold text-white border border-white/20 uppercase tracking-wider font-heading">
                       Before Photo
                     </span>
                   </div>
+                ) : (
+                  <span className="absolute top-4 left-4 z-20 px-3 py-1 rounded-md bg-slate-950/85 backdrop-blur-md text-xs font-extrabold text-white border border-white/20 uppercase tracking-wider font-heading">
+                    Original Source Render
+                  </span>
                 )}
 
                 <span className="absolute top-4 right-4 z-20 px-3 py-1 rounded-md bg-purple-600 text-white font-extrabold text-xs shadow-md uppercase tracking-wider font-heading">
