@@ -158,7 +158,7 @@ export default function DesignsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [showcaseSearch, setShowcaseSearch] = useState<string>('');
   const [sortBy, setSortBy] = useState<'rating' | 'newest'>('rating');
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [viewMode, setViewMode] = useState<'masonry' | 'table'>('masonry');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // Detail Modal state
@@ -356,6 +356,36 @@ export default function DesignsPage() {
           </div>
 
           <div className="flex items-center gap-3 self-end lg:self-auto">
+            {/* View Mode Toggle Buttons */}
+            <div className="flex items-center p-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setViewMode('masonry')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  viewMode === 'masonry'
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Unsplash-Style Masonry Cards Layout"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Masonry Cards</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  viewMode === 'table'
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Compact Table View"
+              >
+                <Table className="w-3.5 h-3.5" />
+                <span>Table View</span>
+              </button>
+            </div>
+
             {/* Sort Dropdown */}
             <select
               value={sortBy}
@@ -400,6 +430,72 @@ export default function DesignsPage() {
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Try clearing search filters or category selections above!
             </p>
+          </div>
+        ) : viewMode === 'masonry' ? (
+          /* UNSPLASH / PINTEREST STYLE MASONRY CARDS GRID (PRESERVES EXACT NATURAL IMAGE SHAPE) */
+          <div className="space-y-6">
+            <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+              {paginatedShowcase.map((proj) => (
+                <div
+                  key={proj._id}
+                  onClick={() => handleOpenDetailModal(proj)}
+                  className="break-inside-avoid relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-2xl transition-all duration-300 group cursor-pointer"
+                >
+                  {/* NATURAL ASPECT RATIO IMAGE (NO CROPPING!) */}
+                  <div className="relative w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+                    <img
+                      src={proj.sampleImageUrl}
+                      alt={proj.title}
+                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500 rounded-3xl"
+                    />
+
+                    {/* TOP FLOATING OVERLAY: Room Type Badge */}
+                    <div className="absolute top-3 left-3 z-10">
+                      <span className="px-3 py-1 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider border border-white/20 shadow-md">
+                        {proj.roomType}
+                      </span>
+                    </div>
+
+                    {/* TOP RIGHT QUICK ACTIONS: Download */}
+                    <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <a
+                        href={proj.sampleImageUrl}
+                        download={`${proj.title}.jpg`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-2 rounded-full bg-slate-950/80 backdrop-blur-md text-white hover:bg-purple-600 transition-colors shadow-md"
+                        title="Download HD Render"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+
+                    {/* BOTTOM HOVER GRADIENT OVERLAY WITH TITLE & STYLE */}
+                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent text-white space-y-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
+                      <h4 className="font-extrabold text-sm font-heading line-clamp-1 leading-snug text-white">
+                        {proj.title}
+                      </h4>
+                      <div className="flex items-center justify-between text-[11px] text-slate-300 font-medium">
+                        <span className="text-purple-300 font-bold">{proj.style}</span>
+                        <span className="inline-flex items-center gap-1 text-white font-bold group-hover:text-purple-300 transition-colors">
+                          <span>View Render</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Component */}
+            <CommonPagination
+              currentPage={currentPage}
+              totalItems={filteredShowcase.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+            />
           </div>
         ) : (
           /* Sleek Admin-Style Data Table Container */
