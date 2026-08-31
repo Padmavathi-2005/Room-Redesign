@@ -689,15 +689,9 @@ export default function DesignsPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleWishlistToggle(selectedDetailDesign._id)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:border-rose-500 hover:text-rose-500 transition-colors"
-                  >
-                    <Heart className="w-4 h-4 text-rose-500" /> Save to Wishlist
-                  </button>
                   <Link
                     href="/generate"
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold transition-colors shadow-md shadow-purple-600/30"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold transition-colors shadow-md shadow-purple-600/30 font-heading"
                   >
                     <Sparkles className="w-4 h-4" /> Try This Style in Studio
                   </Link>

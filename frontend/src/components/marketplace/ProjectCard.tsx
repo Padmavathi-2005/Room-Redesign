@@ -80,19 +80,7 @@ export const ProjectCard: React.FC<PublishedProjectCardProps> = ({
           </span>
         </div>
 
-        {/* Wishlist Heart Button */}
-        <button
-          onClick={handleHeartClick}
-          aria-label="Wishlist toggle"
-          className={`absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md border transition-all duration-200 ${
-            liked
-              ? 'bg-rose-500/20 border-rose-500/50 text-rose-500'
-              : 'bg-slate-950/60 border-slate-700/50 text-slate-300 hover:text-rose-400 hover:scale-110'
-          }`}
-          title={liked ? 'Remove from wishlist' : 'Save to wishlist'}
-        >
-          <Heart className={`h-4 h-4 ${liked ? 'fill-rose-500 text-rose-500' : ''}`} />
-        </button>
+
 
         {/* Interactive Before/After Toggle Overlay Button */}
         {beforeImageUrl && (
