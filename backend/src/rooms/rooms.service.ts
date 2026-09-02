@@ -36,10 +36,17 @@ export class RoomsService implements OnModuleInit {
       ).exec();
       // Remove all previous room generations from DB
       await this.roomModel.deleteMany({}).exec();
+      this.inMemoryRooms = [];
       this.logger.log('Reset user credits to 0 and cleared old room redesign generations.');
     } catch (e) {
       this.logger.warn('Initial cleanup warning:', e);
     }
+  }
+
+  async removeAll(): Promise<{ success: boolean; message: string }> {
+    await this.roomModel.deleteMany({}).exec();
+    this.inMemoryRooms = [];
+    return { success: true, message: 'All room generations cleared' };
   }
 
   /**

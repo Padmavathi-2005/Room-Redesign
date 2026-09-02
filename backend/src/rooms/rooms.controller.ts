@@ -34,6 +34,11 @@ export class RoomsController {
     return this.roomsService.findOne(id);
   }
 
+  @Delete()
+  async removeAll() {
+    return this.roomsService.removeAll();
+  }
+
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.roomsService.remove(id);

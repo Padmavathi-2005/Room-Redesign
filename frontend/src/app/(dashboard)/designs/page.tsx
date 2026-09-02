@@ -18,6 +18,8 @@ import {
   Download,
   MessageSquare,
   Eye,
+  Coins,
+  Trash2,
 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import {
@@ -105,9 +107,13 @@ export default function DesignsPage() {
       // Combine local & backend designs
       const combined = [...localDesigns, ...formattedRooms];
 
-      // Filter by room category if selected
+      // Filter out any sample/demo placeholder images and filter by category
       const filtered = combined.filter((item) => {
-        if (!item.sampleImageUrl || item.sampleImageUrl.includes('unsplash')) return false;
+        if (!item.sampleImageUrl) return false;
+        const img = item.sampleImageUrl.toLowerCase();
+        if (img.includes('unsplash') || img.includes('photo-1600210492486') || img.includes('sample-1') || item._id === 'sample-1') {
+          return false;
+        }
         if (selectedCategory === 'All') return true;
         return item.roomType?.toLowerCase() === selectedCategory.toLowerCase() || item.style?.toLowerCase() === selectedCategory.toLowerCase();
       });
@@ -458,6 +464,10 @@ export default function DesignsPage() {
                     </span>
                     <span className="px-3 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-extrabold border border-slate-200 dark:border-slate-700 font-heading">
                       {selectedDetailDesign.style}
+                    </span>
+                    <span className="px-3 py-1 rounded-md bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-xs font-extrabold border border-amber-200 dark:border-amber-800 font-heading flex items-center gap-1.5 shadow-2xs">
+                      <Coins className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <span>Debited: {selectedDetailDesign.creditsCost || 4} Credits</span>
                     </span>
                   </div>
 

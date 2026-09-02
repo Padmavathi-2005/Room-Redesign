@@ -22,6 +22,7 @@ export interface PublishedProjectData {
   style?: string;
   sampleImageUrl: string;
   beforeImageUrl?: string;
+  creditsCost?: number;
   totalImageCount: number;
   tags?: string[];
   salesCount?: number;
