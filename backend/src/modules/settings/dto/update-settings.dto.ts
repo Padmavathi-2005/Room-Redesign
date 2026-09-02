@@ -128,6 +128,10 @@ export class UpdateSettingsDto {
   // 4. Stripe & PayPal Payment Gateways
   @IsOptional()
   @IsBoolean()
+  stripeEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   stripeTestMode?: boolean;
 
   @IsOptional()
@@ -144,6 +148,10 @@ export class UpdateSettingsDto {
 
   @IsOptional()
   @IsBoolean()
+  paypalEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   paypalSandboxMode?: boolean;
 
   @IsOptional()
@@ -153,6 +161,10 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsString()
   paypalClientSecret?: string;
+
+  @IsOptional()
+  @IsString()
+  paypalSecretKey?: string;
 
   @IsOptional()
   @IsString()

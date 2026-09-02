@@ -807,17 +807,20 @@ export default function AdminSettingsPage() {
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      {/* Enable / Disable Toggle */}
-                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                        <input
-                          type="checkbox"
-                          checked={stripeEnabled}
-                          onChange={(e) => setStripeEnabled(e.target.checked)}
-                          className="w-4 h-4 text-emerald-600 rounded cursor-pointer accent-emerald-600"
-                        />
-                        <span className={`text-xs font-black ${stripeEnabled ? 'text-emerald-700' : 'text-slate-400'}`}>
+                      {/* Enable / Disable Toggle Switch */}
+                      <label className="flex items-center gap-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                        <span className={`text-xs font-black font-heading ${stripeEnabled ? 'text-emerald-700' : 'text-slate-400'}`}>
                           {stripeEnabled ? '✓ Enabled' : '✕ Disabled'}
                         </span>
+                        <div className="relative inline-flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={stripeEnabled}
+                            onChange={(e) => setStripeEnabled(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </div>
                       </label>
 
                       {/* Test Mode Checkbox */}
@@ -878,17 +881,20 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {/* Enable / Disable Toggle */}
-                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-blue-200 shadow-2xs">
-                        <input
-                          type="checkbox"
-                          checked={paypalEnabled}
-                          onChange={(e) => setPaypalEnabled(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 rounded cursor-pointer accent-blue-600"
-                        />
-                        <span className={`text-xs font-black ${paypalEnabled ? 'text-blue-700' : 'text-slate-400'}`}>
+                      {/* Enable / Disable Toggle Switch */}
+                      <label className="flex items-center gap-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded-xl border border-blue-200 shadow-2xs">
+                        <span className={`text-xs font-black font-heading ${paypalEnabled ? 'text-blue-700' : 'text-slate-400'}`}>
                           {paypalEnabled ? '✓ Enabled' : '✕ Disabled'}
                         </span>
+                        <div className="relative inline-flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={paypalEnabled}
+                            onChange={(e) => setPaypalEnabled(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        </div>
                       </label>
 
                       {/* Test Mode Checkbox */}

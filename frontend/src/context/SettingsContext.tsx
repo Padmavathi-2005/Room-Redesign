@@ -42,8 +42,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   creditsPerGeneration: 1,
   tablePaginationLimit: 10,
   stripeEnabled: true,
-  stripePublishableKey: 'pk_test_51RoomAIStripePublishableKey123',
-  stripeSecretKey: 'sk_test_51RoomAIStripeSecretKey123',
+  stripePublishableKey: 'pk_test_51OuCU4HSqjDEGS2ZVpMCwum53GzzcuJ3XuAxJHgeJaFdG6XvU10VyfCnpzdEQu4JdefyoegMTUZXh8sB3fHiMJQY',
+  stripeSecretKey: 'sk_test_51OuCU4HSqjDEGS2ZSecretKeyMock123',
   paypalEnabled: true,
   paypalClientId: 'client_id_roomai_paypal_123',
   paypalSecretKey: 'secret_key_roomai_paypal_123',
@@ -108,15 +108,29 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function fetchSettings() {
       try {
+        let local: Partial<AppSettings> = {};
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('app_settings');
+          if (stored) {
+            try {
+              local = JSON.parse(stored);
+            } catch (e) {}
+          }
+        }
+
         const res = await fetch(`${API_BASE_URL}/settings`, { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
-            const fetched = json.data as AppSettings;
+            const fetched = { ...DEFAULT_SETTINGS, ...local, ...json.data } as AppSettings;
             setSettings(fetched);
             applyThemeToDOM(fetched);
+            return;
           }
         }
+        const merged = { ...DEFAULT_SETTINGS, ...local };
+        setSettings(merged);
+        applyThemeToDOM(merged);
       } catch (err) {
         console.warn('Failed to fetch DB settings, using defaults:', err);
         applyThemeToDOM(DEFAULT_SETTINGS);
@@ -132,6 +146,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const updated = { ...settings, ...newSettings };
     setSettings(updated);
     applyThemeToDOM(updated);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('app_settings', JSON.stringify(updated));
+    }
 
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
