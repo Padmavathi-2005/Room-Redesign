@@ -830,19 +830,14 @@ export default function AdminSettingsPage() {
                     
                     <div className="flex items-center gap-3">
                       {/* Enable / Disable Toggle Switch */}
-                      <label className="flex items-center gap-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                        <span className={`text-xs font-black font-heading ${stripeEnabled ? 'text-emerald-700' : 'text-slate-400'}`}>
-                          {stripeEnabled ? '✓ Enabled' : '✕ Disabled'}
-                        </span>
-                        <div className="relative inline-flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={stripeEnabled}
-                            onChange={(e) => setStripeEnabled(e.target.checked)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                        </div>
+                      <label className="relative inline-flex items-center cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={stripeEnabled}
+                          onChange={(e) => setStripeEnabled(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 border border-slate-300 dark:border-slate-600 shadow-xs"></div>
                       </label>
 
                       {/* Test Mode Checkbox */}
@@ -904,19 +899,14 @@ export default function AdminSettingsPage() {
 
                     <div className="flex items-center gap-3">
                       {/* Enable / Disable Toggle Switch */}
-                      <label className="flex items-center gap-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded-xl border border-blue-200 shadow-2xs">
-                        <span className={`text-xs font-black font-heading ${paypalEnabled ? 'text-blue-700' : 'text-slate-400'}`}>
-                          {paypalEnabled ? '✓ Enabled' : '✕ Disabled'}
-                        </span>
-                        <div className="relative inline-flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={paypalEnabled}
-                            onChange={(e) => setPaypalEnabled(e.target.checked)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                        </div>
+                      <label className="relative inline-flex items-center cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={paypalEnabled}
+                          onChange={(e) => setPaypalEnabled(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 border border-slate-300 dark:border-slate-600 shadow-xs"></div>
                       </label>
 
                       {/* Test Mode Checkbox */}
@@ -1029,20 +1019,15 @@ export default function AdminSettingsPage() {
                                 <span className="absolute right-3 text-xs font-extrabold text-slate-400">%</span>
                               </div>
                             </td>
-                            <td className="py-2.5 px-3 w-36">
-                              <label className="flex items-center gap-2 cursor-pointer select-none">
-                                <span className={`text-xs font-extrabold ${tax.enabled ? 'text-emerald-700' : 'text-slate-400'}`}>
-                                  {tax.enabled ? '✓ Enabled' : '✕ Disabled'}
-                                </span>
-                                <div className="relative inline-flex items-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={tax.enabled}
-                                    onChange={(e) => handleUpdateTax(idx, 'enabled', e.target.checked)}
-                                    className="sr-only peer"
-                                  />
-                                  <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-600"></div>
-                                </div>
+                            <td className="py-2.5 px-3 w-28">
+                              <label className="relative inline-flex items-center cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={tax.enabled}
+                                  onChange={(e) => handleUpdateTax(idx, 'enabled', e.target.checked)}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 border border-slate-300 dark:border-slate-600 shadow-xs"></div>
                               </label>
                             </td>
                             <td className="py-2.5 px-3 text-right w-16">
