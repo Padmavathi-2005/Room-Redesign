@@ -24,28 +24,34 @@ export class UsersService implements OnModuleInit {
       $or: [{ email: 'admin@gmail.com' }, { role: UserRole.ADMIN }],
     });
 
-    // 2. Seed Default User Account: test@yopmail.com with 0 initial credits
-    const testUserEmail = 'test@yopmail.com';
-    const existingTestUser = await this.userModel.findOne({ email: testUserEmail });
-    if (!existingTestUser) {
+    // 2. Seed Default User Account: user@yopmail.com (Alex) with 0 initial credits
+    const defaultUserEmail = 'user@yopmail.com';
+    let existingUser = await this.userModel.findOne({
+      $or: [{ email: defaultUserEmail }, { email: 'client@yopmail.com' }, { email: 'test@yopmail.com' }]
+    });
+
+    if (!existingUser) {
       await this.userModel.create({
-        email: testUserEmail,
+        email: defaultUserEmail,
         password: '12345678',
-        firstName: 'Test',
-        lastName: 'User',
+        firstName: 'Alex',
+        lastName: '',
         role: UserRole.USER,
         isActive: true,
         credits: 0,
         subscriptionTier: 'FREE',
       });
-    } else if (existingTestUser.credits > 0 && (!existingTestUser.subscriptionTier || existingTestUser.subscriptionTier === 'FREE')) {
-      existingTestUser.credits = 0;
-      await existingTestUser.save();
+    } else {
+      existingUser.email = defaultUserEmail;
+      existingUser.firstName = 'Alex';
+      existingUser.credits = 0;
+      existingUser.subscriptionTier = 'FREE';
+      await existingUser.save();
     }
 
-    // 3. Reset test accounts without active paid plans to 0 credits
+    // 3. Reset all user accounts without active paid plans to 0 credits
     await this.userModel.updateMany(
-      { subscriptionTier: { $in: ['FREE', null] } },
+      { subscriptionTier: { $in: ['FREE', null, undefined] } },
       { $set: { credits: 0 } }
     ).exec();
   }

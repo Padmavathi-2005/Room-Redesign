@@ -984,21 +984,24 @@ function GenerateStudioContent() {
       const projs = await projectService.getProjects();
       setProjectsList(projs);
 
-      if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
-        const pid = params.get('projectId');
-        if (pid) {
-          setSelectedProjectId(pid);
-          const found = projs.find((p) => String(p._id) === String(pid) || String(p.id) === String(pid));
-          if (found && found.theme) {
-            setSelectedStyle(found.theme);
-            setExteriorStyle(found.theme);
-            setGardenStyle(found.theme);
-            if (found.colorPalette) setSelectedPalette(found.colorPalette);
-            if (found.lighting) setSelectedLighting(found.lighting);
+        if (typeof window !== 'undefined') {
+          // Reset old cached designs to start 100% fresh
+          localStorage.removeItem('user_generated_designs');
+
+          const params = new URLSearchParams(window.location.search);
+          const pid = params.get('projectId');
+          if (pid) {
+            setSelectedProjectId(pid);
+            const found = projs.find((p) => String(p._id) === String(pid) || String(p.id) === String(pid));
+            if (found && found.theme) {
+              setSelectedStyle(found.theme);
+              setExteriorStyle(found.theme);
+              setGardenStyle(found.theme);
+              if (found.colorPalette) setSelectedPalette(found.colorPalette);
+              if (found.lighting) setSelectedLighting(found.lighting);
+            }
           }
         }
-      }
     };
     const fetchDbTools = async () => {
       try {

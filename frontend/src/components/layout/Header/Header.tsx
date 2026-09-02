@@ -87,13 +87,21 @@ export default function Header() {
         const parsed = JSON.parse(storedUser);
         const isAdmin = parsed && parsed.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(parsed.role);
         if (!isAdmin) {
+          if (parsed.email === 'client@yopmail.com' || parsed.email === 'test@yopmail.com') {
+            parsed.email = 'user@yopmail.com';
+            parsed.firstName = 'Alex';
+            parsed.name = 'Alex';
+            parsed.credits = 0;
+            localStorage.setItem('user', JSON.stringify(parsed));
+          }
+
           const rawName = parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim();
           const emailName = parsed.email ? parsed.email.split('@')[0] : '';
-          const displayName = rawName || (emailName ? emailName.charAt(0).toUpperCase() + emailName.slice(1) : 'User');
+          const displayName = rawName || (emailName ? emailName.charAt(0).toUpperCase() + emailName.slice(1) : 'Alex');
 
           setUser({
             name: displayName,
-            email: parsed.email || 'user@example.com',
+            email: parsed.email || 'user@yopmail.com',
             credits: parsed.credits ?? 0,
             plan: parsed.plan ? `${parsed.plan.toUpperCase()}` : 'FREE',
             avatar: parsed.avatar || parsed.avatarUrl || '',
