@@ -33,13 +33,19 @@ export default function Footer() {
     };
   }, []);
 
-  // Hide global footer on Auth and Admin pages or when Modal is open
+  // Hide global landing footer on Auth, Dashboard, Checkout, Billing, and Admin pages or when Modal is open
   if (
     isModalActive ||
     pathname === '/login' ||
     pathname === '/signup' ||
     pathname === '/forgot-password' ||
-    pathname.startsWith('/admin')
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/checkout') ||
+    pathname.startsWith('/billing') ||
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/designs') ||
+    pathname.startsWith('/projects') ||
+    pathname.startsWith('/settings')
   ) {
     return null;
   }

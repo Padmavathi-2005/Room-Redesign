@@ -45,7 +45,12 @@ export default function Header() {
     pathname?.startsWith('/pricing') ||
     pathname?.startsWith('/profile') ||
     pathname?.startsWith('/wishlist') ||
-    pathname?.startsWith('/shopping-list')
+    pathname?.startsWith('/shopping-list') ||
+    pathname?.startsWith('/checkout') ||
+    pathname?.startsWith('/billing') ||
+    pathname?.startsWith('/settings') ||
+    pathname?.startsWith('/notifications') ||
+    pathname?.startsWith('/ai-tools')
   );
 
   const isAppDashboard = Boolean((user && pathname !== '/') || isAppRoute);
