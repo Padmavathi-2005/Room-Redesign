@@ -35,7 +35,7 @@ export default function RootLayout({
             <Header />
 
             {/* Main Page Content */}
-            <div className="relative z-10">{children}</div>
+            <div className="relative">{children}</div>
 
             {/* Light/Dark Theme Footer */}
             <Footer />

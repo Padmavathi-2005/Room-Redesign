@@ -59,13 +59,23 @@ export interface ProjectData {
   updatedAt?: string | Date;
 }
 
+function checkAuthError(res: Response) {
+  if (res.status === 401 && typeof window !== 'undefined') {
+    localStorage.removeItem('token');
+    localStorage.removeItem('admin_token');
+  }
+}
+
 export const projectService = {
   async getProjects(token?: string): Promise<ProjectData[]> {
     try {
       const headers: Record<string, string> = {};
       if (token) headers.Authorization = `Bearer ${token}`;
       const res = await fetch(`${API_URL}/projects`, { headers });
-      if (!res.ok) return [];
+      if (!res.ok) {
+        checkAuthError(res);
+        return [];
+      }
       return await res.json();
     } catch (err) {
       console.warn('Failed to fetch projects from backend:', err);
@@ -108,6 +118,7 @@ export const projectService = {
     });
     
     if (!res.ok) {
+      checkAuthError(res);
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || 'Failed to create project');
     }

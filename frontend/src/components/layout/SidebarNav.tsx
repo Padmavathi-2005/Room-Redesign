@@ -15,6 +15,7 @@ import {
   Layers,
   Home,
   PanelLeftClose,
+  Bell,
 } from 'lucide-react';
 
 interface SidebarNavProps {
@@ -29,6 +30,7 @@ export default function SidebarNav({ className = '', onToggleCollapse }: Sidebar
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'My Designs', href: '/designs', icon: Home },
     { label: 'Projects', href: '/projects', icon: FolderKanban },
+    { label: 'Notifications', href: '/notifications', icon: Bell },
     { label: 'AI Tools', href: '/generate', icon: Wand2, badge: 'New' },
     { label: 'Templates', href: '/templates', icon: Layers },
     { label: 'Shopping List', href: '/shopping-list', icon: ShoppingCart },

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, Sparkles, Zap, ShieldAlert, User, X, CheckCheck } from 'lucide-react';
+import { Bell, Check, Sparkles, Zap, ShieldAlert, User, X, CheckCheck, ArrowRight } from 'lucide-react';
 import { useSocketNotifications, AppNotification } from '@/hooks/useSocketNotifications';
 
 interface NotificationCenterProps {
@@ -158,6 +159,18 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
                     );
                   })
                 )}
+              </div>
+
+              {/* Dropdown Footer: View All Link */}
+              <div className="p-3 bg-slate-50/90 dark:bg-slate-800/90 border-t border-slate-100 dark:border-slate-800 text-center">
+                <Link
+                  href={isAdmin ? '/admin/notifications' : '/notifications'}
+                  onClick={() => setIsOpen(false)}
+                  className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors inline-flex items-center gap-1.5"
+                >
+                  <span>View All Notifications</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </motion.div>
           </>

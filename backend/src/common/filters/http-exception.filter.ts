@@ -17,14 +17,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let message = 'Internal server error';
     let errorResponse: any = {};
 
-    let is404 = false;
-    if (exception instanceof HttpException) {
-      if (exception.getStatus() === 404) {
-        is404 = true;
-      }
-    }
+    const isExpectedHttpError =
+      exception instanceof HttpException &&
+      [400, 401, 403, 404].includes(exception.getStatus());
 
-    if (!is404) {
+    if (!isExpectedHttpError) {
       console.error('💥 Exception caught in Global Filter:', exception);
     }
 

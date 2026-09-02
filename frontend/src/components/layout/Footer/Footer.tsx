@@ -17,26 +17,19 @@ export default function Footer() {
       const modalOpen = Boolean(
         document.body.getAttribute('data-modal-open') === 'true' ||
         document.documentElement.getAttribute('data-modal-open') === 'true' ||
-        document.body.classList.contains('modal-open') ||
-        document.querySelector('[data-modal-open="true"]')
+        document.body.classList.contains('modal-open')
       );
       setIsModalActive(modalOpen);
     };
 
     checkModalState();
 
-    const interval = setInterval(checkModalState, 100);
-    window.addEventListener('click', checkModalState, { capture: true });
-    window.addEventListener('keydown', checkModalState, { capture: true });
-
-    const observer = new MutationObserver(checkModalState);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    window.addEventListener('click', checkModalState);
+    window.addEventListener('keydown', checkModalState);
 
     return () => {
-      clearInterval(interval);
       window.removeEventListener('click', checkModalState);
       window.removeEventListener('keydown', checkModalState);
-      observer.disconnect();
     };
   }, []);
 

@@ -66,6 +66,15 @@ export class RoomGeneration {
   flooringGrout?: string;
 
   @Prop({ required: false, default: '' })
+  furnitureHandling?: string;
+
+  @Prop({ required: false, default: '' })
+  budgetLevel?: string;
+
+  @Prop({ type: Array, default: [] })
+  selectedProducts?: string[];
+
+  @Prop({ required: false, default: '' })
   customInstructions?: string;
 
   @Prop({ required: false, default: '' })

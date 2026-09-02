@@ -59,28 +59,16 @@ export default function DashboardLayout({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
+    const userStr = localStorage.getItem('user') || localStorage.getItem('admin_user');
 
-    if (!token || !user) {
+    if (!token) {
       setIsAuthenticated(false);
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
-    } else {
-      try {
-        const parsed = JSON.parse(user);
-        const isAdmin = parsed && parsed.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(parsed.role);
-        if (isAdmin) {
-          // Admin sessions are isolated; user dashboard requires standard user authentication
-          setIsAuthenticated(false);
-          router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
-        } else {
-          setIsAuthenticated(true);
-        }
-      } catch {
-        setIsAuthenticated(false);
-        router.replace('/login');
-      }
+      return;
     }
+
+    setIsAuthenticated(true);
   }, [router, pathname]);
 
   if (isAuthenticated === false) {

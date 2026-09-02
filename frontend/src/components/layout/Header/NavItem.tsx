@@ -2,23 +2,40 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 interface NavItemProps {
   href: string;
   label: string;
   onClick?: () => void;
+  requireAuth?: boolean;
 }
 
-export default function NavItem({ href, label, onClick }: NavItemProps) {
+export default function NavItem({ href, label, onClick, requireAuth = false }: NavItemProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) onClick();
+
+    if (requireAuth) {
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
+        if (!token) {
+          e.preventDefault();
+          router.push(`/login?redirect=${encodeURIComponent(href)}`);
+          return;
+        }
+      }
+    }
+  };
 
   return (
     <Link
       href={href}
-      onClick={onClick}
+      onClick={handleClick}
       className={`relative py-1 text-sm font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl group ${
         isActive
           ? 'text-[#2563EB] font-semibold'

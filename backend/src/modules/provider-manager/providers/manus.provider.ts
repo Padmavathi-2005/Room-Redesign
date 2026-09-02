@@ -174,18 +174,14 @@ export class ManusProvider implements IAIProvider {
       absoluteImageUrl = `${cleanHost}${cleanPath}`;
     }
 
-    // Determine if absoluteImageUrl is a publicly accessible internet URL (non-localhost)
-    const isPublicUrl = absoluteImageUrl &&
-      (absoluteImageUrl.startsWith('http://') || absoluteImageUrl.startsWith('https://')) &&
-      !absoluteImageUrl.includes('localhost') &&
-      !absoluteImageUrl.includes('127.0.0.1');
+    // Always attach Original Input Image URL on line 1 of prompt payload for Manus AI
+    const validImageUrl = absoluteImageUrl && (absoluteImageUrl.startsWith('http://') || absoluteImageUrl.startsWith('https://'))
+      ? absoluteImageUrl
+      : (input.imageUrl && !input.imageUrl.startsWith('data:image/') ? input.imageUrl : '');
 
-    // Attach public URL to prompt if accessible over internet, otherwise transmit image buffer directly
-    const imagePrefix = isPublicUrl ? `Reference Input Room Image URL: ${absoluteImageUrl}\n\n` : '';
+    const imagePrefix = validImageUrl ? `[Original Input Image: ${validImageUrl}]\n\n` : '';
     
-    const aspectAndResolutionDirective = `\n\nCRITICAL RESOLUTION & GEOMETRIC PROPORTION INSTRUCTIONS:
-1. PRESERVE ORIGINAL ASPECT RATIO: Maintain the exact geometric aspect ratio, camera perspective, and room shape of the reference input image. Do not warp, stretch, or alter the natural room proportions.
-2. HIGH PIXEL UPSCALE & CLARITY ENHANCEMENT: If the uploaded input image is low-resolution or blurry (e.g. 300x300), upscale and render the output image into ultra-crisp, high-resolution architectural quality (minimum 4K/8K UHD, e.g., 1024x1024 / 2048x2048 or higher equivalent matching the exact aspect ratio). Enhance all room textures, lighting, and materials into razor-sharp, photorealistic clarity.`;
+    const aspectAndResolutionDirective = `\n\nCRITICAL INSTRUCTION: Preserve exact aspect ratio, camera perspective, and room proportions. Render in ultra-crisp 8K UHD photorealistic quality.`;
 
     const manusCombinedPrompt = `${imagePrefix}${input.prompt}${aspectAndResolutionDirective}`;
 
@@ -274,13 +270,17 @@ export class ManusProvider implements IAIProvider {
                 const listRes = await axios.get(`${manusApiUrl}/task.list`, { headers, timeout: 5000 });
                 const taskObj = listRes.data?.data?.find((t: any) => t.id === taskId);
                 if (taskObj) {
-                  this.logger.log(`Task #${taskId} state in task.list: "${taskObj.status}"`);
-                  if (taskObj.status === 'error' || taskObj.status === 'failed') {
-                    throw new Error(`Manus API Task execution failed: ${taskObj.title || 'Task error'}`);
+                  const taskStatus = String(taskObj.status || '').toLowerCase();
+                  this.logger.log(`Task #${taskId} state in task.list: "${taskStatus}"`);
+                  if (['error', 'failed', 'stopped', 'cancelled', 'canceled', 'terminated', 'aborted'].includes(taskStatus)) {
+                    throw new Error(`Manus AI Task execution was ${taskStatus}: ${taskObj.title || 'Task stopped or cancelled in Manus app'}`);
                   }
                 }
               } catch (listErr: any) {
-                // Silently ignore task.list transient errors
+                if (listErr.message && listErr.message.includes('Manus AI Task execution was')) {
+                  throw listErr;
+                }
+                // Silently ignore transient network errors during task.list query
               }
 
               // Step 2: Query task.listMessages for completed render image output
@@ -288,9 +288,10 @@ export class ManusProvider implements IAIProvider {
                 const msgEndpoint = `${manusApiUrl}/task.listMessages?task_id=${taskId}`;
                 const msgRes = await axios.get(msgEndpoint, { headers, timeout: 8000 });
                 
-                if (msgRes.data?.status === 'failed' || msgRes.data?.error) {
-                  const errDetail = msgRes.data?.error?.message || msgRes.data?.message || 'Task processing error';
-                  throw new Error(`Manus API Task execution failed: ${errDetail}`);
+                const taskMsgStatus = String(msgRes.data?.status || '').toLowerCase();
+                if (['failed', 'error', 'stopped', 'cancelled', 'canceled', 'terminated', 'aborted'].includes(taskMsgStatus) || msgRes.data?.error) {
+                  const errDetail = msgRes.data?.error?.message || msgRes.data?.message || `Task ${taskMsgStatus}`;
+                  throw new Error(`Manus AI Task execution was ${taskMsgStatus}: ${errDetail}`);
                 }
 
                 // Safe state machine processing of raw Manus runtime messages
@@ -324,6 +325,9 @@ export class ManusProvider implements IAIProvider {
                   lastFailureReason = `Task active (HTTP ${msgRes.status}), waiting for render output image...`;
                 }
               } catch (msgErr: any) {
+                if (msgErr.message && msgErr.message.includes('Manus AI Task execution was')) {
+                  throw msgErr;
+                }
                 const status = msgErr.response?.status;
                 const errText = msgErr.response?.data?.error?.message || msgErr.response?.data?.message || msgErr.message;
                 

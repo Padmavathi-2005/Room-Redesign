@@ -29,26 +29,24 @@ interface UserProfileData {
 export default function Header() {
   const pathname = usePathname();
 
-  // Hide global navbar ONLY on Admin pages
-  if (pathname.startsWith('/admin')) {
-    return null;
-  }
-
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isModalActive, setIsModalActive] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<UserProfileData | null>(null);
 
   const headerRef = useRef<HTMLDivElement>(null);
-  const isAppRoute = pathname.startsWith('/generate') ||
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/projects') ||
-    pathname.startsWith('/designs') ||
-    pathname.startsWith('/templates') ||
-    pathname.startsWith('/pricing') ||
-    pathname.startsWith('/profile') ||
-    pathname.startsWith('/wishlist') ||
-    pathname.startsWith('/shopping-list');
+  const isAppRoute = Boolean(
+    pathname?.startsWith('/generate') ||
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/projects') ||
+    pathname?.startsWith('/designs') ||
+    pathname?.startsWith('/templates') ||
+    pathname?.startsWith('/pricing') ||
+    pathname?.startsWith('/profile') ||
+    pathname?.startsWith('/wishlist') ||
+    pathname?.startsWith('/shopping-list')
+  );
 
   const isAppDashboard = Boolean((user && pathname !== '/') || isAppRoute);
 
@@ -57,30 +55,23 @@ export default function Header() {
     if (typeof window === 'undefined') return;
 
     const checkModalState = () => {
+      if (typeof document === 'undefined') return;
       const modalOpen = Boolean(
         document.body.getAttribute('data-modal-open') === 'true' ||
         document.body.getAttribute('data-fullscreen-workspace') === 'true' ||
         document.documentElement.getAttribute('data-modal-open') === 'true' ||
-        document.body.classList.contains('modal-open') ||
-        document.querySelector('[data-modal-open="true"]')
+        document.body.classList.contains('modal-open')
       );
       setIsModalActive(modalOpen);
     };
 
     checkModalState();
-    const interval = setInterval(checkModalState, 300);
-
     window.addEventListener('click', checkModalState);
     window.addEventListener('keydown', checkModalState);
 
-    const observer = new MutationObserver(checkModalState);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-
     return () => {
-      clearInterval(interval);
       window.removeEventListener('click', checkModalState);
       window.removeEventListener('keydown', checkModalState);
-      observer.disconnect();
     };
   }, []);
 
@@ -117,6 +108,7 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    setMounted(true);
     checkAuthUser();
     window.addEventListener('storage', checkAuthUser);
     window.addEventListener('user-credits-updated', checkAuthUser);
@@ -139,6 +131,16 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Reset any lingering modal states on route navigation
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.removeAttribute('data-modal-open');
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      setIsModalActive(false);
+    }
+  }, [pathname]);
+
   const handleSignOut = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
@@ -149,7 +151,8 @@ export default function Header() {
     window.location.href = '/login';
   };
 
-  if (isModalActive) {
+  // Hide global user header on Admin pages
+  if (!pathname || pathname.startsWith('/admin')) {
     return null;
   }
 
@@ -157,7 +160,7 @@ export default function Header() {
   if (isAppDashboard) {
     return (
       <>
-        <header ref={headerRef} className="fixed top-0 left-0 right-0 w-full z-40 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/90 dark:border-slate-800 shadow-xs backdrop-blur-xl pointer-events-auto">
+        <header id="global-header" ref={headerRef} className="fixed top-0 left-0 right-0 w-full z-40 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/90 dark:border-slate-800 shadow-xs backdrop-blur-xl pointer-events-auto">
           <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 h-[64px] flex items-center justify-between">
             {/* LEFT SIDE: RoomAI Brand Logo */}
             <div className="shrink-0 flex items-center gap-3">
@@ -171,17 +174,6 @@ export default function Header() {
 
             {/* RIGHT SIDE: User Actions & Profile */}
             <div className="hidden lg:flex items-center gap-4 xl:gap-5 shrink-0">
-              <Link href="/wishlist">
-                <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
-                  aria-label="View Wishlist"
-                  className="relative w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-[#E5E7EB] dark:border-slate-800 text-rose-500 hover:border-rose-400 shadow-2xs hover:shadow-md hover:shadow-rose-500/20 flex items-center justify-center focus:outline-none transition-all cursor-pointer"
-                >
-                  <Heart className="w-4 h-4 fill-rose-500/20 text-rose-500 hover:fill-rose-500 transition-colors" />
-                </motion.button>
-              </Link>
-
               <NotificationCenter userId={(user as any)?._id || (user as any)?.id} />
               <ThemeToggle />
 
@@ -205,13 +197,11 @@ export default function Header() {
   return (
     <>
       <header
+        id="global-header"
         ref={headerRef}
         className="fixed top-3 sm:top-5 left-0 right-0 z-40 w-full px-4 sm:px-6 lg:px-8 flex justify-center pointer-events-none"
       >
-        <motion.div
-          initial={{ y: -20, opacity: 0, scale: 0.98 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+        <div
           className={`pointer-events-auto relative w-full max-w-7xl px-4 sm:px-8 lg:px-10 flex items-center justify-between transition-all duration-300 rounded-2xl bg-white/95 dark:bg-slate-900/90 border border-slate-200/70 dark:border-slate-800 shadow-lg shadow-slate-900/10 backdrop-blur-xl ${
             isScrolled ? 'h-[64px] sm:h-[68px]' : 'h-[72px] sm:h-[76px]'
           }`}
@@ -220,16 +210,7 @@ export default function Header() {
           <DesktopMenu />
 
           <div className="hidden lg:flex items-center gap-4 xl:gap-5">
-            <Link href="/wishlist">
-              <motion.button
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.92 }}
-                aria-label="View Wishlist"
-                className="relative w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-[#E5E7EB] dark:border-slate-800 text-rose-500 hover:border-rose-400 shadow-2xs hover:shadow-md hover:shadow-rose-500/20 flex items-center justify-center focus:outline-none transition-all cursor-pointer"
-              >
-                <Heart className="w-4 h-4 fill-rose-500/20 text-rose-500 hover:fill-rose-500 transition-colors" />
-              </motion.button>
-            </Link>
+            {user && <NotificationCenter userId={(user as any)?._id || (user as any)?.id} />}
 
             <ThemeToggle />
 
@@ -257,7 +238,7 @@ export default function Header() {
             <SearchButton onClick={() => setIsSearchOpen(true)} />
             <MobileMenu onOpenSearch={() => setIsSearchOpen(true)} />
           </div>
-        </motion.div>
+        </div>
       </header>
 
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />

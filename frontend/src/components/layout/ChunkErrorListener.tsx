@@ -11,14 +11,11 @@ export default function ChunkErrorListener() {
       if (
         error?.name === 'ChunkLoadError' ||
         message.includes('Loading chunk') ||
-        message.includes('failed to load')
+        message.includes('failed to load') ||
+        message.includes('ChunkLoadError')
       ) {
-        console.warn('ChunkLoadError detected due to dev server hot reload. Auto-refreshing...');
-        // Perform a single page refresh to grab fresh chunks
-        if (!window.sessionStorage.getItem('chunk_reloaded')) {
-          window.sessionStorage.setItem('chunk_reloaded', 'true');
-          window.location.reload();
-        }
+        console.warn('ChunkLoadError detected. Auto-refreshing page for fresh assets...');
+        window.location.reload();
       }
     };
 

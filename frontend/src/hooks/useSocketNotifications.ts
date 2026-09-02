@@ -23,7 +23,7 @@ export function useSocketNotifications(userId?: string, isAdmin: boolean = false
   // Fetch initial notifications from REST API
   const fetchNotifications = useCallback(async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
       const token = typeof window !== 'undefined'
         ? localStorage.getItem('admin_token') || localStorage.getItem('token')
         : '';
@@ -41,27 +41,35 @@ export function useSocketNotifications(userId?: string, isAdmin: boolean = false
         setUnreadCount(list.filter((n) => !n.isRead).length);
       }
     } catch (err) {
-      console.warn('Failed to fetch initial notifications:', err);
+      console.warn('Backend offline or starting up, retrying fetch in 5s...');
+      setTimeout(() => {
+        fetchNotifications();
+      }, 5000);
     }
   }, [isAdmin]);
 
   useEffect(() => {
     fetchNotifications();
 
-    const socketUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1')
+    const socketUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1')
       .replace('/api/v1', '')
       .replace(/\/$/, '');
 
     const socket = io(`${socketUrl}/notifications`, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
-      reconnectionAttempts: 5,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+      randomizationFactor: 0.5,
     });
 
     socketRef.current = socket;
 
     socket.on('connect', () => {
       console.log('⚡ Connected to Socket.IO Notifications namespace:', socket.id);
+      fetchNotifications();
 
       if (isAdmin) {
         socket.emit('join_admin_room');

@@ -12,10 +12,10 @@ interface DashboardStatsProps {
 }
 
 export default function DashboardStats({
-  totalDesigns = 24,
-  activeProjects = 8,
-  creditsLeft = 100,
-  wishlistCount = 12,
+  totalDesigns = 0,
+  activeProjects = 0,
+  creditsLeft = 0,
+  wishlistCount = 0,
 }: DashboardStatsProps) {
   const STATS_CARDS = [
     {

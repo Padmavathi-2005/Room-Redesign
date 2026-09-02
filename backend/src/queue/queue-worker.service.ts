@@ -97,22 +97,31 @@ export class QueueWorkerService implements OnApplicationBootstrap {
       this.logger.log(`Step 1: Building structural prompt and analyzing original room image...`);
       console.log(`🔍 [VISION AI] Calling OpenAI GPT-4o Vision to analyze the uploaded room structure...`);
       
-      // Fetch project designTheme if room belongs to a project
+      // Fetch project details (designTheme and existing manusChatId) if room belongs to a project
       let projectDesignTheme: Record<string, any> | undefined = undefined;
+      let effectiveChatId: string | undefined = room.manusChatId || undefined;
+
       if (room.projectId) {
         try {
           const activeProj = await this.projectsService.findOne(String(room.projectId));
-          if (activeProj && activeProj.designTheme) {
-            projectDesignTheme = activeProj.designTheme;
-            this.logger.log(`Injected structured Project DesignTheme into prompt payload for Project "${activeProj.name}"`);
+          if (activeProj) {
+            if (activeProj.designTheme) {
+              projectDesignTheme = activeProj.designTheme;
+              this.logger.log(`Injected structured Project DesignTheme into prompt payload for Project "${activeProj.name}"`);
+            }
+            if (!effectiveChatId && (activeProj as any).manusChatId) {
+              effectiveChatId = (activeProj as any).manusChatId;
+              this.logger.log(`Reusing existing Manus task thread chatId "${effectiveChatId}" for Project "${activeProj.name}"`);
+            }
           }
         } catch (projErr: any) {
-          this.logger.warn(`Could not resolve project designTheme: ${projErr.message}`);
+          this.logger.warn(`Could not resolve project details: ${projErr.message}`);
         }
       }
 
       const promptResult = await this.promptBuilderService.buildPromptWithImageAnalysis({
-        imageUrl: base64Image, // Now it is a base64 Data URL!
+        imageUrl: base64Image,
+        originalImage: room.originalImage,
         roomType: room.roomType,
         theme: room.theme,
         colorPalette: room.colorPalette,
@@ -129,6 +138,9 @@ export class QueueWorkerService implements OnApplicationBootstrap {
         flooringMaterial: room.flooringMaterial,
         flooringFinish: room.flooringFinish,
         flooringGrout: room.flooringGrout,
+        furnitureHandling: room.furnitureHandling,
+        selectedProducts: room.selectedProducts,
+        budgetLevel: room.budgetLevel,
         designTheme: projectDesignTheme,
       });
 
@@ -152,7 +164,7 @@ export class QueueWorkerService implements OnApplicationBootstrap {
         imageBuffer: originalImageBuffer,
         imageMimeType: mimeType,
         imageUrl: room.originalImage, // Passed to check absolute URLs for cloud fetchers
-        chatId: room.manusChatId,
+        chatId: effectiveChatId,
         projectId: room.projectId ? String(room.projectId) : undefined,
         onProgress: (progressData: { statusText: string; steps: any[] }) => {
           room.stepStatus = progressData.statusText;

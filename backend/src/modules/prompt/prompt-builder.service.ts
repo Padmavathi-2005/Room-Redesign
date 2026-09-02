@@ -115,11 +115,16 @@ export class PromptBuilderService {
       if (dt.materials && dt.materials.length > 0) themeClauses.push(`Materials: ${dt.materials.join(', ')}`);
       if (dt.lighting) themeClauses.push(`Lighting: ${dt.lighting}`);
       if (dt.furnitureStyle) themeClauses.push(`Furniture: ${dt.furnitureStyle}`);
-      if (dt.metalFinish) themeClauses.push(`Metal Finish: ${dt.metalFinish}`);
-
       if (themeClauses.length > 0) {
         result.finalPrompt = `${result.finalPrompt}, Project Design Theme Consistency [${themeClauses.join('; ')}]`;
       }
+    }
+
+    // If main original input image URL exists, prepend directly on the VERY FIRST LINE of prompt
+    const mainOriginalImage = options.originalImage || (options.imageUrl && !options.imageUrl.startsWith('data:image/') ? options.imageUrl : null);
+    if (mainOriginalImage && typeof mainOriginalImage === 'string' && mainOriginalImage.trim()) {
+      const cleanUrl = mainOriginalImage.trim();
+      result.finalPrompt = `[Original Input Image: ${cleanUrl}]\n${result.finalPrompt}`;
     }
 
     return result;

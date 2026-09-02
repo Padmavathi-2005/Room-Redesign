@@ -28,6 +28,7 @@ import {
   AlertCircle,
   Folder,
   FolderPlus,
+  Plus,
   Lock,
   Ruler,
   Paintbrush,
@@ -44,6 +45,7 @@ import { ROOM_TYPES, DESIGN_STYLES, COLOR_PALETTES, MOODS, BUDGET_LEVELS, BUILDI
 import { projectService, ProjectData } from '@/services/project.service';
 import { useToast } from '@/context/ToastContext';
 import { CreditTokenIcon } from '@/components/ui';
+import Modal from '@/components/ui/Modal';
 
 interface StudioToolConfig {
   id: string;
@@ -653,6 +655,45 @@ function GenerateStudioContent() {
   // Projects state
   const [projectsList, setProjectsList] = useState<ProjectData[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState<boolean>(false);
+  const [newProjectName, setNewProjectName] = useState<string>('');
+  const [newProjectTheme, setNewProjectTheme] = useState<string>('Modern');
+  const [newProjectDescription, setNewProjectDescription] = useState<string>('');
+  const [isCreatingProject, setIsCreatingProject] = useState<boolean>(false);
+
+  const handleCreateProjectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjectName.trim()) {
+      showToast({ type: 'error', title: 'Required Field', message: 'Please enter a project name.' });
+      return;
+    }
+    try {
+      setIsCreatingProject(true);
+      const token = typeof window !== 'undefined'
+        ? localStorage.getItem('token') || localStorage.getItem('admin_token') || ''
+        : '';
+
+      const newProject = await projectService.createProject({
+        name: newProjectName.trim(),
+        theme: newProjectTheme,
+        description: newProjectDescription.trim(),
+      }, token);
+
+      if (newProject) {
+        const pId = newProject._id || newProject.id || '';
+        setProjectsList((prev) => [newProject, ...prev]);
+        setSelectedProjectId(pId);
+        showToast({ type: 'success', title: 'Project Created', message: `🎉 Project "${newProject.name}" created and selected!` });
+        setIsCreateProjectModalOpen(false);
+        setNewProjectName('');
+        setNewProjectDescription('');
+      }
+    } catch (err: any) {
+      showToast({ type: 'error', title: 'Project Creation Failed', message: err.message || 'Failed to create project' });
+    } finally {
+      setIsCreatingProject(false);
+    }
+  };
 
   const [isUserUploaded, setIsUserUploaded] = useState<boolean>(false);
   const [dbTools, setDbTools] = useState<any[]>(DEFAULT_TOOLS_CONFIG);
@@ -923,6 +964,22 @@ function GenerateStudioContent() {
     const fetchProjects = async () => {
       const projs = await projectService.getProjects();
       setProjectsList(projs);
+
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const pid = params.get('projectId');
+        if (pid) {
+          setSelectedProjectId(pid);
+          const found = projs.find((p) => String(p._id) === String(pid) || String(p.id) === String(pid));
+          if (found && found.theme) {
+            setSelectedStyle(found.theme);
+            setExteriorStyle(found.theme);
+            setGardenStyle(found.theme);
+            if (found.colorPalette) setSelectedPalette(found.colorPalette);
+            if (found.lighting) setSelectedLighting(found.lighting);
+          }
+        }
+      }
     };
     const fetchDbTools = async () => {
       try {
@@ -943,6 +1000,10 @@ function GenerateStudioContent() {
   }, []);
 
   const handleSelectProject = (projId: string) => {
+    if (projId === 'CREATE_NEW_PROJECT') {
+      setIsCreateProjectModalOpen(true);
+      return;
+    }
     setSelectedProjectId(projId);
     if (!projId) return;
     const proj = projectsList.find((p) => p._id === projId || p.id === projId);
@@ -1054,6 +1115,7 @@ function GenerateStudioContent() {
 
     setIsGenerating(true);
     setGenerationError(null);
+    setGeneratedResult(null);
 
     const currentSlug = toolSlug || selectedToolId || (activeSpace === 'floor-plans' ? 'floor-plan-generator' : activeSpace === 'exteriors' ? 'exterior-design' : activeSpace === 'gardens' ? 'landscape-design' : 'interior-design');
 
@@ -1282,22 +1344,32 @@ function GenerateStudioContent() {
 
           {/* GENERATION ERROR ALERT BANNER */}
           {generationError && (
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 space-y-1 shadow-xs flex items-start justify-between gap-3 animate-in fade-in duration-200">
+            <div className="p-4 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 space-y-2 shadow-xs flex items-start justify-between gap-3 animate-in fade-in duration-200">
               <div className="flex items-start gap-2.5">
-                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-xs font-extrabold uppercase tracking-wider font-heading text-rose-900">
-                    Generation Service Notice
+                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider font-heading text-amber-900 dark:text-amber-100">
+                    Generation Status Notice
                   </h4>
-                  <p className="text-xs font-medium text-rose-700 mt-0.5">
+                  <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
                     {generationError}
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGenerationError(null);
+                      handleGenerate();
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-600 text-white text-[11px] font-extrabold shadow-xs hover:bg-amber-700 transition-colors mt-1 cursor-pointer font-heading"
+                  >
+                    <Sparkles className="w-3 h-3" /> Retry Generation
+                  </button>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setGenerationError(null)}
-                className="text-rose-500 hover:text-rose-800 text-xs font-bold p-1 cursor-pointer"
+                className="text-amber-500 hover:text-amber-800 dark:hover:text-amber-100 text-xs font-bold p-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1515,7 +1587,7 @@ function GenerateStudioContent() {
                       title: 'Verify Image Quality & Style',
                       description: 'Reviewing the generated image for visual quality, composition and style consistency.',
                     },
-                    {
+                  {
                       id: 'deliver',
                       num: 5,
                       title: 'Deliver Finished Visual Result',
@@ -1523,28 +1595,46 @@ function GenerateStudioContent() {
                     },
                   ];
 
-                  let activeIndex = 0;
+                  const isStoppedErr = generationError && (
+                    generationError.toLowerCase().includes('stopped') ||
+                    generationError.toLowerCase().includes('cancelled') ||
+                    generationError.toLowerCase().includes('canceled')
+                  );
+
+                  let activeIndex = -1; // -1 = idle initial state (all pending)
                   if (generatedResult) {
-                    activeIndex = 5; // All completed
-                  } else if (generationError) {
-                    activeIndex = generationElapsedSeconds > 30 ? 3 : generationElapsedSeconds > 18 ? 2 : 1;
+                    activeIndex = 5; // All 5 steps completed
                   } else if (isGenerating) {
-                    activeIndex = generationElapsedSeconds > 40 ? 4 : generationElapsedSeconds > 30 ? 3 : generationElapsedSeconds > 18 ? 2 : generationElapsedSeconds > 8 ? 1 : 0;
+                    activeIndex = generationElapsedSeconds > 35 ? 3 : generationElapsedSeconds > 18 ? 2 : generationElapsedSeconds > 5 ? 1 : 0;
+                  } else if (generationError) {
+                    // Manus stopped on step 2/3 (e.g. 2 completed, stopped on step 3)
+                    activeIndex = 2;
                   }
 
                   return staticSteps.map((step, idx) => {
-                    let stepStatus: 'completed' | 'running' | 'pending' | 'error' = 'pending';
-                    if (generatedResult || idx < activeIndex) {
+                    let stepStatus: 'completed' | 'running' | 'pending' | 'error' | 'stopped' = 'pending';
+                    if (generatedResult) {
                       stepStatus = 'completed';
-                    } else if (idx === activeIndex && !generatedResult && isGenerating) {
-                      stepStatus = 'running';
-                    } else if (idx === activeIndex && generationError) {
-                      stepStatus = 'error';
+                    } else if (isGenerating) {
+                      if (idx < activeIndex) stepStatus = 'completed';
+                      else if (idx === activeIndex) stepStatus = 'running';
+                      else stepStatus = 'pending';
+                    } else if (generationError) {
+                      if (idx < activeIndex) {
+                        stepStatus = 'completed';
+                      } else if (idx === activeIndex) {
+                        stepStatus = isStoppedErr ? 'stopped' : 'error';
+                      } else {
+                        stepStatus = 'pending'; // Steps after stopped remain pending (4, 5)
+                      }
+                    } else {
+                      stepStatus = 'pending';
                     }
 
                     const isCompleted = stepStatus === 'completed';
                     const isRunning = stepStatus === 'running';
                     const isError = stepStatus === 'error';
+                    const isStopped = stepStatus === 'stopped';
 
                     return (
                       <div
@@ -1554,9 +1644,11 @@ function GenerateStudioContent() {
                             ? 'bg-purple-50/70 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 shadow-xs'
                             : isCompleted
                               ? 'bg-slate-50/80 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800/60'
-                              : isError
-                                ? 'bg-rose-50/70 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800'
-                                : 'bg-slate-50/40 dark:bg-slate-900/30 border-slate-100/60 dark:border-slate-800/30 opacity-60'
+                              : isStopped
+                                ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
+                                : isError
+                                  ? 'bg-rose-50/70 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800'
+                                  : 'bg-slate-50/40 dark:bg-slate-900/30 border-slate-100/60 dark:border-slate-800/30 opacity-60'
                         }`}
                       >
                         <div className="mt-0.5 shrink-0">
@@ -1564,6 +1656,8 @@ function GenerateStudioContent() {
                             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                           ) : isRunning ? (
                             <div className="w-4 h-4 rounded-full border-2 border-purple-600 border-t-transparent animate-spin" />
+                          ) : isStopped ? (
+                            <span className="text-amber-500 font-bold text-xs">⏸</span>
                           ) : isError ? (
                             <AlertCircle className="w-4 h-4 text-rose-500" />
                           ) : (
@@ -1579,12 +1673,14 @@ function GenerateStudioContent() {
                                 ? 'text-purple-700 dark:text-purple-300'
                                 : isCompleted
                                   ? 'text-slate-800 dark:text-slate-200'
-                                  : isError
-                                    ? 'text-rose-700 dark:text-rose-300'
-                                    : 'text-slate-500 dark:text-slate-400'
+                                  : isStopped
+                                    ? 'text-amber-800 dark:text-amber-300'
+                                    : isError
+                                      ? 'text-rose-700 dark:text-rose-300'
+                                      : 'text-slate-500 dark:text-slate-400'
                             }`}
                           >
-                            {step.num}. {step.title}
+                            {step.num}. {isStopped ? `${step.title} (Manus stopped — send message to continue)` : step.title}
                           </div>
                           <p
                             className={`text-[11px] mt-0.5 leading-relaxed font-medium ${
@@ -1614,15 +1710,89 @@ function GenerateStudioContent() {
                 })()}
               </div>
 
-              {/* AI ARCHITECTURAL ANALYSIS SUMMARY NOTE */}
-              <div className="p-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/50 space-y-1">
-                <div className="text-[11px] font-extrabold text-purple-900 dark:text-purple-300 uppercase tracking-wider font-heading flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                  <span>AI Design Analysis Summary</span>
+              {/* TERMINAL-STYLE LIVE LOG STREAM & AI DESIGN ANALYSIS SUMMARY CONSOLE */}
+              <div className="p-3.5 rounded-2xl bg-slate-950 text-slate-200 border border-slate-800 font-mono text-[11px] shadow-lg space-y-2">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">
+                      Manus AI Execution Terminal
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {isGenerating ? (
+                      <span className="px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 text-[9px] font-bold flex items-center gap-1 animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                        LIVE STREAMING
+                      </span>
+                    ) : generationError ? (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800 text-[9px] font-bold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                        PAUSED
+                      </span>
+                    ) : generatedResult ? (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[9px] font-bold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        COMPLETE
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[9px] font-bold">
+                        SYSTEM READY
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                  The {selectedRoomType} redesign uses the requested {selectedStyle} direction with {selectedPalette || 'tailored'} color palette, {selectedLighting || 'natural'} lighting, and structural preservation. Final delivery is in 8K UHD resolution with matching architectural perspective.
-                </p>
+
+                {/* LOG FEED OUTPUT LINES */}
+                <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                  {isGenerating ? (
+                    <>
+                      <p className="text-slate-400"><span className="text-emerald-400 font-bold">&gt;</span> Connected to Manus AI Generation Pipeline...</p>
+                      {generationElapsedSeconds >= 2 && (
+                        <p className="text-slate-300"><span className="text-purple-400 font-bold">&gt;</span> Analyzing room structure, camera angle &amp; architectural bounds...</p>
+                      )}
+                      {generationElapsedSeconds >= 8 && (
+                        <p className="text-slate-300"><span className="text-blue-400 font-bold">&gt;</span> Synthesizing {selectedStyle} theme with {selectedPalette || 'beige'} palette &amp; {selectedLighting || 'warm'} lighting...</p>
+                      )}
+                      {selectedProducts.length > 0 && generationElapsedSeconds >= 15 && (
+                        <p className="text-slate-300"><span className="text-amber-400 font-bold">&gt;</span> Integrating selected decor &amp; products ({selectedProducts.slice(0, 3).join(', ')})...</p>
+                      )}
+                      {generationElapsedSeconds >= 22 && (
+                        <p className="text-slate-200 animate-pulse"><span className="text-indigo-400 font-bold">&gt;</span> Rendering high-precision 8K UHD architectural result...</p>
+                      )}
+                    </>
+                  ) : generationError ? (
+                    <>
+                      <p className="text-amber-400"><span className="font-bold">&gt;</span> ⚠️ {generationError}</p>
+                      <p className="text-slate-400"><span className="text-slate-500 font-bold">&gt;</span> Task status: Paused / Stopped in Manus. Click Retry Generation to continue.</p>
+                    </>
+                  ) : generatedResult ? (
+                    <>
+                      <p className="text-emerald-400"><span className="font-bold">&gt;</span> ✅ Task execution finished successfully. 8K UHD render delivered.</p>
+                      <div className="pt-1.5 text-slate-300 space-y-1 border-t border-slate-800/80 mt-1">
+                        <p className="text-purple-300 font-bold uppercase text-[10px] tracking-wider">&gt; AI DESIGN ANALYSIS SUMMARY:</p>
+                        <p className="text-slate-300 leading-relaxed text-[11px]">
+                          The {selectedRoomType} redesign uses the requested {selectedStyle} direction with {selectedPalette || 'tailored'} color palette, {selectedLighting || 'natural'} lighting, and structural preservation. Final delivery is in 8K UHD resolution with matching architectural perspective.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-slate-400"><span className="text-purple-400 font-bold">&gt;</span> READY FOR EXECUTION: Configure options on right &amp; click Generate to start AI live stream.</p>
+                      <div className="pt-1.5 text-slate-300 space-y-1 border-t border-slate-800/80 mt-1">
+                        <p className="text-purple-400 font-bold uppercase text-[10px] tracking-wider">&gt; AI DESIGN ANALYSIS SUMMARY:</p>
+                        <p className="text-slate-400 leading-relaxed text-[11px]">
+                          The {selectedRoomType} redesign uses the requested {selectedStyle} direction with {selectedPalette || 'beige'} color palette, {selectedLighting || 'warm'} lighting, and structural preservation. Final delivery is in 8K UHD resolution with matching architectural perspective.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1738,14 +1908,18 @@ function GenerateStudioContent() {
             {/* SIMPLE PROJECT SELECTOR */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-800 flex items-center justify-between font-heading">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between font-heading">
                   <span>Select Project</span>
                 </label>
-                {selectedProjectId && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-600 text-white">
-                    <Lock className="w-2.5 h-2.5" /> Locked
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateProjectModalOpen(true)}
+                    className="text-xs font-extrabold text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Create New Project
+                  </button>
+                </div>
               </div>
 
               <CustomSelect
@@ -1753,6 +1927,7 @@ function GenerateStudioContent() {
                 onChange={(val) => handleSelectProject(val)}
                 options={[
                   { value: '', label: '-- Standalone Generation (No Project) --' },
+                  { value: 'CREATE_NEW_PROJECT', label: '➕ Create New Project...' },
                   ...projectsList.map((p) => ({
                     value: p._id || p.id || '',
                     label: `📁 ${p.name} (${p.theme} Theme ${p.manusChatId ? '• AI Session Active' : ''})`,
@@ -2606,28 +2781,47 @@ function GenerateStudioContent() {
           </div>
 
           {/* GENERATE ACTION BUTTON */}
-          <button
-            type="button"
-            disabled={isGenerating || !uploadedImage}
-            onClick={handleGenerate}
-            className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:opacity-95 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25 disabled:opacity-50 transition-all cursor-pointer font-heading"
-          >
-            {isGenerating ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Processing AI Redesign (${Math.floor(generationElapsedSeconds / 60).toString().padStart(2, '0')}:${(generationElapsedSeconds % 60).toString().padStart(2, '0')})...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
-                <span className="flex items-center gap-1.5">
-                  <span>Generate AI Redesign (4</span>
-                  <CreditTokenIcon size="xs" />
-                  <span>)</span>
-                </span>
-              </>
+          <div className="space-y-2">
+            <button
+              type="button"
+              disabled={isGenerating || !uploadedImage}
+              onClick={handleGenerate}
+              className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:opacity-95 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25 disabled:opacity-50 transition-all cursor-pointer font-heading"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Processing AI Redesign (${Math.floor(generationElapsedSeconds / 60).toString().padStart(2, '0')}:${(generationElapsedSeconds % 60).toString().padStart(2, '0')})...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
+                  <span className="flex items-center gap-1.5">
+                    <span>Generate AI Redesign (4</span>
+                    <CreditTokenIcon size="xs" />
+                    <span>)</span>
+                  </span>
+                </>
+              )}
+            </button>
+
+            {isGenerating && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsGenerating(false);
+                  showToast({
+                    type: 'info',
+                    title: 'Generation Stopped',
+                    message: 'Generation loading state cancelled.',
+                  });
+                }}
+                className="w-full py-2 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-300 hover:text-rose-600 font-extrabold text-xs transition-all cursor-pointer font-heading border border-slate-200 dark:border-slate-700"
+              >
+                Cancel / Stop Waiting
+              </button>
             )}
-          </button>
+          </div>
         </div>
       </div>
 
@@ -2745,6 +2939,92 @@ function GenerateStudioContent() {
           </div>
         </div>
       )}
+
+      {/* CREATE NEW PROJECT MODAL */}
+      <Modal
+        isOpen={isCreateProjectModalOpen}
+        onClose={() => setIsCreateProjectModalOpen(false)}
+        title="Create New Project"
+        subtitle="Group your AI room designs into a project workspace"
+        icon={<FolderPlus className="w-5 h-5" />}
+        maxWidth="md"
+      >
+        <form onSubmit={handleCreateProjectSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Project Name *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Living Room Renovation 2026"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Primary Design Theme
+            </label>
+            <select
+              value={newProjectTheme}
+              onChange={(e) => setNewProjectTheme(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              {DESIGN_STYLES.map((s: any) => {
+                const name = typeof s === 'string' ? s : s.name;
+                return (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Description (Optional)
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Brief description of the room or project goals..."
+              value={newProjectDescription}
+              onChange={(e) => setNewProjectDescription(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setIsCreateProjectModalOpen(false)}
+              className="px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-all cursor-pointer font-heading"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isCreatingProject}
+              className="px-5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50 font-heading"
+            >
+              {isCreatingProject ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Creating...</span>
+                </>
+              ) : (
+                <>
+                  <FolderPlus className="w-4 h-4" />
+                  <span>Create & Select</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

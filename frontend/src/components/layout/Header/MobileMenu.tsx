@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Search, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
 
@@ -15,11 +15,11 @@ interface MobileMenuProps {
 const PUBLIC_NAV_LINKS = [
   { label: 'Designs', href: '/designs' },
   { label: 'AI Models', href: '/tools' },
+  { label: 'Generate', href: '/generate', requireAuth: true },
   { label: 'Pricing', href: '/pricing' },
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ];
-
 
 const DASHBOARD_NAV_LINKS = [
   { label: 'Dashboard', href: '/dashboard' },
@@ -36,6 +36,22 @@ const DASHBOARD_NAV_LINKS = [
 export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const toggleMenu = () => setIsOpen(!isOpen);
+
+  const handleLinkClick = (e: React.MouseEvent, link: any) => {
+    toggleMenu();
+    if (link.requireAuth) {
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
+        if (!token) {
+          e.preventDefault();
+          router.push(`/login?redirect=${encodeURIComponent(link.href)}`);
+        }
+      }
+    }
+  };
 
   const isDashboardRoute =
     pathname !== '/' &&
@@ -50,8 +66,6 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
      pathname.startsWith('/pricing'));
 
   const navLinks = isDashboardRoute ? DASHBOARD_NAV_LINKS : PUBLIC_NAV_LINKS;
-
-  const toggleMenu = () => setIsOpen(!isOpen);
 
   return (
     <div className="lg:hidden">
@@ -121,7 +135,7 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
                     <Link
                       key={link.href}
                       href={link.href}
-                      onClick={toggleMenu}
+                      onClick={(e) => handleLinkClick(e, link)}
                       className="flex items-center justify-between px-4 py-3 text-base font-bold text-slate-800 dark:text-slate-100 hover:text-blue-600 hover:bg-blue-50/60 dark:hover:bg-blue-950/40 rounded-2xl transition-colors font-heading"
                     >
                       <span>{link.label}</span>

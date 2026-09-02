@@ -97,7 +97,7 @@ export default function DesignsPage() {
         totalImageCount: 1,
         roomType: r.roomType || 'Living Room',
         style: r.theme || 'Modern',
-        sampleImageUrl: r.generatedImage || r.coverImage || r.originalImage,
+        sampleImageUrl: r.generatedImage || (r.coverImage && !r.coverImage.includes('unsplash') ? r.coverImage : null),
         beforeImageUrl: r.originalImage,
         createdAt: r.createdAt || new Date().toISOString(),
       }));
@@ -107,7 +107,7 @@ export default function DesignsPage() {
 
       // Filter by room category if selected
       const filtered = combined.filter((item) => {
-        if (!item.sampleImageUrl) return false;
+        if (!item.sampleImageUrl || item.sampleImageUrl.includes('unsplash')) return false;
         if (selectedCategory === 'All') return true;
         return item.roomType?.toLowerCase() === selectedCategory.toLowerCase() || item.style?.toLowerCase() === selectedCategory.toLowerCase();
       });
@@ -336,14 +336,22 @@ export default function DesignsPage() {
             <p className="text-xs font-semibold text-slate-500">Loading design gallery...</p>
           </div>
         ) : filteredShowcase.length === 0 ? (
-          <div className="text-center py-16 px-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
-            <Sparkles className="w-10 h-10 text-slate-400 mx-auto" />
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">
-              No designs found matching your search
+          <div className="text-center py-20 px-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4 max-w-lg mx-auto">
+            <div className="w-16 h-16 rounded-2xl bg-purple-50 dark:bg-purple-950/70 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto border border-purple-200 dark:border-purple-800 shadow-2xs">
+              <Sparkles className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white font-heading">
+              No Generated Designs Yet
             </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Try clearing search filters or category selections above!
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+              You haven't generated any AI room redesigns yet. Upload a room photo and generate your first transformed space!
             </p>
+            <Link
+              href="/generate"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-md font-heading"
+            >
+              <Sparkles className="w-4 h-4" /> Start Generating Designs
+            </Link>
           </div>
         ) : (
           /* UNSPLASH / PINTEREST STYLE MASONRY CARDS GRID (2 PER ROW WITH ROUNDED-LG BORDER RADIUS) */

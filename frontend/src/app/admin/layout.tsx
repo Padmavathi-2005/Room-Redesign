@@ -29,6 +29,8 @@ function AdminLayoutHeader({
     switch (pathname) {
       case '/admin/dashboard':
         return 'Dashboard Overview';
+      case '/admin/notifications':
+        return 'Notifications & System Alerts';
       case '/admin/analytics':
         return 'Analytics & Revenue Console';
       case '/admin/models':
@@ -179,6 +181,12 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
           href: '/admin/dashboard',
           icon: <LayoutDashboard className="w-4 h-4" />,
           active: pathname === '/admin/dashboard',
+        },
+        {
+          label: 'Notifications & Alerts',
+          href: '/admin/notifications',
+          icon: <Bell className="w-4 h-4" />,
+          active: pathname === '/admin/notifications',
         },
         {
           label: 'Analytics & Revenue',

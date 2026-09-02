@@ -67,10 +67,10 @@ export default function DashboardPage() {
         try {
           const parsed = JSON.parse(storedUser);
           setUser({
-            name: parsed.name || parsed.firstName || 'Ananya',
-            email: parsed.email || 'ananya@example.com',
-            credits: parsed.credits ?? 100,
-            plan: parsed.plan ? `${parsed.plan.toUpperCase()}` : 'PREMIUM',
+            name: parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || 'User',
+            email: parsed.email || 'user@example.com',
+            credits: typeof parsed.credits === 'number' ? parsed.credits : 0,
+            plan: parsed.plan ? `${parsed.plan.toUpperCase()}` : 'FREE',
           });
         } catch {}
       }
@@ -229,7 +229,7 @@ export default function DashboardPage() {
 
         {/* Live Event Activity Feed (1 Column) */}
         <div className="lg:col-span-1">
-          <RecentActivityWidget />
+          <RecentActivityWidget rooms={userRooms} />
         </div>
       </div>
 

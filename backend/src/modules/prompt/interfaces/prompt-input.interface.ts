@@ -107,6 +107,7 @@ export interface PromptInputOptions {
   flooringFinish?: string;
   flooringGrout?: string;
   imageUrl?: string;
+  originalImage?: string;
   materials?: string[];
   domainScope?: string;
   designTheme?: Record<string, any>;
