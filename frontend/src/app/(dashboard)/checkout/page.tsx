@@ -432,20 +432,45 @@ export default function FullPageCheckout() {
               )}
 
               {/* TOTAL DUE BREAKDOWN */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs font-semibold">
-                <div className="flex justify-between text-slate-500">
-                  <span>Subtotal</span>
-                  <span className="font-mono text-slate-900 dark:text-slate-100">${(plan.price * 0.9).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-slate-500">
-                  <span>Tax (10% VAT)</span>
-                  <span className="font-mono text-slate-900 dark:text-slate-100">${(plan.price * 0.1).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between pt-2 border-t border-slate-200 dark:border-slate-700 text-sm font-extrabold font-heading text-slate-900 dark:text-white">
-                  <span>Total Amount Due Now</span>
-                  <span className="text-purple-600 dark:text-purple-400 font-black font-heading">${plan.price}.00</span>
-                </div>
-              </div>
+              {(() => {
+                const enabledTaxes = Array.isArray(settings?.taxes) ? settings.taxes.filter((t) => t.enabled) : [];
+                const totalTaxRate = enabledTaxes.reduce((sum, t) => sum + (Number(t.rate) || 0), 0);
+                const subtotal = plan.price;
+                const taxAmount = (subtotal * totalTaxRate) / 100;
+                const totalAmountDue = subtotal + taxAmount;
+
+                return (
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs font-semibold">
+                    <div className="flex justify-between text-slate-500">
+                      <span>Subtotal</span>
+                      <span className="font-mono text-slate-900 dark:text-slate-100">${subtotal.toFixed(2)}</span>
+                    </div>
+
+                    {enabledTaxes.length > 0 ? (
+                      enabledTaxes.map((tax) => (
+                        <div key={tax.id} className="flex justify-between text-slate-500">
+                          <span>{tax.name} ({tax.rate}%)</span>
+                          <span className="font-mono text-slate-900 dark:text-slate-100">
+                            +${((subtotal * tax.rate) / 100).toFixed(2)}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex justify-between text-slate-500">
+                        <span>Taxes & Fees (0%)</span>
+                        <span className="font-mono text-slate-900 dark:text-slate-100">$0.00</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between pt-2 border-t border-slate-200 dark:border-slate-700 text-sm font-extrabold font-heading text-slate-900 dark:text-white">
+                      <span>Total Amount Due Now</span>
+                      <span className="text-purple-600 dark:text-purple-400 font-black font-heading">
+                        ${totalAmountDue.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Submit Button */}
               <button
@@ -466,7 +491,16 @@ export default function FullPageCheckout() {
                 ) : (
                   <>
                     <Lock className="w-4 h-4" />
-                    <span>Complete Payment & Upgrade (${plan.price}.00)</span>
+                    <span>
+                      Complete Payment & Upgrade (${(
+                        plan.price +
+                        (plan.price *
+                          (Array.isArray(settings?.taxes)
+                            ? settings.taxes.filter((t) => t.enabled).reduce((sum, t) => sum + (Number(t.rate) || 0), 0)
+                            : 0)) /
+                          100
+                      ).toFixed(2)})
+                    </span>
                   </>
                 )}
               </button>

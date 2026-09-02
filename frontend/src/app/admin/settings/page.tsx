@@ -21,6 +21,8 @@ import {
   EyeOff,
   Check,
   Zap,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 
@@ -76,6 +78,30 @@ export default function AdminSettingsPage() {
   const [paypalClientId, setPaypalClientId] = useState('');
   const [paypalClientSecret, setPaypalClientSecret] = useState('');
   const [paypalWebhookId, setPaypalWebhookId] = useState('');
+
+  // 4b. Dynamic Taxes & Fees State
+  const [taxes, setTaxes] = useState<any[]>([
+    { id: 'tax-vat', name: 'VAT (Sales Tax)', rate: 0, enabled: false },
+  ]);
+
+  const handleAddTaxRow = () => {
+    setTaxes((prev) => [
+      ...prev,
+      { id: `tax-${Date.now()}`, name: 'New Tax / Fee', rate: 5, enabled: true },
+    ]);
+  };
+
+  const handleUpdateTax = (index: number, field: string, value: any) => {
+    setTaxes((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
+
+  const handleDeleteTax = (index: number) => {
+    setTaxes((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // 5. Cloud Storage & Media Delivery State
   const [storageProvider, setStorageProvider] = useState('local');
@@ -201,6 +227,9 @@ export default function AdminSettingsPage() {
       setPaypalClientId(s.paypalClientId || '');
       setPaypalClientSecret(s.paypalClientSecret || '');
       setPaypalWebhookId(s.paypalWebhookId || '');
+      if (Array.isArray(s.taxes)) {
+        setTaxes(s.taxes);
+      }
 
       setStorageProvider(s.storageProvider || 'local');
       setCloudinaryCloudName(s.cloudinaryCloudName || '');
@@ -270,6 +299,7 @@ export default function AdminSettingsPage() {
           paypalClientId,
           paypalClientSecret,
           paypalWebhookId,
+          taxes,
           storageProvider,
           cloudinaryCloudName,
           cloudinaryApiKey,
@@ -943,6 +973,95 @@ export default function AdminSettingsPage() {
                         className="w-full px-3 py-2 bg-white border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* Section C: Dynamic Taxes & Additional Fees Table */}
+                <div className="space-y-4 p-5 rounded-2xl bg-purple-50/40 border border-purple-200/80">
+                  <div className="flex items-center justify-between border-b border-purple-200/80 pb-3">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 font-heading">
+                        3. Dynamic Taxes & Additional Fees Table
+                      </h4>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Configure tax names, rates, and enable/disable states. Enabled taxes apply automatically to checkout totals.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddTaxRow}
+                      className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Tax Rule
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-purple-200/60 text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                          <th className="py-2.5 px-3">Tax / Fee Name</th>
+                          <th className="py-2.5 px-3">Tax Rate (%)</th>
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-purple-100 text-xs">
+                        {taxes.map((tax, idx) => (
+                          <tr key={tax.id || idx} className="hover:bg-purple-100/30">
+                            <td className="py-2.5 px-3">
+                              <input
+                                type="text"
+                                value={tax.name}
+                                onChange={(e) => handleUpdateTax(idx, 'name', e.target.value)}
+                                placeholder="e.g. VAT (Sales Tax)"
+                                className="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                              />
+                            </td>
+                            <td className="py-2.5 px-3 w-32">
+                              <div className="relative flex items-center">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.5"
+                                  value={tax.rate}
+                                  onChange={(e) => handleUpdateTax(idx, 'rate', parseFloat(e.target.value) || 0)}
+                                  className="w-full px-3 py-1.5 pr-7 rounded-xl bg-white border border-slate-200 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                                />
+                                <span className="absolute right-3 text-xs font-extrabold text-slate-400">%</span>
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 w-36">
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <span className={`text-xs font-extrabold ${tax.enabled ? 'text-emerald-700' : 'text-slate-400'}`}>
+                                  {tax.enabled ? '✓ Enabled' : '✕ Disabled'}
+                                </span>
+                                <div className="relative inline-flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={tax.enabled}
+                                    onChange={(e) => handleUpdateTax(idx, 'enabled', e.target.checked)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                </div>
+                              </label>
+                            </td>
+                            <td className="py-2.5 px-3 text-right w-16">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTax(idx)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                title="Remove Tax Rule"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>

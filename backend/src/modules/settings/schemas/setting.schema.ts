@@ -125,6 +125,10 @@ export class Setting {
   @Prop({ default: '' })
   paypalWebhookId?: string;
 
+  // 4b. Taxes & Fees Configuration
+  @Prop({ type: Array, default: [{ id: 'tax-vat', name: 'VAT (Sales Tax)', rate: 0, enabled: false }] })
+  taxes: any[];
+
   // 5. Cloud Storage & Media Delivery
   @Prop({ default: 'local' })
   storageProvider: string;

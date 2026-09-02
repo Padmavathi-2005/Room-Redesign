@@ -170,6 +170,9 @@ export class UpdateSettingsDto {
   @IsString()
   paypalWebhookId?: string;
 
+  @IsOptional()
+  taxes?: any[];
+
   // 5. Cloud Storage & Media Delivery
   @IsOptional()
   @IsString()

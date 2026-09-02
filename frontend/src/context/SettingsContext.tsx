@@ -2,6 +2,13 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
+export interface TaxSetting {
+  id: string;
+  name: string;
+  rate: number;
+  enabled: boolean;
+}
+
 export interface AppSettings {
   applicationName: string;
   theme: 'light' | 'dark';
@@ -25,6 +32,7 @@ export interface AppSettings {
   paypalEnabled: boolean;
   paypalClientId: string;
   paypalSecretKey: string;
+  taxes: TaxSetting[];
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -47,6 +55,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   paypalEnabled: true,
   paypalClientId: 'client_id_roomai_paypal_123',
   paypalSecretKey: 'secret_key_roomai_paypal_123',
+  taxes: [
+    { id: 'tax-vat', name: 'VAT (Sales Tax)', rate: 0, enabled: false },
+  ],
 };
 
 interface SettingsContextType {
