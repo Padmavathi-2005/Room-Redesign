@@ -13,19 +13,8 @@ import { QueueWorkerService } from '../queue/queue-worker.service';
 export class RoomsService implements OnModuleInit {
   private readonly logger = new Logger(RoomsService.name);
 
-  // In-memory fallback dataset for instant local testing
-  private inMemoryRooms: Array<any> = [
-    {
-      _id: 'sample-1',
-      originalImage: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop',
-      generatedImage: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800&auto=format&fit=crop',
-      roomType: 'Living Room',
-      theme: 'Modern',
-      prompt: 'A high quality photorealistic modern interior redesign of a living room',
-      status: 'completed',
-      createdAt: new Date(),
-    },
-  ];
+  // Clean dataset (empty array so no sample images show up in My Designs)
+  private inMemoryRooms: Array<any> = [];
 
   constructor(
     @InjectModel(RoomGeneration.name)
