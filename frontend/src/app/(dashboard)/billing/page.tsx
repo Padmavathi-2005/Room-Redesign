@@ -132,7 +132,7 @@ export default function BillingPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'usage' | 'invoices'>('overview');
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
   // Fetch subscription & credit status
   const fetchSubscriptionStatus = async (userToken: string) => {
@@ -329,11 +329,16 @@ export default function BillingPage() {
     );
   }
 
-  const activePlanCode = subscription?.plan || currentUser?.plan || 'free';
+  const rawPlan = (subscription?.plan || currentUser?.plan || 'free').toString();
+  const activePlanCode = rawPlan.toLowerCase().includes('starter')
+    ? 'starter'
+    : rawPlan.toLowerCase().includes('pro') || rawPlan.toLowerCase().includes('standard')
+    ? 'pro'
+    : 'free';
   const planLimit = getPlanLimit(activePlanCode);
   const creditsRemaining = subscription?.credits ?? currentUser?.credits ?? 0;
   const creditsUsed = Math.max(0, planLimit - creditsRemaining);
-  const progressPercent = Math.min(100, Math.round((creditsRemaining / planLimit) * 100));
+  const progressPercent = planLimit > 0 ? Math.min(100, Math.round((creditsRemaining / planLimit) * 100)) : 0;
   const activePlanPrice = getPlanPrice(activePlanCode);
 
   const startDateStr = subscription?.subscriptionPeriodStart

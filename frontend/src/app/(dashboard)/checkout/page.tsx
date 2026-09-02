@@ -156,7 +156,7 @@ export default function FullPageCheckout() {
             }),
           });
           const resData = await res.json();
-          if (resData.success && resData.data?.url && resData.data.url.startsWith('http')) {
+          if (resData.success && resData.data?.url && resData.data.url.includes('stripe.com')) {
             window.location.href = resData.data.url;
             return;
           }

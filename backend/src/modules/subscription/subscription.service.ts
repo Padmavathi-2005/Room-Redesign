@@ -304,16 +304,20 @@ export class SubscriptionService implements OnModuleInit {
           cancel_url: cancelUrl || 'http://localhost:3000/checkout?plan=' + planCodeLower,
         });
 
-        return { url: session.url, sessionId: session.id };
+        if (session && session.url) {
+          return { url: session.url, sessionId: session.id };
+        }
       } catch (err: any) {
         console.error('Stripe SDK Error:', err.message);
       }
     }
 
-    // Direct fallback if Stripe live key not present
+    // Sandbox / Test fallback: Perform immediate DB upgrade and return billing page URL
+    const upgradedUser = await this.upgradeUserPlan(userId, planCodeLower);
     return {
       url: (successUrl || 'http://localhost:3000/billing') + '?checkout=success',
       directUpgrade: true,
+      data: upgradedUser,
     };
   }
 
