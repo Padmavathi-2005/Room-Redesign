@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '@/context/SettingsContext';
-import { Palette, Sun, Moon, Sparkles, Check, RefreshCw, ShieldAlert, Sliders, CreditCard, Key, Eye, EyeOff, Lock } from 'lucide-react';
+import { Palette, Sun, Moon, Sparkles, Check, RefreshCw, ShieldAlert, Sliders, CreditCard, Key, Eye, EyeOff, Lock, Plus, Trash2 } from 'lucide-react';
 
 export default function AdminSettingsPage() {
   const { settings, updateSettings, isLoading } = useSettings();
@@ -18,6 +18,29 @@ export default function AdminSettingsPage() {
 
   const handleChange = (key: string, value: any) => {
     setFormState((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const currentTaxes = Array.isArray(formState.taxes)
+    ? formState.taxes
+    : [{ id: 'tax-vat', name: 'VAT (Sales Tax)', rate: 0, enabled: false }];
+
+  const handleAddTaxRow = () => {
+    const updated = [
+      ...currentTaxes,
+      { id: `tax-${Date.now()}`, name: 'New Tax / Fee', rate: 5, enabled: true },
+    ];
+    handleChange('taxes', updated);
+  };
+
+  const handleUpdateTax = (index: number, field: string, value: any) => {
+    const updated = [...currentTaxes];
+    updated[index] = { ...updated[index], [field]: value };
+    handleChange('taxes', updated);
+  };
+
+  const handleDeleteTax = (index: number) => {
+    const updated = currentTaxes.filter((_, i) => i !== index);
+    handleChange('taxes', updated);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -424,6 +447,95 @@ export default function AdminSettingsPage() {
                   ✕ PayPal Gateway is currently disabled. Users will not see PayPal options on checkout.
                 </p>
               )}
+            </div>
+          </div>
+
+          {/* TAXES & CUSTOM FEES MANAGEMENT CARD */}
+          <div className="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white font-heading">
+                  Dynamic Taxes & Custom Fees Configuration
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Configure tax names, rates, and enable/disable states. Enabled taxes apply automatically to checkout totals.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddTaxRow}
+                className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Add Tax Rule
+              </button>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+              <table className="w-full text-left border-collapse bg-slate-50/50 dark:bg-slate-800/40">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    <th className="py-3 px-4">Tax / Fee Name</th>
+                    <th className="py-3 px-4">Tax Rate (%)</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
+                  {currentTaxes.map((tax: any, idx: number) => (
+                    <tr key={tax.id || idx} className="hover:bg-slate-100/50 dark:hover:bg-slate-800/80">
+                      <td className="py-3 px-4">
+                        <input
+                          type="text"
+                          value={tax.name}
+                          onChange={(e) => handleUpdateTax(idx, 'name', e.target.value)}
+                          placeholder="e.g. VAT (Sales Tax)"
+                          className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                        />
+                      </td>
+                      <td className="py-3 px-4 w-36">
+                        <div className="relative flex items-center">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.5"
+                            value={tax.rate}
+                            onChange={(e) => handleUpdateTax(idx, 'rate', parseFloat(e.target.value) || 0)}
+                            className="w-full px-3 py-2 pr-7 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                          />
+                          <span className="absolute right-3 text-xs font-extrabold text-slate-400">%</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 w-36">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <span className={`text-xs font-extrabold ${tax.enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                            {tax.enabled ? '✓ Enabled' : '✕ Disabled'}
+                          </span>
+                          <div className="relative inline-flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={tax.enabled}
+                              onChange={(e) => handleUpdateTax(idx, 'enabled', e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-8 h-4.5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-600"></div>
+                          </div>
+                        </label>
+                      </td>
+                      <td className="py-3 px-4 text-right w-16">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTax(idx)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors cursor-pointer"
+                          title="Remove Tax Rule"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
