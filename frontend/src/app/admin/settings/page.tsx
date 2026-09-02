@@ -320,7 +320,7 @@ export default function AdminSettingsPage() {
     { id: 'branding', label: 'Branding & Visuals', icon: Palette, color: 'text-indigo-600' },
     { id: 'oauth', label: 'Social Login & OAuth', icon: KeyRound, color: 'text-purple-600' },
     { id: 'ai-engine', label: 'AI Models & Tokens', icon: Wand2, color: 'text-cyan-600' },
-    { id: 'stripe', label: 'Stripe Gateway', icon: CreditCard, color: 'text-emerald-600' },
+    { id: 'stripe', label: 'Payment Settings', icon: CreditCard, color: 'text-emerald-600' },
     { id: 'storage', label: 'Cloud Storage', icon: Cloud, color: 'text-blue-600' },
     { id: 'smtp', label: 'Email & SMTP', icon: Mail, color: 'text-amber-600' },
     { id: 'economy', label: 'Credits & Toggles', icon: Sliders, color: 'text-rose-600' },
@@ -806,7 +806,7 @@ export default function AdminSettingsPage() {
                         onChange={(e) => setStripeTestMode(e.target.checked)}
                         className="w-4 h-4 text-indigo-600 rounded cursor-pointer"
                       />
-                      <span className="text-xs font-bold text-slate-800">{stripeTestMode ? 'Test Mode' : 'Live Mode'}</span>
+                      <span className="text-xs font-bold text-slate-800">{stripeTestMode ? 'Test Mode (Sandbox)' : 'Live Mode'}</span>
                     </label>
                   </div>
 
@@ -860,7 +860,7 @@ export default function AdminSettingsPage() {
                         onChange={(e) => setPaypalSandboxMode(e.target.checked)}
                         className="w-4 h-4 text-blue-600 rounded cursor-pointer"
                       />
-                      <span className="text-xs font-bold text-slate-800">{paypalSandboxMode ? 'Sandbox Mode' : 'Live Mode'}</span>
+                      <span className="text-xs font-bold text-slate-800">{paypalSandboxMode ? 'Test Mode (Sandbox)' : 'Live Mode'}</span>
                     </label>
                   </div>
 

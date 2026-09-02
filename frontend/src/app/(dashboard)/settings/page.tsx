@@ -291,12 +291,12 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        {/* SECTION: Payment Gateway Settings (Stripe & PayPal) */}
+        {/* SECTION: Payment Gateway Keys & Settings */}
         <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-6">
           <div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 font-heading">
               <CreditCard className="w-5 h-5 text-purple-600" />
-              <span>Payment Gateway Settings (Stripe & PayPal)</span>
+              <span>Payment Keys & Settings</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Enable or disable payment methods and configure live API keys. Only enabled gateways will be presented to users on the checkout page.
