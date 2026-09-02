@@ -40,6 +40,32 @@ export class SubscriptionController {
   }
 
   /**
+   * POST /api/v1/subscription/create-checkout-session
+   * Generate official Stripe Hosted Checkout Session URL
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('create-checkout-session')
+  @HttpCode(HttpStatus.OK)
+  async createCheckoutSession(
+    @CurrentUser('_id') userId: string,
+    @Body('planCode') planCode: string,
+    @Body('successUrl') successUrl?: string,
+    @Body('cancelUrl') cancelUrl?: string,
+  ) {
+    const data = await this.subscriptionService.createCheckoutSession(
+      userId.toString(),
+      planCode,
+      successUrl,
+      cancelUrl,
+    );
+    return {
+      success: true,
+      message: 'Stripe Checkout session initialized',
+      data,
+    };
+  }
+
+  /**
    * POST /api/v1/subscription/upgrade
    * Upgrade user subscription plan
    */

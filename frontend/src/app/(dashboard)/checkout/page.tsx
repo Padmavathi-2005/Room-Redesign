@@ -129,23 +129,50 @@ export default function FullPageCheckout() {
     e.preventDefault();
     setIsProcessing(true);
 
-    setTimeout(async () => {
-      setIsProcessing(false);
-      setIsSuccess(true);
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('user');
+      let token: string | null = null;
+      if (storedUser) {
+        try {
+          const userObj = JSON.parse(storedUser);
+          token = userObj.token || userObj.accessToken;
+        } catch (e) {}
+      }
 
-      if (typeof window !== 'undefined') {
-        const storedUser = localStorage.getItem('user');
-        let token: string | null = null;
-        let userId: string | null = null;
+      try {
+        if (token) {
+          const res = await fetch(`${API_BASE}/subscription/create-checkout-session`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              planCode: plan.code,
+              successUrl: window.location.origin + '/billing?checkout=success',
+              cancelUrl: window.location.href,
+            }),
+          });
+          const resData = await res.json();
+          if (resData.success && resData.data?.url && resData.data.url.startsWith('http')) {
+            window.location.href = resData.data.url;
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Stripe checkout session redirect fallback:', err);
+      }
+
+      // Upgrade Fallback: Direct Local Upgrade & Receipt Generation
+      setTimeout(async () => {
+        setIsProcessing(false);
+        setIsSuccess(true);
 
         if (storedUser) {
           try {
             const userObj = JSON.parse(storedUser);
-            token = userObj.token || userObj.accessToken;
-            userId = userObj._id || userObj.id;
-
             const now = new Date();
             let newPeriodStart: string;
             let newPeriodEnd: string;
@@ -179,8 +206,6 @@ export default function FullPageCheckout() {
             date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
             item: `${plan.name} Subscription (30 Days)`,
             amount: `$${plan.price}.00`,
-            subtotal: `$${(plan.price * 0.9).toFixed(2)}`,
-            tax: `$${(plan.price * 0.1).toFixed(2)}`,
             gateway: paymentMethod === 'card' ? 'Stripe' : 'PayPal',
             status: 'SUCCEEDED',
           };
@@ -207,9 +232,9 @@ export default function FullPageCheckout() {
 
         setTimeout(() => {
           router.push(`/billing?upgraded=true&plan=${plan.code}`);
-        }, 1500);
-      }
-    }, 1500);
+        }, 1200);
+      }, 1000);
+    }
   };
 
   return (

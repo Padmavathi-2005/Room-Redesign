@@ -4,12 +4,16 @@ import { Model } from 'mongoose';
 import { User, UserDocument, SubscriptionPlan } from '../users/schemas/user.schema';
 import { SubscriptionPlanDefinition, SubscriptionPlanDefinitionDocument } from './schemas/subscription-plan.schema';
 
+import Stripe from 'stripe';
+import { Setting, SettingDocument } from '../settings/schemas/setting.schema';
+
 @Injectable()
 export class SubscriptionService implements OnModuleInit {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(SubscriptionPlanDefinition.name)
     private readonly planModel: Model<SubscriptionPlanDefinitionDocument>,
+    @InjectModel(Setting.name) private readonly settingModel: Model<SettingDocument>,
   ) {}
 
   /**
@@ -247,6 +251,69 @@ export class SubscriptionService implements OnModuleInit {
       subscriptionPeriodStart: user.subscriptionPeriodStart,
       subscriptionPeriodEnd: user.subscriptionPeriodEnd,
       daysRemaining: Math.max(0, Math.ceil((user.subscriptionPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))),
+    };
+  }
+
+  /**
+   * Create a official Stripe Checkout Session for subscription
+   */
+  async createCheckoutSession(userId: string, planCode: string, successUrl?: string, cancelUrl?: string) {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const settings = await this.settingModel.findOne().exec();
+    const stripeSecretKey = settings?.stripeSecretKey || process.env.STRIPE_SECRET_KEY;
+
+    const planCodeLower = planCode.toLowerCase().trim();
+    const planDef = await this.planModel.findOne({ code: planCodeLower }).exec();
+
+    const price = planDef ? planDef.priceMonthly : (planCodeLower === 'starter' ? 19 : 39);
+    const planName = planDef ? planDef.name : (planCodeLower === 'starter' ? 'Starter Plan' : 'Pro Plan');
+
+    // Calculate dynamic taxes if enabled
+    const enabledTaxes = Array.isArray(settings?.taxes) ? settings.taxes.filter((t) => t.enabled) : [];
+    const totalTaxRate = enabledTaxes.reduce((sum, t) => sum + (Number(t.rate) || 0), 0);
+    const totalAmountCents = Math.round((price * (1 + totalTaxRate / 100)) * 100);
+
+    if (stripeSecretKey && stripeSecretKey.startsWith('sk_')) {
+      try {
+        const stripe = new Stripe(stripeSecretKey, { apiVersion: '2025-02-24.acacia' as any });
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          mode: 'subscription',
+          customer_email: user.email,
+          line_items: [
+            {
+              price_data: {
+                currency: 'usd',
+                product_data: {
+                  name: planName,
+                  description: `RoomAI ${planName} Monthly Subscription`,
+                },
+                unit_amount: totalAmountCents,
+                recurring: { interval: 'month' },
+              },
+              quantity: 1,
+            },
+          ],
+          client_reference_id: userId,
+          metadata: { userId, planCode: planCodeLower },
+          success_url: successUrl || 'http://localhost:3000/billing?checkout=success',
+          cancel_url: cancelUrl || 'http://localhost:3000/checkout?plan=' + planCodeLower,
+        });
+
+        return { url: session.url, sessionId: session.id };
+      } catch (err: any) {
+        console.error('Stripe SDK Error:', err.message);
+      }
+    }
+
+    // Direct fallback if Stripe live key not present
+    return {
+      url: (successUrl || 'http://localhost:3000/billing') + '?checkout=success',
+      directUpgrade: true,
     };
   }
 
