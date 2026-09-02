@@ -17,99 +17,79 @@ export class SubscriptionService implements OnModuleInit {
    */
   async onModuleInit() {
     try {
-      const planCount = await this.planModel.countDocuments().exec();
-      if (planCount === 0) {
-        console.log('🌱 Seeding default Subscription Plans into MongoDB...');
-        const defaultPlans = [
-          {
-            name: 'Free Plan',
-            code: 'free',
-            priceMonthly: 0,
-            priceAnnual: 0,
-            credits: 40,
-            description: 'Perfect for exploring RoomAI capabilities.',
-            features: [
-              '40 Complimentary credits',
-              'Standard AI render engines',
-              'SD generation quality (768px)',
-              '3-day rendering history',
-              'Community forum support',
-            ],
-            accessibleModels: ['interior-design', 'floor-plan-generator'],
-            stripePriceIdMonthly: '',
-            stripePriceIdAnnual: '',
-            isPopular: false,
-            isActive: true,
-          },
-          {
-            name: 'Starter Tier',
-            code: 'starter',
-            priceMonthly: 19,
-            priceAnnual: 15,
-            credits: 200,
-            description: 'For homeowners starting single-room projects.',
-            features: [
-              '200 Generation credits / mo',
-              'Priority standard queue',
-              'Full HD generation quality (1080p)',
-              'Unlimited rendering history',
-              'Personal workspace organization',
-              'Email customer support',
-            ],
-            accessibleModels: ['interior-design', 'exterior-design', 'floor-plan-generator', 'sketch-to-render'],
-            stripePriceIdMonthly: 'price_mock_starter_monthly',
-            stripePriceIdAnnual: 'price_mock_starter_annual',
-            isPopular: false,
-            isActive: true,
-          },
-          {
-            name: 'Standard Pro',
-            code: 'standard',
-            priceMonthly: 49,
-            priceAnnual: 39,
-            credits: 600,
-            description: 'Ideal for designers and professional remodelers.',
-            features: [
-              '600 Generation credits / mo',
-              'Super fast priority processing',
-              '4K Ultra-HD resolution output',
-              'Custom lighting & color editing',
-              'CAD floor plan preprocessing',
-              'Priority email/chat support',
-            ],
-            accessibleModels: ['interior-design', 'exterior-design', 'landscape-design', 'floor-plan-generator', '3d-floor-plan', 'sketch-to-render'],
-            stripePriceIdMonthly: 'price_mock_standard_monthly',
-            stripePriceIdAnnual: 'price_mock_standard_annual',
-            isPopular: true,
-            isActive: true,
-          },
-          {
-            name: 'Professional',
-            code: 'professional',
-            priceMonthly: 99,
-            priceAnnual: 79,
-            credits: 1500,
-            description: 'For studios and architecture agencies.',
-            features: [
-              '1500 Generation credits / mo',
-              'Fastest dedicated cluster queues',
-              '8K Extreme render quality',
-              'Custom pre-processing overrides',
-              'Material & Cost estimates PDF',
-              'Dedicated account manager',
-            ],
-            accessibleModels: ['interior-design', 'exterior-design', 'landscape-design', 'floor-plan-generator', '3d-floor-plan', 'sketch-to-render', 'virtual-staging', 'color-palette-customizer'],
-            stripePriceIdMonthly: 'price_mock_professional_monthly',
-            stripePriceIdAnnual: 'price_mock_professional_annual',
-            isPopular: false,
-            isActive: true,
-          },
-        ];
-        await this.planModel.insertMany(defaultPlans);
-        console.log('✅ Default Subscription Plans seeded successfully!');
-      }
+      // Clear old plan definitions to enforce exact 3 plans
+      await this.planModel.deleteMany({}).exec();
+      console.log('🌱 Seeding exact 3 Subscription Plans into MongoDB...');
+      const defaultPlans = [
+        {
+          name: 'Free Plan',
+          code: 'free',
+          priceMonthly: 0,
+          priceAnnual: 0,
+          credits: 0,
+          validityDays: 30,
+          description: 'Explore RoomAI tools. Upgrade to a paid plan to receive generation credits.',
+          features: [
+            '0 Initial Credits',
+            '30-Day Validity Cycle',
+            'Standard AI Render Engines',
+            'Access to All Design Categories',
+            'Automatic 30-Day Cycle Renewal',
+          ],
+          accessibleModels: ['interior-design', 'floor-plan-generator', 'exterior-design', 'landscape-design'],
+          stripePriceIdMonthly: '',
+          stripePriceIdAnnual: '',
+          isPopular: false,
+          isActive: true,
+        },
+        {
+          name: 'Starter Plan',
+          code: 'starter',
+          priceMonthly: 19,
+          priceAnnual: 15,
+          credits: 40,
+          validityDays: 30,
+          description: 'Ideal for homeowners & design enthusiasts starting single-room projects.',
+          features: [
+            '40 Generation Credits / month',
+            '30-Day Billing Cycle',
+            '8K UHD Architectural Quality',
+            'All 12+ AI Design Tools',
+            'Requires Completed Payment',
+          ],
+          accessibleModels: ['interior-design', 'exterior-design', 'floor-plan-generator', 'sketch-to-render', 'landscape-design'],
+          stripePriceIdMonthly: 'price_mock_starter_monthly',
+          stripePriceIdAnnual: 'price_mock_starter_annual',
+          isPopular: true,
+          isActive: true,
+        },
+        {
+          name: 'Pro Plan',
+          code: 'pro',
+          priceMonthly: 39,
+          priceAnnual: 31,
+          credits: 100,
+          validityDays: 30,
+          description: 'For professional interior designers & architects needing priority generation.',
+          features: [
+            '100 Generation Credits / month',
+            '30-Day Billing Cycle',
+            'Priority Processing Queue',
+            'Full 8K UHD Architectural Quality',
+            'Multi-Room Project Consistency',
+            'Priority Email & Chat Support',
+          ],
+          accessibleModels: ['interior-design', 'exterior-design', 'landscape-design', 'floor-plan-generator', '3d-floor-plan', 'sketch-to-render'],
+          stripePriceIdMonthly: 'price_mock_pro_monthly',
+          stripePriceIdAnnual: 'price_mock_pro_annual',
+          isPopular: false,
+          isActive: true,
+        },
+      ];
+      await this.planModel.insertMany(defaultPlans);
+      console.log('✅ Exactly 3 Subscription Plans seeded successfully!');
     } catch (err: any) {
-      console.error('Failed to seed default subscription plans:', err.message);
+      console.error('Failed to seed subscription plans:', err.message);
     }
   }
 

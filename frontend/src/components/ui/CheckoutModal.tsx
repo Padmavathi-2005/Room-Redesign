@@ -15,8 +15,10 @@ import {
 
 export interface CheckoutPlan {
   id: string;
+  code?: string;
   name: string;
   price: number;
+  priceMonthly?: number;
   billingCycle: 'monthly' | 'annual';
   credits: number;
   features: string[];
@@ -69,20 +71,37 @@ export default function CheckoutModal({
       setIsProcessing(false);
       setIsCompleted(true);
 
-      // Add credits to user session in localStorage
+      // Add credits to user session in localStorage and record invoice receipt
       if (typeof window !== 'undefined') {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           try {
             const userObj = JSON.parse(storedUser);
-            const currentCredits = userObj.credits || 100;
+            const currentCredits = userObj.credits ?? 0;
             userObj.credits = currentCredits + plan.credits;
+            userObj.plan = plan.code || plan.name.toUpperCase();
             userObj.subscriptionTier = plan.name;
+            userObj.subscriptionPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
             localStorage.setItem('user', JSON.stringify(userObj));
           } catch {
             // fallback
           }
         }
+
+        try {
+          const newInvoice = {
+            id: `INV-${Date.now().toString().slice(-6)}`,
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            item: `${plan.name} Subscription`,
+            amount: `$${plan.priceMonthly || plan.price || 19}.00`,
+            subtotal: `$${((plan.priceMonthly || plan.price || 19) * 0.9).toFixed(2)}`,
+            tax: `$${((plan.priceMonthly || plan.price || 19) * 0.1).toFixed(2)}`,
+            gateway: 'Stripe',
+            status: 'SUCCEEDED',
+          };
+          const existingInv = JSON.parse(localStorage.getItem('user_invoices') || '[]');
+          localStorage.setItem('user_invoices', JSON.stringify([newInvoice, ...existingInv]));
+        } catch (e) {}
         
         // Dispatch custom global event to notify Header and state listeners
         window.dispatchEvent(new Event('user-credits-updated'));

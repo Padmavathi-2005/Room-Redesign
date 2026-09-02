@@ -20,6 +20,9 @@ export class SubscriptionPlanDefinition {
   @Prop({ required: true })
   credits: number;
 
+  @Prop({ default: 30 })
+  validityDays: number;
+
   @Prop({ trim: true, default: '' })
   description: string;
 

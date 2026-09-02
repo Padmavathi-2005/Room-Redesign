@@ -68,50 +68,48 @@ interface UserInvoice {
 
 const DEFAULT_PRICING_PLANS: DatabasePlan[] = [
   {
-    name: 'Starter Pro',
+    name: 'Free Plan',
+    code: 'free',
+    priceMonthly: 0,
+    priceAnnual: 0,
+    credits: 0,
+    description: 'Explore RoomAI tools. Upgrade to a paid plan to receive generation credits.',
+    features: [
+      '0 Initial Credits',
+      '30-Day Billing Cycle',
+      'Standard AI Render Quality',
+      'Access to All Design Categories',
+      'Automatic 30-Day Cycle Renewal',
+    ],
+  },
+  {
+    name: 'Starter Plan',
     code: 'starter',
     priceMonthly: 19,
     priceAnnual: 15,
-    credits: 200,
-    description: 'Perfect for homeowners and design enthusiasts redesigning personal room spaces.',
+    credits: 40,
+    description: 'Ideal for homeowners & design enthusiasts starting single-room projects.',
     features: [
-      '200 AI Generation Credits / month',
-      'Full 8K UHD Architectural Quality',
-      'All 12+ Interior & Exterior AI Tools',
-      'Commercial Usage License',
-      'Standard Support',
+      '40 AI Generation Credits / month',
+      '30-Day Billing Cycle',
+      '8K UHD Architectural Quality',
+      'All 12+ AI Design Tools',
+      'Requires Completed Payment',
     ],
   },
   {
-    name: 'Pro Studio',
+    name: 'Pro Plan',
     code: 'pro',
     priceMonthly: 39,
     priceAnnual: 31,
-    credits: 650,
-    description: 'For interior designers, real estate stagers, and creators who need maximum quality.',
+    credits: 100,
+    description: 'For professional interior designers & architects needing priority generation.',
     features: [
-      '650 AI Generation Credits / month',
-      'Ultra-Fast Priority Processing',
-      'Full 8K UHD Architectural Quality',
+      '100 AI Generation Credits / month',
+      '30-Day Billing Cycle',
+      'Priority Processing Queue',
+      'Full 8K UHD Quality',
       'Multi-Room Project Consistency',
-      'Custom Style & Palette Controls',
-      'Priority 24/7 VIP Support',
-    ],
-  },
-  {
-    name: 'Agency Master',
-    code: 'agency',
-    priceMonthly: 89,
-    priceAnnual: 71,
-    credits: 1800,
-    description: 'For professional architectural firms, design agencies, and high-volume commercial teams.',
-    features: [
-      '1,800 AI Generation Credits / month',
-      'Instant Priority Queueing',
-      '8K UHD & Raw Asset Downloads',
-      'Dedicated Account Manager',
-      'Unlimited Project Storage',
-      'Custom ERP API Integrations',
     ],
   },
 ];
@@ -222,49 +220,16 @@ export default function BillingPage() {
 
   // Fetch invoice purchase details history
   const fetchInvoices = async () => {
-    // Generate invoice purchase history
-    setInvoices([
-      {
-        id: 'INV-2026-0891',
-        date: 'Aug 15, 2026',
-        item: 'Pro Studio Subscription (Monthly)',
-        amount: '$39.00',
-        subtotal: '$35.45',
-        tax: '$3.55',
-        gateway: 'Stripe',
-        status: 'SUCCEEDED',
-      },
-      {
-        id: 'INV-2026-0742',
-        date: 'Jul 15, 2026',
-        item: 'Pro Studio Subscription (Monthly)',
-        amount: '$39.00',
-        subtotal: '$35.45',
-        tax: '$3.55',
-        gateway: 'Stripe',
-        status: 'SUCCEEDED',
-      },
-      {
-        id: 'INV-2026-0510',
-        date: 'Jun 28, 2026',
-        item: '500 AI Credits Top-Up Bundle',
-        amount: '$29.00',
-        subtotal: '$26.36',
-        tax: '$2.64',
-        gateway: 'PayPal',
-        status: 'SUCCEEDED',
-      },
-      {
-        id: 'INV-2026-0301',
-        date: 'May 15, 2026',
-        item: 'Starter Pro Subscription (Monthly)',
-        amount: '$19.00',
-        subtotal: '$17.27',
-        tax: '$1.73',
-        gateway: 'Stripe',
-        status: 'SUCCEEDED',
-      },
-    ]);
+    try {
+      const stored = localStorage.getItem('user_invoices');
+      if (stored) {
+        setInvoices(JSON.parse(stored));
+      } else {
+        setInvoices([]);
+      }
+    } catch (e) {
+      setInvoices([]);
+    }
   };
 
   useEffect(() => {
@@ -353,9 +318,9 @@ export default function BillingPage() {
     );
   }
 
-  const activePlanCode = subscription?.plan || currentUser?.plan || 'pro';
+  const activePlanCode = subscription?.plan || currentUser?.plan || 'free';
   const planLimit = getPlanLimit(activePlanCode);
-  const creditsRemaining = subscription?.credits ?? currentUser?.credits ?? 83;
+  const creditsRemaining = subscription?.credits ?? currentUser?.credits ?? 0;
   const creditsUsed = Math.max(0, planLimit - creditsRemaining);
   const progressPercent = Math.min(100, Math.round((creditsRemaining / planLimit) * 100));
   const activePlanPrice = getPlanPrice(activePlanCode);
