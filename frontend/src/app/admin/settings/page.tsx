@@ -66,10 +66,12 @@ export default function AdminSettingsPage() {
   const [aiGenerationTimeout, setAiGenerationTimeout] = useState(60);
 
   // 4. Stripe & PayPal Payment Gateways State
+  const [stripeEnabled, setStripeEnabled] = useState(true);
   const [stripeTestMode, setStripeTestMode] = useState(true);
   const [stripePublishableKey, setStripePublishableKey] = useState('');
   const [stripeSecretKey, setStripeSecretKey] = useState('');
   const [stripeWebhookSecret, setStripeWebhookSecret] = useState('');
+  const [paypalEnabled, setPaypalEnabled] = useState(true);
   const [paypalSandboxMode, setPaypalSandboxMode] = useState(true);
   const [paypalClientId, setPaypalClientId] = useState('');
   const [paypalClientSecret, setPaypalClientSecret] = useState('');
@@ -189,10 +191,12 @@ export default function AdminSettingsPage() {
       setRoomwhizApiKey(s.roomwhizApiKey || 'sk-BXgV4RDSCZ7FMfjf31UDLy77Y1E_gw2EahLqTbOZYdKni4Kv5X4i2Dq9FSwCWuLvjOWzYQT6dwUKHRJin3pRo1a-4GTh');
       setAiGenerationTimeout(s.aiGenerationTimeout ?? 60);
 
+      setStripeEnabled(s.stripeEnabled ?? true);
       setStripeTestMode(s.stripeTestMode ?? true);
       setStripePublishableKey(s.stripePublishableKey || '');
       setStripeSecretKey(s.stripeSecretKey || '');
       setStripeWebhookSecret(s.stripeWebhookSecret || '');
+      setPaypalEnabled(s.paypalEnabled ?? true);
       setPaypalSandboxMode(s.paypalSandboxMode ?? true);
       setPaypalClientId(s.paypalClientId || '');
       setPaypalClientSecret(s.paypalClientSecret || '');
@@ -256,10 +260,12 @@ export default function AdminSettingsPage() {
           manusApiKey,
           roomwhizApiKey,
           aiGenerationTimeout,
+          stripeEnabled,
           stripeTestMode,
           stripePublishableKey,
           stripeSecretKey,
           stripeWebhookSecret,
+          paypalEnabled,
           paypalSandboxMode,
           paypalClientId,
           paypalClientSecret,
@@ -794,20 +800,37 @@ export default function AdminSettingsPage() {
 
                 {/* Section A: Stripe Configuration */}
                 <div className="space-y-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
                     <div>
                       <p className="text-xs font-black text-slate-900">1. Stripe Payment Gateway</p>
                       <p className="text-[11px] text-slate-500 font-medium">Use Stripe test keys (`pk_test_...`, `sk_test_...`) in Sandbox mode.</p>
                     </div>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={stripeTestMode}
-                        onChange={(e) => setStripeTestMode(e.target.checked)}
-                        className="w-4 h-4 text-indigo-600 rounded cursor-pointer"
-                      />
-                      <span className="text-xs font-bold text-slate-800">{stripeTestMode ? 'Test Mode (Sandbox)' : 'Live Mode'}</span>
-                    </label>
+                    
+                    <div className="flex items-center gap-3">
+                      {/* Enable / Disable Toggle */}
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                        <input
+                          type="checkbox"
+                          checked={stripeEnabled}
+                          onChange={(e) => setStripeEnabled(e.target.checked)}
+                          className="w-4 h-4 text-emerald-600 rounded cursor-pointer accent-emerald-600"
+                        />
+                        <span className={`text-xs font-black ${stripeEnabled ? 'text-emerald-700' : 'text-slate-400'}`}>
+                          {stripeEnabled ? '✓ Enabled' : '✕ Disabled'}
+                        </span>
+                      </label>
+
+                      {/* Test Mode Checkbox */}
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                        <input
+                          type="checkbox"
+                          checked={stripeTestMode}
+                          onChange={(e) => setStripeTestMode(e.target.checked)}
+                          className="w-4 h-4 text-indigo-600 rounded cursor-pointer"
+                        />
+                        <span className="text-xs font-bold text-slate-800">{stripeTestMode ? 'Test Mode (Sandbox)' : 'Live Mode'}</span>
+                      </label>
+                    </div>
                   </div>
 
                   <div className="space-y-3 pt-1">
@@ -848,20 +871,37 @@ export default function AdminSettingsPage() {
 
                 {/* Section B: PayPal Configuration */}
                 <div className="space-y-4 p-4 rounded-2xl bg-blue-50/50 border border-blue-200/80">
-                  <div className="flex items-center justify-between border-b border-blue-200/80 pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-blue-200/80 pb-3">
                     <div>
                       <p className="text-xs font-black text-slate-900">2. PayPal Express Gateway</p>
                       <p className="text-[11px] text-slate-500 font-medium">Use PayPal Developer Sandbox credentials for testing.</p>
                     </div>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={paypalSandboxMode}
-                        onChange={(e) => setPaypalSandboxMode(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                      />
-                      <span className="text-xs font-bold text-slate-800">{paypalSandboxMode ? 'Test Mode (Sandbox)' : 'Live Mode'}</span>
-                    </label>
+
+                    <div className="flex items-center gap-3">
+                      {/* Enable / Disable Toggle */}
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-blue-200 shadow-2xs">
+                        <input
+                          type="checkbox"
+                          checked={paypalEnabled}
+                          onChange={(e) => setPaypalEnabled(e.target.checked)}
+                          className="w-4 h-4 text-blue-600 rounded cursor-pointer accent-blue-600"
+                        />
+                        <span className={`text-xs font-black ${paypalEnabled ? 'text-blue-700' : 'text-slate-400'}`}>
+                          {paypalEnabled ? '✓ Enabled' : '✕ Disabled'}
+                        </span>
+                      </label>
+
+                      {/* Test Mode Checkbox */}
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-blue-200 shadow-2xs">
+                        <input
+                          type="checkbox"
+                          checked={paypalSandboxMode}
+                          onChange={(e) => setPaypalSandboxMode(e.target.checked)}
+                          className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                        />
+                        <span className="text-xs font-bold text-slate-800">{paypalSandboxMode ? 'Test Mode (Sandbox)' : 'Live Mode'}</span>
+                      </label>
+                    </div>
                   </div>
 
                   <div className="space-y-3 pt-1">
