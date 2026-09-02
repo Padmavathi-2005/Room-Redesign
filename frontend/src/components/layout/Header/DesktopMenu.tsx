@@ -20,7 +20,12 @@ export default function DesktopMenu() {
     pathname.startsWith('/history') ||
     pathname.startsWith('/settings') ||
     pathname.startsWith('/billing') ||
-    pathname.startsWith('/upload');
+    pathname.startsWith('/upload') ||
+    pathname.startsWith('/checkout') ||
+    pathname.startsWith('/designs') ||
+    pathname.startsWith('/templates') ||
+    pathname.startsWith('/shopping-list') ||
+    pathname.startsWith('/profile');
 
   if (isDashboardRoute) {
     return (

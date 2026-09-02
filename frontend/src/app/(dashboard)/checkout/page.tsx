@@ -307,6 +307,7 @@ export default function FullPageCheckout() {
           <div className="lg:col-span-7">
             <form
               onSubmit={handleCheckoutSubmit}
+              autoComplete="off"
               className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm space-y-6"
             >
               <h3 className="text-lg font-black text-slate-900 dark:text-white font-heading">
@@ -361,6 +362,7 @@ export default function FullPageCheckout() {
                     <input
                       type="text"
                       required
+                      autoComplete="off"
                       placeholder="Alex User"
                       value={nameOnCard}
                       onChange={(e) => setNameOnCard(e.target.value)}
@@ -375,6 +377,7 @@ export default function FullPageCheckout() {
                     <input
                       type="text"
                       required
+                      autoComplete="off"
                       maxLength={19}
                       placeholder="4242 •••• •••• 4242"
                       value={cardNumber}
@@ -391,6 +394,7 @@ export default function FullPageCheckout() {
                       <input
                         type="text"
                         required
+                        autoComplete="off"
                         maxLength={5}
                         placeholder="MM/YY"
                         value={expiry}
@@ -406,6 +410,7 @@ export default function FullPageCheckout() {
                       <input
                         type="text"
                         required
+                        autoComplete="off"
                         maxLength={4}
                         placeholder="123"
                         value={cvc}
