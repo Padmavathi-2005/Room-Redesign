@@ -36,14 +36,39 @@ export default function LoginForm() {
       const mockToken = 'mock_jwt_token_roomai_' + Date.now();
       const userRole = 'user';
       
+      // Preserve existing user credits and plan if available in local storage (default 0 credits for new users)
+      let existingCredits = 0;
+      let existingPlan = 'FREE';
+      let existingAvatar = '';
+      let existingName = fullName || email.split('@')[0] || 'Demo User';
+
+      const storedUserStr = localStorage.getItem('user');
+      if (storedUserStr) {
+        try {
+          const parsed = JSON.parse(storedUserStr);
+          if (parsed) {
+            if (typeof parsed.credits === 'number') {
+              existingCredits = parsed.credits;
+            }
+            if (parsed.plan) existingPlan = parsed.plan;
+            if (parsed.avatar || parsed.avatarUrl) existingAvatar = parsed.avatar || parsed.avatarUrl;
+            if (!fullName && parsed.name) existingName = parsed.name;
+          }
+        } catch (e) {
+          // Ignore JSON parse error
+        }
+      }
+      
       localStorage.setItem('token', mockToken);
       localStorage.setItem(
         'user',
         JSON.stringify({
-          name: fullName || email.split('@')[0] || 'Demo User',
+          name: existingName,
           email,
           role: userRole,
-          credits: 100,
+          credits: existingCredits,
+          plan: existingPlan,
+          avatar: existingAvatar,
         })
       );
       document.cookie = `token=${mockToken}; path=/; max-age=86400; SameSite=Lax`;

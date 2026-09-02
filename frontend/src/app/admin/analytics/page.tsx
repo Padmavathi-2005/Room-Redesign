@@ -32,6 +32,7 @@ interface AnalyticsData {
 
 export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
+  const [userAllocations, setUserAllocations] = useState<Array<Record<string, any>>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('7d');
 
@@ -45,41 +46,19 @@ export default function AdminAnalyticsPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
       const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') || localStorage.getItem('token') : '';
 
-      const res = await fetch(`${apiUrl}/admin/analytics`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const [analyticsRes, usersRes] = await Promise.all([
+        fetch(`${apiUrl}/admin/analytics`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/admin/users`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
 
-      if (res.ok) {
-        const json = await res.json();
+      if (analyticsRes.ok) {
+        const json = await analyticsRes.json();
         setData(json);
-      } else {
-        // Fallback demo metrics if endpoint unauthenticated
-        setData({
-          overview: {
-            totalRevenue: 12480,
-            monthlyRecurringRevenue: 3450,
-            activeGenerations: 420,
-            totalUsers: 156,
-            totalProjects: 312,
-            conversionRate: '4.8%',
-          },
-          generationsTrend: [
-            { label: 'Mon', count: 120 },
-            { label: 'Tue', count: 180 },
-            { label: 'Wed', count: 240 },
-            { label: 'Thu', count: 310 },
-            { label: 'Fri', count: 420 },
-            { label: 'Sat', count: 380 },
-            { label: 'Sun', count: 290 },
-          ],
-          popularStyles: [
-            { name: 'Modern Minimalist', percentage: 38 },
-            { name: 'Scandinavian Clean', percentage: 24 },
-            { name: 'Japandi Harmony', percentage: 18 },
-            { name: 'Industrial Loft', percentage: 12 },
-            { name: 'Luxury Villa', percentage: 8 },
-          ],
-        });
+      }
+
+      if (usersRes.ok) {
+        const usersJson = await usersRes.json();
+        setUserAllocations(usersJson);
       }
     } catch (err) {
       console.error('Failed to load analytics:', err);
@@ -265,6 +244,92 @@ export default function AdminAnalyticsPage() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Admin Global Credit Consumption & User Allocation Table */}
+      <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-extrabold uppercase tracking-wider border border-purple-200">
+                System Monitor
+              </span>
+              <span className="text-xs font-bold text-slate-400">
+                Platform Credit Pool
+              </span>
+            </div>
+            <h2 className="text-base font-extrabold text-slate-900 mt-1">
+              Global Credits Consumption & User Top-Tier Allocations
+            </h2>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto text-xs">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                <th className="py-3 px-4 rounded-l-xl">User Account</th>
+                <th className="py-3 px-4">Active Plan</th>
+                <th className="py-3 px-4 text-center">Remaining Balance</th>
+                <th className="py-3 px-4 text-center">Monthly Spent</th>
+                <th className="py-3 px-4 text-center">Total Renders</th>
+                <th className="py-3 px-4 rounded-r-xl text-right">Account Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              {userAllocations.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-400 font-semibold">
+                    No active user allocations found in database.
+                  </td>
+                </tr>
+              ) : (
+                userAllocations.map((user) => {
+                  const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
+                  const tier = (user.subscriptionTier || 'FREE').toUpperCase();
+                  const roomCount = user.roomCount || 0;
+                  const credits = user.credits ?? 0;
+
+                  return (
+                    <tr key={user._id || user.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                        <div>
+                          <p className="font-extrabold text-slate-900">{fullName}</p>
+                          <p className="text-[11px] text-slate-400 font-mono">{user.email}</p>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${
+                          tier === 'PRO' || tier === 'PROFESSIONAL' || tier === 'PREMIUM'
+                            ? 'bg-purple-50 text-purple-700 border-purple-100'
+                            : tier === 'STARTER' || tier === 'STANDARD'
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                            : 'bg-slate-100 text-slate-700 border-slate-200'
+                        }`}>
+                          {tier} Plan
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center font-mono font-bold text-emerald-600">
+                        ⚡ {credits} Credits
+                      </td>
+                      <td className="py-3.5 px-4 text-center font-mono font-extrabold text-slate-900">
+                        {roomCount * 4} Credits
+                      </td>
+                      <td className="py-3.5 px-4 text-center font-bold text-indigo-600">
+                        {roomCount} AI Renders
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] uppercase border border-emerald-100">
+                          Active Account
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

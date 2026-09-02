@@ -27,17 +27,7 @@ import { TimeOfDayModule } from './modules/time-of-day/time-of-day.module';
 import { QueueModule } from './queue/queue.module';
 import { ProviderManagerModule } from './modules/provider-manager/provider-manager.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
-import { CmsModule } from './modules/cms/cms.module';
-import { ImageProcessingModule } from './image-processing/image-processing.module';
-import {
-  databaseConfig,
-  jwtConfig,
-  cloudinaryConfig,
-  redisConfig,
-  aiConfig,
-  mailConfig,
-  appConfig,
-} from './config';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -83,6 +73,7 @@ import {
     MarketplaceModule,
     CmsModule,
     ImageProcessingModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

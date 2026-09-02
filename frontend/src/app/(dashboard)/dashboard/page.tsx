@@ -21,51 +21,14 @@ import QuickRedesignStudio from '@/components/dashboard/QuickRedesignStudio';
 import CommonPagination from '@/components/ui/CommonPagination';
 import { useSettings } from '@/context/SettingsContext';
 
+import { projectService, ProjectData, RoomData } from '@/services/project.service';
+
 interface UserSession {
   name: string;
   email: string;
   credits: number;
   plan: string;
 }
-
-const RECENT_DESIGNS = [
-  {
-    id: 'des-1',
-    title: 'Modern Minimalist Living Room',
-    roomType: 'Living Room',
-    style: 'Modern Minimalist',
-    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80',
-    creditsUsed: 10,
-    timeAgo: '2 mins ago',
-  },
-  {
-    id: 'des-2',
-    title: 'Japandi Serenity Master Bedroom',
-    roomType: 'Bedroom',
-    style: 'Japandi',
-    image: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600&q=80',
-    creditsUsed: 15,
-    timeAgo: '2 hours ago',
-  },
-  {
-    id: 'des-3',
-    title: 'Luxury Marble Chef Kitchen',
-    roomType: 'Kitchen',
-    style: 'Luxury Modern',
-    image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&q=80',
-    creditsUsed: 12,
-    timeAgo: '1 day ago',
-  },
-  {
-    id: 'des-4',
-    title: 'Industrial Executive Loft Office',
-    roomType: 'Office',
-    style: 'Industrial Loft',
-    image: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=600&q=80',
-    creditsUsed: 10,
-    timeAgo: '3 days ago',
-  },
-];
 
 const AI_SUGGESTIONS = [
   {
@@ -87,11 +50,15 @@ export default function DashboardPage() {
   const { settings } = useSettings();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [user, setUser] = useState<UserSession>({
-    name: 'Ananya',
-    email: 'ananya@example.com',
-    credits: 100,
-    plan: 'PREMIUM',
+    name: 'User',
+    email: 'user@example.com',
+    credits: 0,
+    plan: 'FREE',
   });
+
+  const [userProjects, setUserProjects] = useState<ProjectData[]>([]);
+  const [userRooms, setUserRooms] = useState<RoomData[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -108,6 +75,23 @@ export default function DashboardPage() {
         } catch {}
       }
     }
+
+    const fetchLiveUserMetrics = async () => {
+      try {
+        const [projs, rooms] = await Promise.all([
+          projectService.getProjects(),
+          projectService.getAllRooms(),
+        ]);
+        setUserProjects(projs || []);
+        setUserRooms(rooms || []);
+      } catch (err) {
+        console.error('Failed to load user projects/rooms:', err);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    fetchLiveUserMetrics();
   }, []);
 
   return (
@@ -122,8 +106,8 @@ export default function DashboardPage() {
 
       {/* 4 Metric Stats Cards */}
       <DashboardStats
-        totalDesigns={24}
-        activeProjects={8}
+        totalDesigns={userRooms.length}
+        activeProjects={userProjects.length}
         creditsLeft={user.credits}
         wishlistCount={12}
       />
@@ -160,66 +144,76 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                {RECENT_DESIGNS.slice(
-                  (currentPage - 1) * (settings.tablePaginationLimit || 10),
-                  currentPage * (settings.tablePaginationLimit || 10)
-                ).map((des) => (
-                  <tr key={des.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group">
-                    {/* Design Thumbnail & Title */}
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-3">
-                        <img src={des.image} alt={des.title} className="w-12 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-800 shadow-2xs shrink-0" />
-                        <span className="font-bold text-slate-900 dark:text-white font-heading truncate max-w-[140px] sm:max-w-[180px]">{des.title}</span>
-                      </div>
-                    </td>
-
-                    {/* Room Type & Style */}
-                    <td className="py-3 px-3">
-                      <div className="space-y-0.5">
-                        <span className="px-2 py-0.5 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 font-extrabold text-[10px] inline-block">
-                          {des.roomType}
-                        </span>
-                        <p className="text-slate-400 font-medium text-[11px]">{des.style}</p>
-                      </div>
-                    </td>
-
-                    {/* Credits Used */}
-                    <td className="py-3 px-3">
-                      <span className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2.5 py-1 rounded-2xl border border-amber-200 dark:border-amber-900/50 text-[11px]">
-                        <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
-                        {des.creditsUsed} Credits
-                      </span>
-                    </td>
-
-                    {/* Generated Time */}
-                    <td className="py-3 px-3 text-slate-400 font-medium whitespace-nowrap">
-                      {des.timeAgo}
-                    </td>
-
-                    {/* Download & Action Buttons */}
-                    <td className="py-3 px-3 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
-                        <a
-                          href={des.image}
-                          download={`${des.title}.jpg`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-600 hover:text-white transition-all shadow-2xs"
-                          title="Download High-Res Render Image"
-                        >
-                          <Download className="w-4 h-4" />
-                        </a>
-                        <Link
-                          href="/designs"
-                          className="p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-600 hover:text-white transition-all shadow-2xs"
-                          title="View Design Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                      </div>
+                {userRooms.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400 font-semibold">
+                      No AI room renders generated yet. Click &quot;Open AI Studio&quot; to transform your room!
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  userRooms.slice(
+                    (currentPage - 1) * (settings.tablePaginationLimit || 10),
+                    currentPage * (settings.tablePaginationLimit || 10)
+                  ).map((room) => {
+                    const imgUrl = room.generatedImage || room.originalImage || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80';
+                    const title = room.prompt || room.roomType || 'AI Room Redesign';
+                    const roomType = room.roomType || 'Living Room';
+                    const style = (room as any).designStyle || room.theme || 'Modern';
+
+                    return (
+                      <tr key={room._id || room.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group">
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-3">
+                            <img src={imgUrl} alt={title} className="w-12 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-800 shadow-2xs shrink-0" />
+                            <span className="font-bold text-slate-900 dark:text-white font-heading truncate max-w-[140px] sm:max-w-[180px]">{title}</span>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-3">
+                          <div className="space-y-0.5">
+                            <span className="px-2 py-0.5 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 font-extrabold text-[10px] inline-block">
+                              {roomType}
+                            </span>
+                            <p className="text-slate-400 font-medium text-[11px]">{style}</p>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-3">
+                          <span className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2.5 py-1 rounded-2xl border border-amber-200 dark:border-amber-900/50 text-[11px]">
+                            <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
+                            4 Credits
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-3 text-slate-400 font-medium whitespace-nowrap">
+                          {(room as any).createdAt ? new Date((room as any).createdAt).toLocaleDateString() : 'Recently'}
+                        </td>
+
+                        <td className="py-3 px-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2">
+                            <a
+                              href={imgUrl}
+                              download="room-redesign.jpg"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-600 hover:text-white transition-all shadow-2xs"
+                              title="Download High-Res Render Image"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                            <Link
+                              href="/projects"
+                              className="p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-purple-600 hover:text-white transition-all shadow-2xs"
+                              title="View Project"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -227,7 +221,7 @@ export default function DashboardPage() {
           {/* Common Table Pagination Component */}
           <CommonPagination
             currentPage={currentPage}
-            totalItems={RECENT_DESIGNS.length}
+            totalItems={userRooms.length || 1}
             pageSize={settings.tablePaginationLimit || 10}
             onPageChange={setCurrentPage}
           />

@@ -27,6 +27,18 @@ export default function SignupForm() {
     // Save user auth session in localStorage & cookies
     if (typeof window !== 'undefined') {
       const mockToken = 'mock_jwt_token_roomai_' + Date.now();
+      // Preserve existing user credits if available in local storage (default 0 credits for new signups)
+      let initialCredits = 0;
+      const storedUserStr = localStorage.getItem('user');
+      if (storedUserStr) {
+        try {
+          const parsed = JSON.parse(storedUserStr);
+          if (parsed && typeof parsed.credits === 'number') {
+            initialCredits = parsed.credits;
+          }
+        } catch (e) {}
+      }
+
       localStorage.setItem('token', mockToken);
       localStorage.setItem(
         'user',
@@ -34,7 +46,7 @@ export default function SignupForm() {
           name: fullName || email.split('@')[0] || 'Demo User',
           email,
           role: 'Architect',
-          credits: 100,
+          credits: initialCredits,
         })
       );
       document.cookie = `token=${mockToken}; path=/; max-age=86400; SameSite=Lax`;

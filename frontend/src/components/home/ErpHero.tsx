@@ -82,7 +82,7 @@ export default function ErpHero() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="text-sm font-semibold text-slate-800 hover:text-blue-700 transition-colors focus:outline-none py-2"
+                  className="text-sm font-semibold text-slate-800 dark:text-slate-200 hover:text-blue-700 dark:hover:text-blue-400 transition-colors focus:outline-none py-2 cursor-pointer"
                 >
                   Book a Demo
                 </motion.button>

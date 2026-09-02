@@ -2,19 +2,133 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, LayoutGrid, Shield, User, ChevronRight, Settings, LayoutDashboard, CreditCard, Search, Bell, Menu, X, Wand2, FileText, BarChart3, Receipt, ShieldCheck, Users } from 'lucide-react';
+import { LogOut, LayoutGrid, Shield, User, ChevronRight, Settings, LayoutDashboard, CreditCard, Search, Bell, Menu, X, Wand2, FileText, BarChart3, Receipt, ShieldCheck, Users, PhoneCall } from 'lucide-react';
 import Link from 'next/link';
+
+import { AdminSearchProvider, useAdminSearch } from '@/context/AdminSearchContext';
+import NotificationCenter from '@/components/ui/NotificationCenter';
 
 interface AdminUserProfile {
   name: string;
   email: string;
 }
 
-export default function AdminLayout({
-  children,
+function AdminLayoutHeader({
+  pathname,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
 }: {
-  children: React.ReactNode;
+  pathname: string;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
 }) {
+  const { searchQuery, setSearchQuery } = useAdminSearch();
+
+  const getHeaderTitle = () => {
+    if (pathname.startsWith('/admin/cms')) return 'CMS & Custom Page Builder';
+    switch (pathname) {
+      case '/admin/dashboard':
+        return 'Dashboard Overview';
+      case '/admin/analytics':
+        return 'Analytics & Revenue Console';
+      case '/admin/models':
+        return 'AI Models & Image Tools Catalog';
+      case '/admin/users':
+        return 'Users Management Console';
+      case '/admin/projects':
+        return 'Project & Room Management';
+      case '/admin/admins':
+        return 'Admin Team & Roles Control';
+      case '/admin/images':
+        return 'Converted Images Gallery';
+      case '/admin/plans':
+        return 'Subscription Plans Manager';
+      case '/admin/transactions':
+        return 'Lite Payment Transactions & Invoices';
+      case '/admin/leads':
+        return 'Demo Requests & Enterprise Onboarding';
+      case '/admin/settings':
+        return 'Admin Settings Console';
+      case '/admin/logs':
+        return 'Audit & System API Logs';
+      default:
+        return 'Admin Control Panel';
+    }
+  };
+
+  const getSearchPlaceholder = () => {
+    if (pathname.startsWith('/admin/cms')) return 'Search CMS pages & builder...';
+    switch (pathname) {
+      case '/admin/leads':
+        return 'Search leads by name, email, phone or company...';
+      case '/admin/users':
+        return 'Search users by name, email, role...';
+      case '/admin/transactions':
+        return 'Search ID, user email, plan, gateway...';
+      case '/admin/projects':
+        return 'Search projects by title, room type...';
+      case '/admin/models':
+        return 'Search AI models or tools...';
+      case '/admin/images':
+        return 'Search converted images...';
+      case '/admin/admins':
+        return 'Search admin team members...';
+      case '/admin/plans':
+        return 'Search pricing plans...';
+      case '/admin/analytics':
+        return 'Search metrics or design styles...';
+      case '/admin/logs':
+        return 'Search audit logs...';
+      default:
+        return 'Search admin resources...';
+    }
+  };
+
+  return (
+    <header className="h-16 shrink-0 sticky top-0 z-20 bg-[#FCFCFD]/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 shadow-2xs">
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Mobile Menu Toggle Button */}
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="lg:hidden p-2 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs shrink-0"
+          aria-label="Open navigation menu"
+        >
+          <Menu className="w-4 h-4" />
+        </button>
+
+        <h2 className="text-sm sm:text-base lg:text-lg font-black text-slate-900 truncate">
+          {getHeaderTitle()}
+        </h2>
+      </div>
+
+      <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+        {/* Search Input (Hidden on Analytics and Settings pages where top search is not needed) */}
+        {pathname !== '/admin/analytics' && pathname !== '/admin/settings' && (
+          <div className="relative hidden md:block w-48 lg:w-72">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder={getSearchPlaceholder()}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400 transition-all shadow-2xs"
+            />
+          </div>
+        )}
+
+        {/* Real-time Socket.IO Notification Bell */}
+        <NotificationCenter isAdmin={true} />
+
+        {/* Avatar indicator */}
+        <div className="w-8 h-8 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-black text-indigo-600 uppercase shadow-2xs shrink-0">
+          AD
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -95,6 +209,12 @@ export default function AdminLayout({
       category: 'USERS & ACCESS',
       items: [
         {
+          label: 'Demo Leads & Onboarding',
+          href: '/admin/leads',
+          icon: <PhoneCall className="w-4 h-4" />,
+          active: pathname === '/admin/leads',
+        },
+        {
           label: 'Users Console',
           href: '/admin/users',
           icon: <User className="w-4 h-4" />,
@@ -161,37 +281,6 @@ export default function AdminLayout({
     },
   ];
 
-  // Determine active section title for the attached header
-  const getHeaderTitle = () => {
-    if (pathname.startsWith('/admin/cms')) return 'CMS & Custom Page Builder';
-    switch (pathname) {
-      case '/admin/dashboard':
-        return 'Dashboard Overview';
-      case '/admin/analytics':
-        return 'Analytics & Revenue Dashboard';
-      case '/admin/models':
-        return 'AI Models & Image Catalog';
-      case '/admin/users':
-        return 'Users Management Console';
-      case '/admin/projects':
-        return 'Project & Room Management';
-      case '/admin/admins':
-        return 'Admin Team & Roles Control';
-      case '/admin/images':
-        return 'Converted Images Gallery';
-      case '/admin/plans':
-        return 'Subscription Plans Manager';
-      case '/admin/transactions':
-        return 'Transactions & Payment Records';
-      case '/admin/settings':
-        return 'Admin Settings Console';
-      case '/admin/logs':
-        return 'Audit & System API Logs';
-      default:
-        return 'Admin Control Panel';
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#FCFCFD] text-slate-900 flex relative overflow-hidden">
       {/* Blueprint Grid Pattern */}
@@ -214,8 +303,6 @@ export default function AdminLayout({
           isMobileMenuOpen ? 'translate-x-0 shadow-2xl z-40' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-
-        
         {/* Fixed Top Brand Header */}
         <div className="h-16 px-4 border-b border-slate-200/80 shrink-0 bg-white z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -300,54 +387,15 @@ export default function AdminLayout({
             <span>Sign Out</span>
           </button>
         </div>
-
       </aside>
 
       {/* Main Content Pane */}
       <div className="flex-1 min-w-0 h-screen flex flex-col relative overflow-hidden">
-        
-        {/* Sticky Attached Header (Top Bar) */}
-        <header className="h-16 shrink-0 sticky top-0 z-20 bg-[#FCFCFD]/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-center gap-3 min-w-0">
-
-            {/* Mobile Menu Toggle Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs shrink-0"
-              aria-label="Open navigation menu"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
-
-            <h2 className="text-sm sm:text-base lg:text-lg font-black text-slate-900 truncate">
-              {getHeaderTitle()}
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
-            {/* Search Input */}
-            <div className="relative hidden md:block w-48 lg:w-64">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search resources..."
-                disabled
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none placeholder-slate-450 opacity-80"
-              />
-            </div>
-
-            {/* Notification Bell */}
-            <button className="p-2 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition-all relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
-            </button>
-
-            {/* Avatar indicator */}
-            <div className="w-8 h-8 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-black text-indigo-600 uppercase shadow-2xs shrink-0">
-              AD
-            </div>
-          </div>
-        </header>
+        <AdminLayoutHeader
+          pathname={pathname}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {/* Content View Grid */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-h-0">
@@ -355,5 +403,13 @@ export default function AdminLayout({
         </main>
       </div>
     </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminSearchProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </AdminSearchProvider>
   );
 }

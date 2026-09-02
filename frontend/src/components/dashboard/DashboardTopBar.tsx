@@ -12,10 +12,10 @@ interface DashboardTopBarProps {
 }
 
 export default function DashboardTopBar({
-  userName = 'Ananya',
-  userEmail = 'ananya@example.com',
-  credits = 100,
-  roleBadge = 'Premium',
+  userName = 'User',
+  userEmail = 'user@example.com',
+  credits = 0,
+  roleBadge = 'Free',
 }: DashboardTopBarProps) {
   return (
     <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">

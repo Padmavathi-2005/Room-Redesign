@@ -16,6 +16,7 @@ import {
   FileText,
   DollarSign,
 } from 'lucide-react';
+import { useAdminSearch } from '@/context/AdminSearchContext';
 
 interface Transaction {
   id: string;
@@ -30,12 +31,11 @@ interface Transaction {
 }
 
 export default function AdminTransactionsPage() {
+  const { searchQuery } = useAdminSearch();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [gatewayFilter, setGatewayFilter] = useState<string>('ALL');
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
-
   useEffect(() => {
     fetchTransactions();
   }, []);
@@ -111,53 +111,97 @@ export default function AdminTransactionsPage() {
 
   const filteredTransactions = transactions.filter((txn) => {
     const matchesSearch =
-      txn.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      txn.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      txn.userName.toLowerCase().includes(searchTerm.toLowerCase());
+      !searchQuery ||
+      txn.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      txn.userEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      txn.userName.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesGateway = gatewayFilter === 'ALL' || txn.gateway.toUpperCase() === gatewayFilter.toUpperCase();
 
     return matchesSearch && matchesGateway;
   });
 
+  const handleExportCSV = () => {
+    let csv = 'Transaction ID,User Name,User Email,Plan/Item,Gateway,Amount,Status,Date\n';
+    filteredTransactions.forEach((t) => {
+      csv += `"${t.id}","${t.userName}","${t.userEmail}","${t.planName}","${t.gateway}","${t.amount}","${t.status}","${new Date(t.date).toLocaleDateString()}"\n`;
+    });
+    const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csv}`);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `transactions_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const totalVolume = filteredTransactions.reduce((acc, t) => {
+    const val = parseFloat(t.amount.replace(/[^0-9.]/g, '')) || 0;
+    return acc + val;
+  }, 0);
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 p-6 rounded-2xl border border-slate-200/80 shadow-xs backdrop-blur-xl">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-              <Receipt className="w-5 h-5" />
-            </span>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Transactions & Invoices</h1>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Monitor payment gateway activity, Stripe & PayPal transactions, and billing records.
-          </p>
+      {/* Top Filter Controls & Export */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="text-xs font-bold text-slate-500">
+          Showing <span className="text-slate-900 font-extrabold">{filteredTransactions.length}</span> transactions
         </div>
 
-        {/* Filter Controls */}
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search ID, user email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-            />
-          </div>
-
+        <div className="flex items-center gap-3">
           <select
             value={gatewayFilter}
             onChange={(e) => setGatewayFilter(e.target.value)}
-            className="w-full sm:w-36 px-3 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+            className="px-3 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer"
           >
             <option value="ALL">All Gateways</option>
             <option value="STRIPE">Stripe</option>
             <option value="PAYPAL">PayPal</option>
           </select>
+
+          <button
+            onClick={handleExportCSV}
+            className="px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Summary KPI Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Processed Total Volume</span>
+            <p className="text-xl font-black text-slate-900 font-mono mt-0.5">${totalVolume.toFixed(2)}</p>
+          </div>
+          <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+            <DollarSign className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Total Ledger Transactions</span>
+            <p className="text-xl font-black text-slate-900 font-mono mt-0.5">{filteredTransactions.length}</p>
+          </div>
+          <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+            <Receipt className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Gateway Status</span>
+            <p className="text-xs font-bold text-emerald-600 mt-1 flex items-center gap-1">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              Stripe & PayPal Active
+            </p>
+          </div>
+          <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
+            <CreditCard className="w-5 h-5" />
+          </div>
         </div>
       </div>
 

@@ -10,6 +10,8 @@ import { Admin, AdminDocument, AdminRole } from './schemas/admin.schema';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { NotificationsService } from '../notifications/notifications.service';
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -18,6 +20,7 @@ export class AdminService {
     @InjectModel(Project.name) private readonly projectModel: Model<ProjectDocument>,
     @InjectModel(RoomGeneration.name) private readonly roomModel: Model<RoomDocument>,
     @InjectModel(ProductTool.name) private readonly productToolModel: Model<ProductToolDocument>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -87,6 +90,19 @@ export class AdminService {
     if (updateData.subscriptionTier) (user as any).subscriptionTier = updateData.subscriptionTier;
 
     await user.save();
+
+    // Trigger real-time WebSocket notification to user without refresh
+    try {
+      await this.notificationsService.notifyUser({
+        userId,
+        title: '🎉 Account Details Updated',
+        message: updateData.subscriptionTier
+          ? `Your subscription plan has been updated to ${updateData.subscriptionTier}!`
+          : 'Your user profile details were updated by administrator.',
+        type: 'success',
+      });
+    } catch (e) {}
+
     return user;
   }
 
@@ -101,6 +117,17 @@ export class AdminService {
 
     user.credits = Math.max(0, (user.credits ?? 0) + amount);
     await user.save();
+
+    // Trigger real-time WebSocket notification to user without refresh
+    try {
+      await this.notificationsService.notifyUser({
+        userId,
+        title: '⚡ Credits Top-Up Added!',
+        message: `Admin added ${amount} AI credits to your balance! New balance: ${user.credits} credits.`,
+        type: 'credit',
+      });
+    } catch (e) {}
+
     return user;
   }
 

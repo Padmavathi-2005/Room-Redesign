@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Settings, CreditCard, LogOut, ChevronDown, Zap, Wand2, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Settings, CreditCard, LogOut, ChevronDown, Zap, Wand2, Sparkles, Crown } from 'lucide-react';
 import { CreditTokenIcon } from '@/components/ui';
 
 export interface UserProfileData {
@@ -11,6 +11,8 @@ export interface UserProfileData {
   email: string;
   avatar?: string;
   credits?: number;
+  plan?: string;
+  isProfileHighlightEnabled?: boolean;
 }
 
 interface ProfileDropdownProps {
@@ -21,8 +23,6 @@ interface ProfileDropdownProps {
 export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-
 
   // Close dropdown on outside click or scroll
   useEffect(() => {
@@ -69,42 +69,73 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
 
   const capitalizedName = capitalizeName(user.name);
   const initials = getInitials(user.name);
-  const credits = user.credits ?? 100;
+  const credits = user.credits ?? 0;
+  
+  // Check if profile highlight / premium features are enabled for the user
+  const isPremiumUser = user.isProfileHighlightEnabled ?? (user.plan ? ['PREMIUM', 'PRO', 'ENTERPRISE', 'VIP'].includes(user.plan.toUpperCase()) : false);
 
   return (
     <div ref={dropdownRef} className="relative">
-      {/* Profile Button Badge */}
+      {/* Profile Capsule Trigger Badge */}
       <motion.button
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg focus:outline-none transition-all duration-300"
+        className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 hover:border-blue-300 dark:hover:border-slate-700 transition-all focus:outline-none cursor-pointer group shadow-2xs overflow-visible"
       >
-        {/* Avatar Image or Initials Circle */}
-        {user.avatar ? (
-          <img
-            src={user.avatar}
-            alt={capitalizedName}
-            className="w-7 h-7 rounded-2xl object-cover border border-white/60 shadow-xs"
-          />
-        ) : (
-          <div className="w-7 h-7 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white text-xs font-extrabold shadow-inner">
-            {initials}
-          </div>
-        )}
+        {/* Avatar Image / Initials Container */}
+        <div className="relative shrink-0 flex items-center justify-center overflow-visible">
+          {isPremiumUser ? (
+            /* Premium User: Compact 32px Avatar Circle + Rotating Conic Ring + Tilted Crown */
+            <div className="relative w-8 h-8 flex items-center justify-center shrink-0 overflow-visible">
+              {/* Outer Rotating Multi-Color Conic Ring */}
+              <div className="absolute -inset-[2px] rounded-full bg-[conic-gradient(from_0deg,#2563eb,#06b6d4,#8b5cf6,#ec4899,#f97316,#2563eb)] animate-[spin_5s_linear_infinite]" />
 
-        {/* User Name & Credits Balance */}
-        <div className="flex flex-col text-left">
-          <span className="text-xs font-extrabold text-white leading-tight font-heading max-w-[110px] truncate capitalize">
-            {capitalizedName}
-          </span>
-          <span className="text-[10px] font-bold text-amber-200 flex items-center gap-1 leading-tight pt-0.5">
-            <CreditTokenIcon size="xs" />
-            <span>{credits} Tokens</span>
-          </span>
+              {/* Inner White Gap Ring */}
+              <div className="absolute inset-[1.5px] rounded-full bg-white dark:bg-slate-900 z-0" />
+
+              {/* Inner Solid Primary Blue Avatar Box (25px x 25px) */}
+              <div className="relative z-10 w-[25px] h-[25px] rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white font-extrabold text-[10px] tracking-wider shadow-2xs shrink-0">
+                {user.avatar ? (
+                  <img src={user.avatar} alt={capitalizedName} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{initials}</span>
+                )}
+              </div>
+
+              {/* Tilted Golden King Crown Icon sitting on top-right of the ring */}
+              <div className="absolute -top-2 -right-1.5 z-20 pointer-events-none transform rotate-[25deg]">
+                <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 drop-shadow-[0_1px_2px_rgba(245,158,11,0.9)]" />
+              </div>
+            </div>
+          ) : (
+            /* Standard User: Compact 32px Primary Blue Circle */
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold text-[11px] shadow-2xs overflow-hidden shrink-0">
+              {user.avatar ? (
+                <img src={user.avatar} alt={capitalizedName} className="w-full h-full object-cover" />
+              ) : (
+                <span>{initials}</span>
+              )}
+            </div>
+          )}
         </div>
 
-        <ChevronDown className={`w-3.5 h-3.5 text-white/80 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        {/* User Details & Credit Badge Column */}
+        <div className="flex flex-col text-left justify-center shrink-0 min-w-0">
+          {/* Top Row: User Name + Chevron Icon */}
+          <div className="flex items-center gap-1 leading-tight">
+            <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 max-w-[90px] truncate capitalize transition-colors">
+              {capitalizedName}
+            </span>
+            <ChevronDown className={`w-3 h-3 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+          </div>
+
+          {/* Bottom Row: Credit Icon + Numeric Value */}
+          <div className="flex items-center gap-1 pt-0.5 leading-tight">
+            <CreditTokenIcon size="xs" />
+            <span className="text-[11px] font-black text-amber-600 dark:text-amber-400 tracking-tight">{credits}</span>
+          </div>
+        </div>
       </motion.button>
 
       {/* Dropdown Menu Box */}
@@ -115,12 +146,12 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.95 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 mt-4 sm:mt-5 w-64 p-3 z-50 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-2xl backdrop-blur-2xl space-y-2 text-xs text-slate-700 dark:text-slate-200"
+            className="absolute right-0 mt-3 sm:mt-4 w-64 p-3 z-50 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-2xl backdrop-blur-2xl space-y-2 text-xs text-slate-700 dark:text-slate-200"
           >
             {/* Premium Top User Card Box */}
-            <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-purple-50/40 dark:from-blue-950/70 dark:via-indigo-950/40 dark:to-slate-900 border border-blue-100 dark:border-blue-900/60 rounded-2xl p-3 space-y-2.5">
+            <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-purple-50/40 dark:from-blue-950/70 dark:via-indigo-950/40 dark:to-slate-900 border border-blue-100 dark:border-blue-900/60 rounded-xl p-3 space-y-2.5">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-extrabold shadow-sm">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-extrabold shadow-sm">
                   {initials}
                 </div>
                 <div className="flex flex-col min-w-0">
@@ -134,18 +165,18 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
               </div>
 
               {/* Credit Balance Highlight with Upgrade Link Button */}
-              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white px-3 py-2 rounded-2xl shadow-xs text-[11px] font-bold flex items-center justify-between">
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white px-3 py-2 rounded-xl shadow-xs text-[11px] font-bold flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-[9px] text-blue-100/90 font-medium">Token Balance</span>
-                  <span className="flex items-center gap-1 font-extrabold text-xs">
-                    <CreditTokenIcon size="xs" />
-                    {credits} Tokens
+                  <span className="text-[10px] text-blue-100/90 font-semibold">Balance</span>
+                  <span className="flex items-center gap-1 font-black text-sm text-amber-300">
+                    <CreditTokenIcon size="sm" />
+                    {credits}
                   </span>
                 </div>
                 <Link
                   href="/pricing"
                   onClick={() => setIsOpen(false)}
-                  className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold rounded-2xl text-[10px] shadow-xs flex items-center gap-1 transition-all"
+                  className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold rounded-lg text-[10px] shadow-xs flex items-center gap-1 transition-all"
                 >
                   <Sparkles className="w-2.5 h-2.5" />
                   <span>Upgrade</span>

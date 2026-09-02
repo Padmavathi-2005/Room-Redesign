@@ -24,7 +24,7 @@ export default function DesktopMenu() {
 
   if (isDashboardRoute) {
     return (
-      <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-xs font-bold">
+      <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-medium">
         <ProductsDropdown label="AI Tools" />
         <NavItem href="/dashboard" label="Dashboard" />
         <NavItem href="/projects" label="Projects" />
@@ -36,7 +36,7 @@ export default function DesktopMenu() {
   }
 
   return (
-    <nav className="hidden lg:flex items-center gap-7 xl:gap-8 text-xs font-semibold">
+    <nav className="hidden lg:flex items-center gap-7 xl:gap-8 text-sm font-medium">
       <NavItem href="/designs" label="Designs" />
       <ProductsDropdown />
       <NavItem href="/pricing" label="Pricing" />

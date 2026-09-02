@@ -25,6 +25,7 @@ import {
   Power
 } from 'lucide-react';
 import { adminService, AdminModel } from '@/services/admin.service';
+import { useAdminSearch } from '@/context/AdminSearchContext';
 
 const BACKEND_URL = 'http://localhost:3002';
 
@@ -80,10 +81,10 @@ const fetchDataSourceOptions = async (source: string): Promise<string[]> => {
 
 export default function AdminModelsPage() {
   const router = useRouter();
+  const { searchQuery } = useAdminSearch();
   const [models, setModels] = useState<AdminModel[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [uploadingToolId, setUploadingToolId] = useState<string | null>(null);
   const [editingModel, setEditingModel] = useState<AdminModel | null>(null);
@@ -872,30 +873,6 @@ export default function AdminModelsPage() {
         // 2. MAIN TABLE LIST VIEW
         // ==============================================
         <>
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="p-2 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100">
-                  <Wand2 className="w-5 h-5" />
-                </span>
-                <h1 className="text-xl font-extrabold text-slate-900 font-heading">
-                  AI Models & Tools Table Manager
-                </h1>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Manage all 20+ Dehome AI tools in table format. Upload Original and Converted images stored in <code>/uploads/images</code> folder.
-              </p>
-            </div>
-
-            <button
-              onClick={fetchModels}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh Table</span>
-            </button>
-          </div>
-
           {successMsg && (
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-3 text-xs shadow-sm">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
@@ -931,17 +908,6 @@ export default function AdminModelsPage() {
                   {tab.label}
                 </button>
               ))}
-            </div>
-
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search models by name or slug..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-xs bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-600/30 text-slate-900"
-              />
             </div>
           </div>
 

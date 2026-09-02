@@ -13,6 +13,7 @@ import SearchButton from './SearchButton';
 import ProfileDropdown from './ProfileDropdown';
 import SearchModal from './SearchModal';
 import ThemeToggle from './ThemeToggle';
+import NotificationCenter from '@/components/ui/NotificationCenter';
 
 interface UserProfileData {
   name: string;
@@ -22,6 +23,7 @@ interface UserProfileData {
   avatar?: string;
   avatarUrl?: string;
   role?: string;
+  isProfileHighlightEnabled?: boolean;
 }
 
 export default function Header() {
@@ -97,10 +99,11 @@ export default function Header() {
           setUser({
             name: parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || 'User',
             email: parsed.email || 'user@example.com',
-            credits: parsed.credits ?? 100,
-            plan: parsed.plan ? `${parsed.plan.toUpperCase()}` : 'PREMIUM',
+            credits: parsed.credits ?? 0,
+            plan: parsed.plan ? `${parsed.plan.toUpperCase()}` : 'FREE',
             avatar: parsed.avatar || parsed.avatarUrl || '',
             role: parsed.role,
+            isProfileHighlightEnabled: parsed.isProfileHighlightEnabled ?? (parsed.plan ? ['PREMIUM', 'PRO', 'ENTERPRISE', 'VIP'].includes(parsed.plan.toUpperCase()) : false),
           });
         } else {
           setUser(null);
@@ -179,6 +182,7 @@ export default function Header() {
                 </motion.button>
               </Link>
 
+              <NotificationCenter userId={(user as any)?._id || (user as any)?.id} />
               <ThemeToggle />
 
               {user && <ProfileDropdown user={user} onSignOut={handleSignOut} />}

@@ -15,6 +15,8 @@ import { UserDocument } from '../users/schemas/user.schema';
 import { Admin, AdminDocument, AdminRole } from '../admin/schemas/admin.schema';
 import { RegisterDto, LoginDto, ChangePasswordDto, RefreshTokenDto } from './dto';
 
+import { NotificationsService } from '../notifications/notifications.service';
+
 @Injectable()
 export class AuthService implements OnModuleInit {
   constructor(
@@ -22,6 +24,7 @@ export class AuthService implements OnModuleInit {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     @InjectModel(Admin.name) private readonly adminModel: Model<AdminDocument>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async onModuleInit() {
@@ -65,6 +68,25 @@ export class AuthService implements OnModuleInit {
     const user = await this.usersService.create(registerDto);
     const tokens = await this.generateTokens(user._id.toString(), user.email, user.role);
     await this.updateRefreshTokenHash(user._id.toString(), tokens.refreshToken);
+
+    // Trigger real-time notifications over WebSockets without refresh
+    try {
+      await Promise.all([
+        this.notificationsService.notifyUser({
+          userId: user._id.toString(),
+          title: 'Welcome to RoomAI! 🎉',
+          message: 'Your account was created successfully with 100 free AI credits.',
+          type: 'success',
+        }),
+        this.notificationsService.notifyAdmin({
+          title: '👤 New User Registered',
+          message: `User ${user.email} (${user.firstName || ''} ${user.lastName || ''}) just registered.`,
+          type: 'info',
+        }),
+      ]);
+    } catch (e) {
+      console.warn('Notification trigger warning:', e);
+    }
 
     return {
       user: this.sanitizeUser(user),
