@@ -292,6 +292,14 @@ export default function DashboardSidebar() {
                     <Settings className="w-4 h-4 text-slate-400" />
                     <span>Account Settings</span>
                   </Link>
+                  <Link
+                    href="/admin/settings"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-2xl text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 font-bold"
+                  >
+                    <Settings className="w-4 h-4 text-purple-600" />
+                    <span>Admin Settings</span>
+                  </Link>
                   <button
                     onClick={handleSignOut}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-2xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold border-t border-slate-100 dark:border-slate-800 mt-1"

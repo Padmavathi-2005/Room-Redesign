@@ -221,6 +221,15 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
                 <Settings className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 <span>Account Settings</span>
               </Link>
+
+              <Link
+                href="/admin/settings"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-bold text-purple-700 dark:text-purple-300"
+              >
+                <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span>Admin Console Settings</span>
+              </Link>
             </div>
 
 
