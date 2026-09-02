@@ -54,7 +54,7 @@ export class User {
   @Prop({ default: 'FREE' })
   subscriptionTier?: string;
 
-  @Prop({ default: 40 })
+  @Prop({ default: 0 })
   credits: number;
 
   @Prop({ default: null })

@@ -24,7 +24,7 @@ export class UsersService implements OnModuleInit {
       $or: [{ email: 'admin@gmail.com' }, { role: UserRole.ADMIN }],
     });
 
-    // 2. Seed Default User Account: test@yopmail.com
+    // 2. Seed Default User Account: test@yopmail.com with 0 initial credits
     const testUserEmail = 'test@yopmail.com';
     const existingTestUser = await this.userModel.findOne({ email: testUserEmail });
     if (!existingTestUser) {
@@ -35,35 +35,19 @@ export class UsersService implements OnModuleInit {
         lastName: 'User',
         role: UserRole.USER,
         isActive: true,
-        credits: 100,
-        subscriptionTier: 'STARTER',
+        credits: 0,
+        subscriptionTier: 'FREE',
       });
-      console.log('----------------------------------------------------');
-      console.log('Seeded default test user account: test@yopmail.com / 12345678');
-      console.log('----------------------------------------------------');
+    } else if (existingTestUser.credits > 0 && (!existingTestUser.subscriptionTier || existingTestUser.subscriptionTier === 'FREE')) {
+      existingTestUser.credits = 0;
+      await existingTestUser.save();
     }
 
-    // 3. Seed Additional Sample End-User Accounts
-    const demoUsers = [
-      { email: 'john.designer@gmail.com', firstName: 'John', lastName: 'Designer', role: UserRole.USER, credits: 50, subscriptionTier: 'STANDARD' },
-      { email: 'sarah.architect@yahoo.com', firstName: 'Sarah', lastName: 'Architect', role: UserRole.USER, credits: 250, subscriptionTier: 'PROFESSIONAL' },
-    ];
-
-    for (const u of demoUsers) {
-      const exists = await this.userModel.findOne({ email: u.email });
-      if (!exists) {
-        await this.userModel.create({
-          email: u.email,
-          password: '12345678',
-          firstName: u.firstName,
-          lastName: u.lastName,
-          role: u.role,
-          isActive: true,
-          credits: u.credits,
-          subscriptionTier: u.subscriptionTier,
-        });
-      }
-    }
+    // 3. Reset test accounts without active paid plans to 0 credits
+    await this.userModel.updateMany(
+      { subscriptionTier: { $in: ['FREE', null] } },
+      { $set: { credits: 0 } }
+    ).exec();
   }
 
   async create(userData: Partial<User>): Promise<UserDocument> {
@@ -71,7 +55,11 @@ export class UsersService implements OnModuleInit {
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
-    const newUser = new this.userModel(userData);
+    const newUser = new this.userModel({
+      ...userData,
+      credits: 0,
+      subscriptionTier: 'FREE',
+    });
     return newUser.save();
   }
 

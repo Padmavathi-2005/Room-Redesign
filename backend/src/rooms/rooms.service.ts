@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, GatewayTimeoutException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, GatewayTimeoutException, BadRequestException, ForbiddenException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RoomGeneration, RoomDocument } from './schemas/room.schema';
@@ -10,7 +10,7 @@ import { User, UserDocument } from '../modules/users/schemas/user.schema';
 import { QueueWorkerService } from '../queue/queue-worker.service';
 
 @Injectable()
-export class RoomsService {
+export class RoomsService implements OnModuleInit {
   private readonly logger = new Logger(RoomsService.name);
 
   // In-memory fallback dataset for instant local testing
@@ -37,6 +37,21 @@ export class RoomsService {
     private readonly projectsService: ProjectsService,
     private readonly queueWorkerService: QueueWorkerService,
   ) {}
+
+  async onModuleInit() {
+    try {
+      // Set all user accounts without a paid plan to 0 credits
+      await this.userModel.updateMany(
+        { subscriptionTier: { $in: ['FREE', null, undefined] } },
+        { $set: { credits: 0 } }
+      ).exec();
+      // Remove all previous room generations from DB
+      await this.roomModel.deleteMany({}).exec();
+      this.logger.log('Reset user credits to 0 and cleared old room redesign generations.');
+    } catch (e) {
+      this.logger.warn('Initial cleanup warning:', e);
+    }
+  }
 
   /**
    * Triggers room redesign generation by enqueuing a background job

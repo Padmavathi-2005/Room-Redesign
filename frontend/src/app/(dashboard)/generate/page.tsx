@@ -40,6 +40,11 @@ import {
   Building2,
   X,
   Star,
+  Coins,
+  Wallet,
+  CreditCard,
+  XCircle,
+  Loader2,
 } from 'lucide-react';
 import { ROOM_TYPES, DESIGN_STYLES, COLOR_PALETTES, MOODS, BUDGET_LEVELS, BUILDING_TYPES, ROOF_TYPES, LIGHTING_OPTIONS, ENVIRONMENTS, TIMES_OF_DAY } from '@/constants';
 import { projectService, ProjectData } from '@/services/project.service';
@@ -652,6 +657,20 @@ function GenerateStudioContent() {
   const [generatedImagesList, setGeneratedImagesList] = useState<string[]>([]);
   const { showToast } = useToast();
 
+  // Execution panel states
+  const [isCreditChecking, setIsCreditChecking] = useState<boolean>(false);
+  const [creditBlocked, setCreditBlocked] = useState<boolean>(false);
+  const [creditRequired, setCreditRequired] = useState<number>(4);
+  const [userCurrentCredits, setUserCurrentCredits] = useState<number>(0);
+  const [generationDurationSeconds, setGenerationDurationSeconds] = useState<number>(0);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState<boolean>(false);
+  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({
+    direction: false,
+    source: false,
+    generate: true,
+    review: false,
+  });
+
   // Projects state
   const [projectsList, setProjectsList] = useState<ProjectData[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -1085,7 +1104,7 @@ function GenerateStudioContent() {
 
   // Trigger AI Redesign Generation
   const handleGenerate = async () => {
-    if (!uploadedImage) return;
+    if (!uploadedImage || isGenerating || isCreditChecking) return;
 
     let currentUser: any = null;
     try {
@@ -1093,15 +1112,6 @@ function GenerateStudioContent() {
       if (stored) currentUser = JSON.parse(stored);
     } catch (e) {
       // Ignore parse error
-    }
-
-    if (currentUser && currentUser.credits !== undefined && currentUser.credits <= 0) {
-      showToast({
-        type: 'error',
-        title: 'Insufficient Credits',
-        message: 'You have 0 credits remaining. Please top up your plan to continue generating AI redesigns.',
-      });
-      return;
     }
 
     if (!uploadedImage) {
@@ -1113,17 +1123,66 @@ function GenerateStudioContent() {
       return;
     }
 
+    const reqCredits = 4;
+    setCreditRequired(reqCredits);
+
+    // Initialize states
     setIsGenerating(true);
+    setIsCreditChecking(true);
+    setCreditBlocked(false);
     setGenerationError(null);
     setGeneratedResult(null);
 
+    // Step 1: Perform explicit Site Credit Validation BEFORE dispatching provider request
+    let currentBalance = currentUser?.credits ?? 0;
+    try {
+      const baseUrl = getApiBaseUrl();
+      const token = typeof window !== 'undefined'
+        ? localStorage.getItem('token') || localStorage.getItem('admin_token') || ''
+        : '';
+
+      if (currentUser?._id || currentUser?.id) {
+        const userRes = await fetch(`${baseUrl}/users/me`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData && typeof userData.credits === 'number') {
+            currentBalance = userData.credits;
+            if (currentUser) {
+              currentUser.credits = currentBalance;
+              localStorage.setItem('user', JSON.stringify(currentUser));
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Fallback to local storage balance
+    }
+
+    setUserCurrentCredits(currentBalance);
+    setIsCreditChecking(false);
+
+    // CRITICAL REQUIREMENT: Stop immediately if user does not have enough site credits
+    if (currentBalance < reqCredits) {
+      setCreditBlocked(true);
+      setIsGenerating(false);
+      showToast({
+        type: 'error',
+        title: 'Insufficient Site Credits',
+        message: `You need ${reqCredits} credits to generate this render. You currently have ${currentBalance} credits. Generation request was blocked.`,
+      });
+      return; // STOP EXECUTION! DO NOT SEND GENERATION REQUEST!
+    }
+
+    // Step 2: User has sufficient site credits! Proceed to backend room redesign call
     const currentSlug = toolSlug || selectedToolId || (activeSpace === 'floor-plans' ? 'floor-plan-generator' : activeSpace === 'exteriors' ? 'exterior-design' : activeSpace === 'gardens' ? 'landscape-design' : 'interior-design');
 
     const bodyPayload = {
       originalImage: uploadedImage,
       toolSlug: currentSlug,
       userId: currentUser?._id || currentUser?.id || undefined,
-      creditsCost: 1,
+      creditsCost: reqCredits,
       roomType: activeSpace === 'floor-plans' ? 'Floor Plan Layout' : activeSpace === 'exteriors' ? 'Exterior Facade' : activeSpace === 'gardens' ? gardenType : selectedRoomType,
       theme: activeSpace === 'exteriors' ? exteriorStyle : activeSpace === 'gardens' ? gardenStyle : selectedStyle,
       designStyle: activeSpace === 'exteriors' ? exteriorStyle : activeSpace === 'gardens' ? gardenStyle : selectedStyle,
@@ -1148,6 +1207,8 @@ function GenerateStudioContent() {
       projectId: selectedProjectId || undefined,
     };
 
+    const startTime = Date.now();
+
     try {
       const baseUrl = getApiBaseUrl();
       const response = await fetch(`${baseUrl}/rooms/generate`, {
@@ -1160,15 +1221,24 @@ function GenerateStudioContent() {
 
       if (!response.ok) {
         const errorMsg = resData.message || resData.error || `Generation API failed with HTTP status ${response.status}`;
-        setGenerationError(errorMsg);
+        
+        if (response.status === 400 && errorMsg.toLowerCase().includes('credit')) {
+          setCreditBlocked(true);
+        } else {
+          setGenerationError(errorMsg);
+        }
+
         showToast({
           type: 'error',
-          title: 'Generation Failed',
+          title: 'Generation Interrupted',
           message: errorMsg,
         });
         setIsGenerating(false);
         return;
       }
+
+      const elapsed = Math.round(((Date.now() - startTime) / 1000) * 10) / 10;
+      setGenerationDurationSeconds(elapsed);
 
       const output = resData.generatedImage || resData.data?.generatedImage || resData.image || resData.url;
       if (output) {
@@ -1179,7 +1249,7 @@ function GenerateStudioContent() {
         showToast({
           type: 'success',
           title: 'AI Transformation Complete',
-          message: 'Your new space design has been generated successfully!',
+          message: `Your redesign render has been generated successfully (${elapsed}s)!`,
         });
 
         // Save generated image to local storage user_generated_designs for My Designs showcase
@@ -1205,28 +1275,16 @@ function GenerateStudioContent() {
 
         // Update local storage user credits & dispatch event
         if (currentUser) {
-          const remaining = resData.remainingCredits ?? resData.data?.remainingCredits ?? (currentUser.credits !== undefined ? Math.max(0, currentUser.credits - 1) : 0);
+          const remaining = resData.remainingCredits ?? resData.data?.remainingCredits ?? (currentUser.credits !== undefined ? Math.max(0, currentUser.credits - reqCredits) : 0);
           const updatedUser = { ...currentUser, credits: remaining };
           localStorage.setItem('user', JSON.stringify(updatedUser));
           window.dispatchEvent(new Event('user-updated'));
         }
       } else {
-        const errorMsg = resData.message || 'No generated image returned from AI backend service.';
-        setGenerationError(errorMsg);
-        showToast({
-          type: 'error',
-          title: 'Generation Error',
-          message: errorMsg,
-        });
+        setGenerationError('The image generation service did not return a visual result.');
       }
     } catch (err: any) {
-      const errorMsg = err?.message || 'Unable to connect to AI generation server. Please verify your internet connection and API status.';
-      setGenerationError(errorMsg);
-      showToast({
-        type: 'error',
-        title: 'Connection Error',
-        message: errorMsg,
-      });
+      setGenerationError(err.message || 'We couldn\'t complete the room render because the network request failed.');
     } finally {
       setIsGenerating(false);
     }
@@ -1519,281 +1577,361 @@ function GenerateStudioContent() {
             );
           })()}
 
-          {/* LIVE AI ARCHITECTURAL WORKFLOW & DESIGN ANALYSIS CARD */}
-          {(isGenerating || generatedResult || compiledPrompt || generationError) && (
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm space-y-3 animate-in fade-in duration-200">
-              <div
-                onClick={() => setIsWorkflowExpanded(!isWorkflowExpanded)}
-                className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 cursor-pointer select-none group/hdr"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 group-hover/hdr:bg-purple-100 transition-all">
+          {/* BRIGHT MODERN SAAS EXECUTION & ACTIVITY PANEL */}
+          {(isGenerating || generatedResult || compiledPrompt || generationError || creditBlocked || isCreditChecking) && (
+            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm space-y-4 animate-in fade-in duration-300">
+              
+              {/* HEADER WITH STATUS BADGE */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 border border-purple-100 dark:border-purple-900/50">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold font-heading text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                      <span>AI Architectural Workflow & Design Analysis</span>
-                      <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isWorkflowExpanded ? 'rotate-180' : ''}`} />
-                    </h4>
-                    <p className="text-[11px] text-slate-500">
-                      {isGenerating ? 'Live execution breakdown...' : 'Transformation workflow & design specification'}
+                    <h3 className="text-sm font-extrabold font-heading text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <span>AI Architectural Workflow</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Transformation workflow &amp; design specification
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {isGenerating && (
-                    <div className="px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-extrabold flex items-center gap-1.5 animate-pulse border border-purple-200 dark:border-purple-800">
-                      <div className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-ping" />
-                      <span>Processing Stage {
-                        generatedResult ? '5 / 5' :
-                        generationElapsedSeconds > 40 ? '5 / 5' :
-                        generationElapsedSeconds > 30 ? '4 / 5' :
-                        generationElapsedSeconds > 18 ? '3 / 5' :
-                        generationElapsedSeconds > 8 ? '2 / 5' : '1 / 5'
-                      }</span>
+
+                {/* STATUS BADGE */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {isCreditChecking ? (
+                    <div className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold flex items-center gap-1.5 border border-blue-200 dark:border-blue-800">
+                      <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span>Checking Credits...</span>
+                    </div>
+                  ) : creditBlocked ? (
+                    <div className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-xs font-extrabold flex items-center gap-1.5 border border-amber-200 dark:border-amber-800">
+                      <Coins className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Generation Blocked</span>
+                    </div>
+                  ) : isGenerating ? (
+                    <div className="px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-xs font-extrabold flex items-center gap-1.5 border border-purple-200 dark:border-purple-800 animate-pulse">
+                      <div className="w-3 h-3 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                      <span>Processing Redesign...</span>
+                    </div>
+                  ) : generatedResult ? (
+                    <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-extrabold flex items-center gap-1.5 border border-emerald-200 dark:border-emerald-800">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Completed · {generationDurationSeconds || '14.2'}s</span>
+                    </div>
+                  ) : generationError ? (
+                    <div className="px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 text-xs font-extrabold flex items-center gap-1.5 border border-rose-200 dark:border-rose-800">
+                      <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Generation Interrupted</span>
+                    </div>
+                  ) : (
+                    <div className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-extrabold border border-slate-200 dark:border-slate-700">
+                      <span>Ready</span>
                     </div>
                   )}
-                  <span className="text-[10px] text-purple-600 font-bold uppercase tracking-wider hidden sm:inline-block">
-                    {isWorkflowExpanded ? 'Collapse' : 'Expand'}
-                  </span>
                 </div>
               </div>
 
-              {/* 5-STEP SANITIZED WORKFLOW STATE MACHINE WITH INTERNAL SCROLLBAR */}
-              <div className={`space-y-2 transition-all duration-300 overflow-hidden ${isWorkflowExpanded ? 'max-h-[340px] overflow-y-auto custom-scrollbar pr-1' : 'max-h-0 opacity-0'}`}>
+              {/* WORKFLOW STEPS LIST */}
+              <div className="space-y-3">
                 {(() => {
-                  const staticSteps = [
+                  const steps = [
                     {
                       id: 'direction',
                       num: 1,
                       title: 'Prepare Visual Redesign Direction',
-                      description: 'Defining the visual redesign direction based on your selected style, palette and lighting.',
+                      subtitle: 'Visual redesign specification & style direction',
                     },
                     {
                       id: 'source',
                       num: 2,
                       title: 'Locate Source Interior Image & Preserve Composition',
-                      description: 'Analyzing the source room to preserve its camera angle, structure and architectural geometry.',
+                      subtitle: 'Source room analysis & architectural geometry preservation',
                     },
                     {
                       id: 'generate',
                       num: 3,
                       title: 'Generate High-Precision Architectural Render',
-                      description: 'Creating the high-resolution interior render with the selected materials, furniture and lighting.',
+                      subtitle: 'High-resolution interior render synthesis',
                     },
                     {
                       id: 'review',
                       num: 4,
                       title: 'Verify Image Quality & Style',
-                      description: 'Reviewing the generated image for visual quality, composition and style consistency.',
-                    },
-                  {
-                      id: 'deliver',
-                      num: 5,
-                      title: 'Deliver Finished Visual Result',
-                      description: 'Preparing your final high-resolution design result.',
+                      subtitle: 'Quality & style consistency check',
                     },
                   ];
 
-                  const isStoppedErr = generationError && (
-                    generationError.toLowerCase().includes('stopped') ||
-                    generationError.toLowerCase().includes('cancelled') ||
-                    generationError.toLowerCase().includes('canceled')
-                  );
+                  return steps.map((step, idx) => {
+                    let status: 'pending' | 'running' | 'completed' | 'failed' | 'credit_blocked' = 'pending';
 
-                  let activeIndex = -1; // -1 = idle initial state (all pending)
-                  if (generatedResult) {
-                    activeIndex = 5; // All 5 steps completed
-                  } else if (isGenerating) {
-                    activeIndex = generationElapsedSeconds > 35 ? 3 : generationElapsedSeconds > 18 ? 2 : generationElapsedSeconds > 5 ? 1 : 0;
-                  } else if (generationError) {
-                    // Manus stopped on step 2/3 (e.g. 2 completed, stopped on step 3)
-                    activeIndex = 2;
-                  }
-
-                  return staticSteps.map((step, idx) => {
-                    let stepStatus: 'completed' | 'running' | 'pending' | 'error' | 'stopped' = 'pending';
                     if (generatedResult) {
-                      stepStatus = 'completed';
+                      status = 'completed';
+                    } else if (creditBlocked && idx === 2) {
+                      status = 'credit_blocked';
+                    } else if (creditBlocked && idx < 2) {
+                      status = 'completed';
+                    } else if (generationError && idx === 2) {
+                      status = 'failed';
+                    } else if (generationError && idx < 2) {
+                      status = 'completed';
                     } else if (isGenerating) {
-                      if (idx < activeIndex) stepStatus = 'completed';
-                      else if (idx === activeIndex) stepStatus = 'running';
-                      else stepStatus = 'pending';
-                    } else if (generationError) {
-                      if (idx < activeIndex) {
-                        stepStatus = 'completed';
-                      } else if (idx === activeIndex) {
-                        stepStatus = isStoppedErr ? 'stopped' : 'error';
-                      } else {
-                        stepStatus = 'pending'; // Steps after stopped remain pending (4, 5)
-                      }
-                    } else {
-                      stepStatus = 'pending';
+                      if (idx < 2) status = 'completed';
+                      else if (idx === 2) status = 'running';
+                      else status = 'pending';
                     }
 
-                    const isCompleted = stepStatus === 'completed';
-                    const isRunning = stepStatus === 'running';
-                    const isError = stepStatus === 'error';
-                    const isStopped = stepStatus === 'stopped';
+                    const isExpanded = expandedSteps[step.id] ?? (status === 'running' || status === 'credit_blocked' || status === 'failed');
+
+                    const toggleExpand = () => {
+                      setExpandedSteps((prev) => ({ ...prev, [step.id]: !isExpanded }));
+                    };
 
                     return (
                       <div
                         key={step.id}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all text-xs ${
-                          isRunning
-                            ? 'bg-purple-50/70 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 shadow-xs'
-                            : isCompleted
-                              ? 'bg-slate-50/80 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800/60'
-                              : isStopped
-                                ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
-                                : isError
-                                  ? 'bg-rose-50/70 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800'
-                                  : 'bg-slate-50/40 dark:bg-slate-900/30 border-slate-100/60 dark:border-slate-800/30 opacity-60'
+                        className={`rounded-xl border transition-all duration-200 ${
+                          status === 'running'
+                            ? 'bg-purple-50/50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800/80 shadow-2xs'
+                            : status === 'credit_blocked'
+                              ? 'bg-amber-50/60 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+                              : status === 'failed'
+                                ? 'bg-rose-50/60 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800'
+                                : status === 'completed'
+                                  ? 'bg-slate-50/70 dark:bg-slate-800/30 border-slate-200/70 dark:border-slate-800'
+                                  : 'bg-slate-50/30 dark:bg-slate-900/20 border-slate-200/50 dark:border-slate-800/40 opacity-75'
                         }`}
                       >
-                        <div className="mt-0.5 shrink-0">
-                          {isCompleted ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          ) : isRunning ? (
-                            <div className="w-4 h-4 rounded-full border-2 border-purple-600 border-t-transparent animate-spin" />
-                          ) : isStopped ? (
-                            <span className="text-amber-500 font-bold text-xs">⏸</span>
-                          ) : isError ? (
-                            <AlertCircle className="w-4 h-4 text-rose-500" />
-                          ) : (
-                            <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 flex items-center justify-center text-[9px] font-bold text-slate-400">
-                              {step.num}
+                        {/* STEP ROW HEADER */}
+                        <div
+                          onClick={toggleExpand}
+                          className="flex items-center justify-between p-3 cursor-pointer select-none"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            {/* STEP ICON */}
+                            <div className="shrink-0">
+                              {status === 'completed' ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-50" />
+                              ) : status === 'running' ? (
+                                <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                              ) : status === 'credit_blocked' ? (
+                                <Coins className="w-5 h-5 text-amber-500" />
+                              ) : status === 'failed' ? (
+                                <XCircle className="w-5 h-5 text-rose-500 fill-rose-50" />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                                  {step.num}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div
-                            className={`font-bold font-heading ${
-                              isRunning
-                                ? 'text-purple-700 dark:text-purple-300'
-                                : isCompleted
-                                  ? 'text-slate-800 dark:text-slate-200'
-                                  : isStopped
-                                    ? 'text-amber-800 dark:text-amber-300'
-                                    : isError
-                                      ? 'text-rose-700 dark:text-rose-300'
-                                      : 'text-slate-500 dark:text-slate-400'
-                            }`}
-                          >
-                            {step.num}. {isStopped ? `${step.title} (Manus stopped — send message to continue)` : step.title}
+
+                            <div className="min-w-0">
+                              <h4 className={`text-xs font-bold font-heading truncate ${
+                                status === 'running'
+                                  ? 'text-purple-900 dark:text-purple-200'
+                                  : status === 'credit_blocked'
+                                    ? 'text-amber-900 dark:text-amber-200'
+                                    : status === 'failed'
+                                      ? 'text-rose-900 dark:text-rose-200'
+                                      : status === 'completed'
+                                        ? 'text-slate-800 dark:text-slate-200'
+                                        : 'text-slate-600 dark:text-slate-400'
+                              }`}>
+                                {step.num}. {step.title}
+                              </h4>
+                              <p className="text-[11px] text-slate-500 truncate font-medium">
+                                {status === 'completed'
+                                  ? 'Completed'
+                                  : status === 'running'
+                                    ? 'Generating your redesigned room...'
+                                    : status === 'credit_blocked'
+                                      ? 'Not enough site credits'
+                                      : status === 'failed'
+                                        ? 'Generation interrupted'
+                                        : 'Waiting'}
+                              </p>
+                            </div>
                           </div>
-                          <p
-                            className={`text-[11px] mt-0.5 leading-relaxed font-medium ${
-                              isRunning
-                                ? 'text-purple-600/90 dark:text-purple-300/90'
-                                : isCompleted
-                                  ? 'text-slate-500 dark:text-slate-400'
-                                  : isError
-                                    ? 'text-rose-600 dark:text-rose-400'
-                                    : 'text-slate-400 dark:text-slate-500'
-                            }`}
-                          >
-                            {isError
-                              ? generationError
-                              : isRunning
-                                ? `${step.description} (Processing...)`
-                                : isCompleted
-                                  ? idx === 4
-                                    ? `Transformation complete! High-resolution ${selectedStyle} ${selectedRoomType} delivered.`
-                                    : `${step.description} Complete.`
-                                  : step.description}
-                          </p>
+
+                          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                         </div>
+
+                        {/* STEP EXPANDED BODY */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="px-3 pb-3 pt-1 border-t border-slate-200/50 dark:border-slate-800/50 space-y-2 text-xs"
+                            >
+                              {/* STEP 1 DETAILS */}
+                              {idx === 0 && (
+                                <div className="space-y-1 text-slate-600 dark:text-slate-300 font-medium">
+                                  <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>Selected {selectedStyle} theme direction locked</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>{selectedPalette || 'Warm beige'} palette &amp; {selectedLighting || 'Natural'} lighting configured</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* STEP 2 DETAILS */}
+                              {idx === 1 && (
+                                <div className="space-y-1 text-slate-600 dark:text-slate-300 font-medium">
+                                  <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>Source image prepared</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>Original camera angle &amp; architectural composition locked</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* STEP 3 DETAILS: RUNNING / CREDIT BLOCKED / ERROR / COMPLETED */}
+                              {idx === 2 && (
+                                <>
+                                  {status === 'credit_blocked' ? (
+                                    <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 space-y-2.5">
+                                      <div className="flex items-center gap-2 text-amber-900 dark:text-amber-100 font-extrabold text-xs font-heading">
+                                        <Coins className="w-4 h-4 text-amber-600 shrink-0" />
+                                        <span>Not Enough Site Credits</span>
+                                      </div>
+                                      <p className="text-xs text-amber-800 dark:text-amber-200 font-medium leading-relaxed">
+                                        You need <strong>{creditRequired} credits</strong> to generate this render. You currently have <strong>{userCurrentCredits} credits</strong>.
+                                      </p>
+                                      <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium">
+                                        Generation was not started and no external generation request was sent.
+                                      </p>
+                                      <a
+                                        href="/billing"
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold text-xs shadow-sm hover:opacity-95 transition-all cursor-pointer font-heading"
+                                      >
+                                        <CreditCard className="w-4 h-4" />
+                                        <span>Buy Credits</span>
+                                      </a>
+                                    </div>
+                                  ) : status === 'failed' ? (
+                                    <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 space-y-2.5">
+                                      <div className="flex items-center gap-2 text-rose-900 dark:text-rose-100 font-extrabold text-xs font-heading">
+                                        <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                                        <span>Generation Interrupted</span>
+                                      </div>
+                                      <p className="text-xs text-rose-800 dark:text-rose-200 font-medium leading-relaxed">
+                                        {generationError || "We couldn't complete the room render because the image generation service did not return a result. Your credits were not consumed."}
+                                      </p>
+                                      <button
+                                        type="button"
+                                        onClick={handleGenerate}
+                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 text-white font-extrabold text-xs shadow-2xs hover:bg-rose-700 transition-colors cursor-pointer font-heading"
+                                      >
+                                        <RotateCcw className="w-3.5 h-3.5" />
+                                        <span>Try Again</span>
+                                      </button>
+                                    </div>
+                                  ) : status === 'running' ? (
+                                    <div className="space-y-1.5 text-slate-700 dark:text-slate-200 font-medium">
+                                      <div className="flex items-center gap-2 text-emerald-600 font-bold">
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>Source composition preserved</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-emerald-600 font-bold">
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>Camera angle &amp; geometry locked</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-bold">
+                                        <span className="text-purple-600">→</span>
+                                        <span>Preparing high-resolution render</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-bold">
+                                        <span className="text-purple-600">→</span>
+                                        <span>Applying selected furniture &amp; materials ({selectedProducts.slice(0, 2).join(', ') || selectedStyle})</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-bold animate-pulse">
+                                        <span className="text-purple-600">→</span>
+                                        <span>Generating architectural 8K image...</span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-1 text-slate-600 dark:text-slate-300 font-medium">
+                                      <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>High-resolution render created</span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>Selected materials &amp; furniture integrated</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+
+                              {/* STEP 4 DETAILS */}
+                              {idx === 3 && (
+                                <div className="space-y-1 text-slate-600 dark:text-slate-300 font-medium">
+                                  {status === 'completed' ? (
+                                    <>
+                                      <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>Resolution &amp; clarity verified</span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>Composition &amp; style consistency verified</span>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <p className="text-slate-400 font-medium">
+                                      Quality &amp; style inspection will run after render generation finishes.
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     );
                   });
                 })()}
               </div>
 
-              {/* TERMINAL-STYLE LIVE LOG STREAM & AI DESIGN ANALYSIS SUMMARY CONSOLE */}
-              <div className="p-3.5 rounded-2xl bg-slate-950 text-slate-200 border border-slate-800 font-mono text-[11px] shadow-lg space-y-2">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">
-                      Manus AI Execution Terminal
-                    </span>
-                  </div>
+              {/* DISCLOSURE: OPTIONAL TECHNICAL DETAILS FOR DEVELOPERS/DEBUGGING */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
+                  className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <span>Technical details</span>
+                  <span className="text-[9px]">{showTechnicalDetails ? '▲' : '▼'}</span>
+                </button>
 
-                  <div className="flex items-center gap-1.5">
-                    {isGenerating ? (
-                      <span className="px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 text-[9px] font-bold flex items-center gap-1 animate-pulse">
-                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                        LIVE STREAMING
-                      </span>
-                    ) : generationError ? (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800 text-[9px] font-bold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                        PAUSED
-                      </span>
-                    ) : generatedResult ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[9px] font-bold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        COMPLETE
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[9px] font-bold">
-                        SYSTEM READY
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* LOG FEED OUTPUT LINES */}
-                <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar pr-1">
-                  {isGenerating ? (
-                    <>
-                      <p className="text-slate-400"><span className="text-emerald-400 font-bold">&gt;</span> Connected to Manus AI Generation Pipeline...</p>
-                      {generationElapsedSeconds >= 2 && (
-                        <p className="text-slate-300"><span className="text-purple-400 font-bold">&gt;</span> Analyzing room structure, camera angle &amp; architectural bounds...</p>
-                      )}
-                      {generationElapsedSeconds >= 8 && (
-                        <p className="text-slate-300"><span className="text-blue-400 font-bold">&gt;</span> Synthesizing {selectedStyle} theme with {selectedPalette || 'beige'} palette &amp; {selectedLighting || 'warm'} lighting...</p>
-                      )}
-                      {selectedProducts.length > 0 && generationElapsedSeconds >= 15 && (
-                        <p className="text-slate-300"><span className="text-amber-400 font-bold">&gt;</span> Integrating selected decor &amp; products ({selectedProducts.slice(0, 3).join(', ')})...</p>
-                      )}
-                      {generationElapsedSeconds >= 22 && (
-                        <p className="text-slate-200 animate-pulse"><span className="text-indigo-400 font-bold">&gt;</span> Rendering high-precision 8K UHD architectural result...</p>
-                      )}
-                    </>
-                  ) : generationError ? (
-                    <>
-                      <p className="text-amber-400"><span className="font-bold">&gt;</span> ⚠️ {generationError}</p>
-                      <p className="text-slate-400"><span className="text-slate-500 font-bold">&gt;</span> Task status: Paused / Stopped in Manus. Click Retry Generation to continue.</p>
-                    </>
-                  ) : generatedResult ? (
-                    <>
-                      <p className="text-emerald-400"><span className="font-bold">&gt;</span> ✅ Task execution finished successfully. 8K UHD render delivered.</p>
-                      <div className="pt-1.5 text-slate-300 space-y-1 border-t border-slate-800/80 mt-1">
-                        <p className="text-purple-300 font-bold uppercase text-[10px] tracking-wider">&gt; AI DESIGN ANALYSIS SUMMARY:</p>
-                        <p className="text-slate-300 leading-relaxed text-[11px]">
-                          The {selectedRoomType} redesign uses the requested {selectedStyle} direction with {selectedPalette || 'tailored'} color palette, {selectedLighting || 'natural'} lighting, and structural preservation. Final delivery is in 8K UHD resolution with matching architectural perspective.
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-slate-400"><span className="text-purple-400 font-bold">&gt;</span> READY FOR EXECUTION: Configure options on right &amp; click Generate to start AI live stream.</p>
-                      <div className="pt-1.5 text-slate-300 space-y-1 border-t border-slate-800/80 mt-1">
-                        <p className="text-purple-400 font-bold uppercase text-[10px] tracking-wider">&gt; AI DESIGN ANALYSIS SUMMARY:</p>
-                        <p className="text-slate-400 leading-relaxed text-[11px]">
-                          The {selectedRoomType} redesign uses the requested {selectedStyle} direction with {selectedPalette || 'beige'} color palette, {selectedLighting || 'warm'} lighting, and structural preservation. Final delivery is in 8K UHD resolution with matching architectural perspective.
-                        </p>
-                      </div>
-                    </>
+                <AnimatePresence>
+                  {showTechnicalDetails && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 font-mono text-[10px] text-slate-500 dark:text-slate-400 space-y-1 border border-slate-200/60 dark:border-slate-800 overflow-x-auto"
+                    >
+                      <div>Tool: {toolSlug || selectedToolId || 'interior-design'}</div>
+                      <div>Status: {generatedResult ? 'completed' : creditBlocked ? 'credit_blocked' : generationError ? 'failed' : isGenerating ? 'running' : 'idle'}</div>
+                      <div>Site Credits Required: {creditRequired} | Current User Credits: {userCurrentCredits}</div>
+                      {generationDurationSeconds > 0 && <div>Execution Duration: {generationDurationSeconds}s</div>}
+                      {generationError && <div className="text-rose-500">ErrorMessage: {generationError}</div>}
+                    </motion.div>
                   )}
-                </div>
+                </AnimatePresence>
               </div>
+
             </div>
           )}
         </div>

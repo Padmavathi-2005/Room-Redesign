@@ -87,8 +87,12 @@ export default function Header() {
         const parsed = JSON.parse(storedUser);
         const isAdmin = parsed && parsed.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(parsed.role);
         if (!isAdmin) {
+          const rawName = parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim();
+          const emailName = parsed.email ? parsed.email.split('@')[0] : '';
+          const displayName = rawName || (emailName ? emailName.charAt(0).toUpperCase() + emailName.slice(1) : 'User');
+
           setUser({
-            name: parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || 'User',
+            name: displayName,
             email: parsed.email || 'user@example.com',
             credits: parsed.credits ?? 0,
             plan: parsed.plan ? `${parsed.plan.toUpperCase()}` : 'FREE',

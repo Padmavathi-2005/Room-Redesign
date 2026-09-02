@@ -34,7 +34,7 @@ export default function DashboardNavCard() {
   const [user, setUser] = useState<UserData>({
     name: 'User',
     email: '',
-    credits: 40,
+    credits: 0,
   });
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
@@ -60,7 +60,7 @@ export default function DashboardNavCard() {
             setUser({
               name: parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || 'User',
               email: parsed.email || '',
-              credits: parsed.credits ?? 40,
+              credits: parsed.credits ?? 0,
             });
           } catch {
             // fallback

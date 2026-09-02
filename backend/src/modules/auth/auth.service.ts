@@ -75,7 +75,7 @@ export class AuthService implements OnModuleInit {
         this.notificationsService.notifyUser({
           userId: user._id.toString(),
           title: 'Welcome to RoomAI! 🎉',
-          message: 'Your account was created successfully with 100 free AI credits.',
+          message: 'Your account was created successfully. Upgrade your plan to get credits and start generating AI room redesigns.',
           type: 'success',
         }),
         this.notificationsService.notifyAdmin({
