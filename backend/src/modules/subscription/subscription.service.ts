@@ -160,13 +160,93 @@ export class SubscriptionService implements OnModuleInit {
       throw new NotFoundException('User not found');
     }
 
+    const now = new Date();
+    let periodEnd = user.subscriptionPeriodEnd ? new Date(user.subscriptionPeriodEnd) : null;
+
+    if (!periodEnd) {
+      periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      user.subscriptionPeriodEnd = periodEnd;
+      await user.save();
+    }
+
+    if (now >= periodEnd) {
+      const isPaid = user.plan && user.plan !== SubscriptionPlan.FREE;
+      if (isPaid) {
+        user.plan = SubscriptionPlan.FREE;
+        user.subscriptionTier = 'FREE';
+        user.credits = 0;
+        user.subscriptionPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        await user.save();
+      } else {
+        user.subscriptionPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        user.credits = 0;
+        await user.save();
+      }
+    }
+
+    const daysRemaining = Math.max(0, Math.ceil((user.subscriptionPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+    return {
+      plan: user.plan || 'FREE',
+      credits: user.credits || 0,
+      subscriptionStatus: user.subscriptionStatus || 'active',
+      subscriptionPeriodStart: user.subscriptionPeriodStart,
+      subscriptionPeriodEnd: user.subscriptionPeriodEnd,
+      daysRemaining,
+      stripeCustomerId: user.stripeCustomerId,
+      stripeSubscriptionId: user.stripeSubscriptionId,
+    };
+  }
+
+  /**
+   * Upgrade user subscription plan with smart 30-day stacking rules
+   */
+  async upgradeUserPlan(userId: string, planCode: string) {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const code = planCode.toLowerCase().trim();
+    const planDef = await this.planModel.findOne({ code }).exec();
+    
+    // Determine credits to add (40 for starter, 100 for pro)
+    const creditsToAdd = planDef ? planDef.credits : (code === 'starter' ? 40 : code === 'pro' ? 100 : 0);
+    const now = new Date();
+    
+    const isCurrentlyFree = !user.plan || user.plan === SubscriptionPlan.FREE;
+    
+    let newPeriodStart: Date;
+    let newPeriodEnd: Date;
+
+    if (isCurrentlyFree || !user.subscriptionPeriodEnd) {
+      // 1. FREE PLAN: End free plan immediately, start new plan right now
+      newPeriodStart = now;
+      newPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    } else {
+      // 2. ACTIVE PAID PLAN: New plan start date is when current plan ends
+      const currentEnd = new Date(user.subscriptionPeriodEnd);
+      const effectiveStart = currentEnd > now ? currentEnd : now;
+      newPeriodStart = effectiveStart;
+      newPeriodEnd = new Date(effectiveStart.getTime() + 30 * 24 * 60 * 60 * 1000);
+    }
+
+    user.plan = code === 'starter' ? SubscriptionPlan.STARTER : code === 'pro' ? SubscriptionPlan.STANDARD : SubscriptionPlan.FREE;
+    user.subscriptionTier = planDef ? planDef.name : (code === 'starter' ? 'Starter Plan' : 'Pro Plan');
+    user.credits = (user.credits || 0) + creditsToAdd;
+    user.subscriptionPeriodStart = newPeriodStart;
+    user.subscriptionPeriodEnd = newPeriodEnd;
+    user.subscriptionStatus = 'active';
+
+    await user.save();
+
     return {
       plan: user.plan,
       credits: user.credits,
-      subscriptionStatus: user.subscriptionStatus,
+      subscriptionTier: user.subscriptionTier,
+      subscriptionPeriodStart: user.subscriptionPeriodStart,
       subscriptionPeriodEnd: user.subscriptionPeriodEnd,
-      stripeCustomerId: user.stripeCustomerId,
-      stripeSubscriptionId: user.stripeSubscriptionId,
+      daysRemaining: Math.max(0, Math.ceil((user.subscriptionPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))),
     };
   }
 

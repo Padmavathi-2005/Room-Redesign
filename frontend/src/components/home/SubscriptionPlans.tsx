@@ -173,7 +173,7 @@ export default function SubscriptionPlans() {
 
               {/* Bottom Call-to-Action Button */}
               <div className="pt-8">
-                <Link href="/signup">
+                <Link href={`/checkout?plan=${plan.id === 'standard' ? 'starter' : plan.id === 'professional' ? 'pro' : 'free'}`}>
                   <button
                     className={`w-full py-3.5 px-6 rounded-2xl text-xs font-extrabold tracking-wide uppercase transition-all duration-200 focus:outline-none cursor-pointer ${
                       plan.popular

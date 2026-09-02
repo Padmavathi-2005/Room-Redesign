@@ -64,6 +64,9 @@ export class User {
   stripeSubscriptionId?: string;
 
   @Prop({ default: null })
+  subscriptionPeriodStart?: Date;
+
+  @Prop({ default: null })
   subscriptionPeriodEnd?: Date;
 
   @Prop({ default: 'active' })

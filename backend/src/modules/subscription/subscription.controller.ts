@@ -40,6 +40,22 @@ export class SubscriptionController {
   }
 
   /**
+   * POST /api/v1/subscription/upgrade
+   * Upgrade user subscription plan
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('upgrade')
+  @HttpCode(HttpStatus.OK)
+  async upgradePlan(@CurrentUser('_id') userId: string, @Body('planCode') planCode: string) {
+    const data = await this.subscriptionService.upgradeUserPlan(userId.toString(), planCode);
+    return {
+      success: true,
+      message: `Plan upgraded successfully to ${planCode.toUpperCase()}`,
+      data,
+    };
+  }
+
+  /**
    * GET /api/v1/subscription/plans
    * Public route to retrieve all active plans
    */

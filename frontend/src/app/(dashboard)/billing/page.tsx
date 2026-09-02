@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { paymentService } from '../../../services/payment.service';
 import { CreditTokenIcon } from '@/components/ui';
+import CheckoutModal, { CheckoutPlan } from '@/components/ui/CheckoutModal';
 
 interface SubscriptionData {
   plan: string;
@@ -276,25 +277,35 @@ export default function BillingPage() {
     }
   };
 
-  const handleSelectPlan = async (planCode: string) => {
-    if (!token) {
-      router.push('/login?redirect=/billing');
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<CheckoutPlan | null>(null);
+
+  const handleSelectPlan = (planCode: string) => {
+    const code = planCode.toLowerCase().trim();
+    if (code === 'free') {
+      setSuccessMessage('You are on the Free Plan. Select Starter or Pro Plan to purchase AI generation credits.');
       return;
     }
-    try {
-      setActionLoading(planCode);
-      const res = await paymentService.mockUpgrade(planCode, token);
-      if (res && res.success) {
-        setSuccessMessage(`Success! Your account has been upgraded to ${planCode.toUpperCase()} Plan.`);
-        await fetchSubscriptionStatus(token);
-      } else {
-        alert('Plan upgrade failed. Please try again.');
-      }
-    } catch (err) {
-      alert('Plan upgrade request failed.');
-    } finally {
-      setActionLoading(null);
+    router.push(`/checkout?plan=${code}`);
+  };
+
+  const handleCheckoutSuccess = async (creditsAdded: number, planName: string) => {
+    setSuccessMessage(`Success! Subscription upgraded to ${planName} (+${creditsAdded} AI Credits added).`);
+    if (token) {
+      const code = planName.toLowerCase().includes('starter') ? 'starter' : planName.toLowerCase().includes('pro') ? 'pro' : 'free';
+      try {
+        await fetch(`${API_BASE}/subscription/upgrade`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ planCode: code }),
+        });
+      } catch (e) {}
+      await fetchSubscriptionStatus(token);
     }
+    fetchInvoices();
   };
 
   const getPlanLimit = (planCode: string) => {
@@ -901,6 +912,14 @@ export default function BillingPage() {
           </div>
         </div>
       )}
+
+      {/* Subscription Checkout Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        plan={selectedPlanForCheckout}
+        onSuccess={handleCheckoutSuccess}
+      />
     </div>
   );
 }
