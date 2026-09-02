@@ -19,6 +19,12 @@ export interface AppSettings {
   creditsPerGeneration: number;
   tablePaginationLimit: number;
   activeTheme?: 'light' | 'dark';
+  stripeEnabled: boolean;
+  stripePublishableKey: string;
+  stripeSecretKey: string;
+  paypalEnabled: boolean;
+  paypalClientId: string;
+  paypalSecretKey: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -35,6 +41,12 @@ const DEFAULT_SETTINGS: AppSettings = {
   maintenanceMode: false,
   creditsPerGeneration: 1,
   tablePaginationLimit: 10,
+  stripeEnabled: true,
+  stripePublishableKey: 'pk_test_51RoomAIStripePublishableKey123',
+  stripeSecretKey: 'sk_test_51RoomAIStripeSecretKey123',
+  paypalEnabled: true,
+  paypalClientId: 'client_id_roomai_paypal_123',
+  paypalSecretKey: 'secret_key_roomai_paypal_123',
 };
 
 interface SettingsContextType {

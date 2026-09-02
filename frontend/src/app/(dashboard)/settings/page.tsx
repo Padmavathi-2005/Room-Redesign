@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '@/context/SettingsContext';
-import { Palette, Sun, Moon, Sparkles, Check, RefreshCw, ShieldAlert, Sliders } from 'lucide-react';
+import { Palette, Sun, Moon, Sparkles, Check, RefreshCw, ShieldAlert, Sliders, CreditCard, Key, Eye, EyeOff, Lock } from 'lucide-react';
 
 export default function AdminSettingsPage() {
   const { settings, updateSettings, isLoading } = useSettings();
@@ -291,31 +291,140 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        {/* SECTION: Table Pagination & System Settings */}
-        <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-4">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Sliders className="w-5 h-5 text-purple-600" />
-            <span>Table & Data Pagination Settings</span>
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Configure the default row limit and pagination size for all tables across the application (My Designs, Dashboard, Admin Tables).
-          </p>
+        {/* SECTION: Payment Gateway Settings (Stripe & PayPal) */}
+        <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-lg space-y-6">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 font-heading">
+              <CreditCard className="w-5 h-5 text-purple-600" />
+              <span>Payment Gateway Settings (Stripe & PayPal)</span>
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Enable or disable payment methods and configure live API keys. Only enabled gateways will be presented to users on the checkout page.
+            </p>
+          </div>
 
-          <div className="max-w-xs space-y-2">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Default Table Rows Per Page
-            </label>
-            <select
-              value={formState.tablePaginationLimit || 10}
-              onChange={(e) => handleChange('tablePaginationLimit', Number(e.target.value))}
-              className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-            >
-              <option value={5}>5 Rows Per Page</option>
-              <option value={10}>10 Rows Per Page</option>
-              <option value={15}>15 Rows Per Page</option>
-              <option value={25}>25 Rows Per Page</option>
-              <option value={50}>50 Rows Per Page</option>
-            </select>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* STRIPE CARD */}
+            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-950/80 text-purple-600">
+                    <CreditCard className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-white font-heading">
+                      Stripe Gateway
+                    </h4>
+                    <span className="text-[10px] text-slate-400 font-medium">Credit / Debit Card Checkout</span>
+                  </div>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formState.stripeEnabled ?? true}
+                    onChange={(e) => handleChange('stripeEnabled', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              {formState.stripeEnabled !== false ? (
+                <div className="space-y-4 pt-1">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-heading">
+                      Stripe Publishable Key
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="pk_live_••••••••••••••••"
+                      value={formState.stripePublishableKey || ''}
+                      onChange={(e) => handleChange('stripePublishableKey', e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-heading">
+                      Stripe Secret Key
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="sk_live_••••••••••••••••"
+                      value={formState.stripeSecretKey || ''}
+                      onChange={(e) => handleChange('stripeSecretKey', e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-rose-500 dark:text-rose-400 italic py-2 font-medium">
+                  ✕ Stripe Gateway is currently disabled. Users will not see Credit Card options on checkout.
+                </p>
+              )}
+            </div>
+
+            {/* PAYPAL CARD */}
+            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-950/80 text-blue-600">
+                    <span className="font-extrabold italic text-sm text-blue-600">PP</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-white font-heading">
+                      PayPal Express
+                    </h4>
+                    <span className="text-[10px] text-slate-400 font-medium">PayPal One-Click Checkout</span>
+                  </div>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formState.paypalEnabled ?? true}
+                    onChange={(e) => handleChange('paypalEnabled', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {formState.paypalEnabled !== false ? (
+                <div className="space-y-4 pt-1">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-heading">
+                      PayPal Client ID
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="client_id_••••••••••••••••"
+                      value={formState.paypalClientId || ''}
+                      onChange={(e) => handleChange('paypalClientId', e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-heading">
+                      PayPal Secret Key
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="secret_key_••••••••••••••••"
+                      value={formState.paypalSecretKey || ''}
+                      onChange={(e) => handleChange('paypalSecretKey', e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-rose-500 dark:text-rose-400 italic py-2 font-medium">
+                  ✕ PayPal Gateway is currently disabled. Users will not see PayPal options on checkout.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

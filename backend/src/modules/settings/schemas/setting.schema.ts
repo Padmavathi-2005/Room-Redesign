@@ -93,6 +93,9 @@ export class Setting {
 
   // 4. Stripe & PayPal Payment Gateways
   @Prop({ default: true })
+  stripeEnabled: boolean;
+
+  @Prop({ default: true })
   stripeTestMode: boolean;
 
   @Prop({ default: '' })
@@ -105,6 +108,9 @@ export class Setting {
   stripeWebhookSecret?: string;
 
   @Prop({ default: true })
+  paypalEnabled: boolean;
+
+  @Prop({ default: true })
   paypalSandboxMode: boolean;
 
   @Prop({ default: '' })
@@ -112,6 +118,9 @@ export class Setting {
 
   @Prop({ default: '' })
   paypalClientSecret?: string;
+
+  @Prop({ default: '' })
+  paypalSecretKey?: string;
 
   @Prop({ default: '' })
   paypalWebhookId?: string;

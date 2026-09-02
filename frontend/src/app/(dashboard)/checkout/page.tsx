@@ -16,7 +16,9 @@ import {
   Coins,
   ArrowRight,
   Clock,
+  AlertCircle,
 } from 'lucide-react';
+import { useSettings } from '@/context/SettingsContext';
 
 interface PlanDetail {
   code: string;
@@ -66,6 +68,10 @@ export default function FullPageCheckout() {
   const planParam = (searchParams.get('plan') || 'starter').toLowerCase();
   const plan: PlanDetail = PLANS_BY_CODE[planParam] || PLANS_BY_CODE.starter;
 
+  const { settings } = useSettings();
+  const stripeActive = settings.stripeEnabled !== false;
+  const paypalActive = settings.paypalEnabled !== false;
+
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
@@ -74,6 +80,14 @@ export default function FullPageCheckout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    if (!stripeActive && paypalActive) {
+      setPaymentMethod('paypal');
+    } else if (stripeActive && !paypalActive) {
+      setPaymentMethod('card');
+    }
+  }, [stripeActive, paypalActive]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -299,32 +313,43 @@ export default function FullPageCheckout() {
                 Payment Method & Billing
               </h3>
 
-              {/* Payment Type Selection */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-3.5 rounded-2xl border text-xs font-bold font-heading flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    paymentMethod === 'card'
-                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4" /> Credit Card (Stripe)
-                </button>
+              {/* Dynamic Payment Type Selection based on Admin Settings */}
+              {!stripeActive && !paypalActive ? (
+                <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2 font-heading">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>No payment gateways are currently enabled by admin. Please contact support.</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {stripeActive && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('card')}
+                      className={`p-3.5 rounded-2xl border text-xs font-bold font-heading flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        paymentMethod === 'card'
+                          ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4" /> Credit Card (Stripe)
+                    </button>
+                  )}
 
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('paypal')}
-                  className={`p-3.5 rounded-2xl border text-xs font-bold font-heading flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    paymentMethod === 'paypal'
-                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
-                  }`}
-                >
-                  <span className="font-extrabold italic text-blue-600">PayPal</span> Express
-                </button>
-              </div>
+                  {paypalActive && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('paypal')}
+                      className={`p-3.5 rounded-2xl border text-xs font-bold font-heading flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        paymentMethod === 'paypal'
+                          ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <span className="font-extrabold italic text-blue-600">PayPal</span> Express
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Card Inputs */}
               {paymentMethod === 'card' ? (
