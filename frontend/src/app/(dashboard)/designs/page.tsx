@@ -141,6 +141,37 @@ export default function DesignsPage() {
     setCurrentPage(1);
   }, [selectedCategory]);
 
+  // Delete a design card permanently
+  const handleDeleteDesign = async (id: string) => {
+    try {
+      const stored = localStorage.getItem('user_generated_designs');
+      if (stored) {
+        const parsed: PublishedProjectData[] = JSON.parse(stored);
+        const filtered = parsed.filter((d) => d._id !== id);
+        localStorage.setItem('user_generated_designs', JSON.stringify(filtered));
+      }
+      if (id && id.length === 24) {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+        await fetch(`${baseUrl}/rooms/${id}`, { method: 'DELETE' }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Error deleting design:', e);
+    }
+    setPublishedDesigns((prev) => prev.filter((d) => d._id !== id));
+  };
+
+  // Clear all designs completely
+  const handleClearAllDesigns = async () => {
+    try {
+      localStorage.removeItem('user_generated_designs');
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+      await fetch(`${baseUrl}/rooms`, { method: 'DELETE' }).catch(() => {});
+    } catch (e) {
+      console.warn('Error clearing designs:', e);
+    }
+    setPublishedDesigns([]);
+  };
+
   // Reset page when search or sort changes
   useEffect(() => {
     setCurrentPage(1);
@@ -315,6 +346,18 @@ export default function DesignsPage() {
               <option value="rating">Highest Rated ★</option>
               <option value="newest">Newest First</option>
             </select>
+
+            {publishedDesigns.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearAllDesigns}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-200 dark:border-rose-800 transition-colors shadow-2xs cursor-pointer font-heading"
+                title="Clear All Designs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Clear All</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -327,7 +370,7 @@ export default function DesignsPage() {
               className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
                 selectedCategory === cat
                   ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md'
-                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 border border-slate-200/80 dark:border-slate-800'
               }`}
             >
               {cat}
@@ -335,16 +378,17 @@ export default function DesignsPage() {
           ))}
         </div>
 
-        {/* Published Designs Table Display */}
+        {/* MASONRY SHOWCASE GRID / EMPTY STATE */}
         {isLoadingShowcase ? (
-          <div className="p-12 text-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
-            <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-semibold text-slate-500">Loading design gallery...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-12">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-64 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+            ))}
           </div>
         ) : filteredShowcase.length === 0 ? (
-          <div className="text-center py-20 px-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-4 max-w-lg mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-purple-50 dark:bg-purple-950/70 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto border border-purple-200 dark:border-purple-800 shadow-2xs">
-              <Sparkles className="w-8 h-8" />
+          <div className="p-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 space-y-4 shadow-sm">
+            <div className="p-3 w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 mx-auto flex items-center justify-center">
+              <Sparkles className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-extrabold text-slate-900 dark:text-white font-heading">
               No Generated Designs Yet
@@ -385,8 +429,19 @@ export default function DesignsPage() {
                       </span>
                     </div>
 
-                    {/* TOP RIGHT QUICK ACTIONS: Download */}
-                    <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {/* TOP RIGHT QUICK ACTIONS: Download & Delete */}
+                    <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteDesign(proj._id);
+                        }}
+                        className="p-2 rounded-full bg-slate-950/80 backdrop-blur-md text-white hover:bg-rose-600 transition-colors shadow-md cursor-pointer"
+                        title="Delete Design"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                       <a
                         href={proj.sampleImageUrl}
                         download={`${proj.title}.jpg`}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Heart, Star, Sparkles, Eye, ArrowRight } from 'lucide-react';
+import { Heart, Star, Sparkles, Eye, ArrowRight, Trash2 } from 'lucide-react';
 
 export interface PublishedProjectCardProps {
   id: string;
@@ -29,6 +29,7 @@ export interface PublishedProjectCardProps {
   };
   onWishlistToggle?: (id: string) => void;
   onViewClick?: (id: string) => void;
+  onDeleteClick?: (id: string) => void;
 }
 
 export const ProjectCard: React.FC<PublishedProjectCardProps> = ({
@@ -46,6 +47,7 @@ export const ProjectCard: React.FC<PublishedProjectCardProps> = ({
   author,
   onWishlistToggle,
   onViewClick,
+  onDeleteClick,
 }) => {
   const [liked, setLiked] = useState(isWishlisted);
   const [likesCount, setLikesCount] = useState(wishlistCount);
@@ -79,6 +81,20 @@ export const ProjectCard: React.FC<PublishedProjectCardProps> = ({
             {showBefore ? 'BEFORE PHOTO' : 'AFTER REDESIGN'}
           </span>
         </div>
+
+        {/* Top Right Delete Action */}
+        {onDeleteClick && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteClick(id);
+            }}
+            title="Delete Design"
+            className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-slate-950/80 hover:bg-rose-600 backdrop-blur-md text-white border border-white/20 transition-colors shadow-md cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
 
 
 
