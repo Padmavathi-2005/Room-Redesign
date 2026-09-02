@@ -100,6 +100,29 @@ export default function FullPageCheckout() {
     }
   }, []);
 
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let digits = e.target.value.replace(/\D/g, '').slice(0, 16);
+    let formatted = digits.match(/.{1,4}/g)?.join(' ') || digits;
+    setCardNumber(formatted);
+  };
+
+  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (digits.length >= 1 && parseInt(digits[0], 10) > 1 && !digits.startsWith('0')) {
+      digits = '0' + digits;
+    }
+    if (digits.length > 2) {
+      setExpiry(`${digits.slice(0, 2)}/${digits.slice(2)}`);
+    } else {
+      setExpiry(digits);
+    }
+  };
+
+  const handleCvcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setCvc(digits);
+  };
+
   const isCurrentlyFree = !currentUser || !currentUser.plan || currentUser.plan.toLowerCase() === 'free';
 
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
@@ -379,10 +402,10 @@ export default function FullPageCheckout() {
                       required
                       autoComplete="off"
                       maxLength={19}
-                      placeholder="4242 •••• •••• 4242"
+                      placeholder="4242 4242 4242 4242"
                       value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-mono font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                      onChange={handleCardNumberChange}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-mono font-bold tracking-wider text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                     />
                   </div>
 
@@ -398,8 +421,8 @@ export default function FullPageCheckout() {
                         maxLength={5}
                         placeholder="MM/YY"
                         value={expiry}
-                        onChange={(e) => setExpiry(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-mono font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                        onChange={handleExpiryChange}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                       />
                     </div>
 
@@ -414,8 +437,8 @@ export default function FullPageCheckout() {
                         maxLength={4}
                         placeholder="123"
                         value={cvc}
-                        onChange={(e) => setCvc(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-mono font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                        onChange={handleCvcChange}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                       />
                     </div>
                   </div>
