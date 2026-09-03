@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { CreditTokenIcon } from '@/components/ui';
+import Modal from '@/components/ui/Modal';
 
 interface CreditLot {
   lotId: string;
@@ -1001,11 +1002,16 @@ export default function BillingPage() {
       )}
 
       {/* ROOMAI OFFICIAL BRANDED INVOICE MODAL */}
-      {selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-2xl w-full space-y-6 shadow-2xl border border-slate-200 dark:border-slate-800 text-left font-sans max-h-[90vh] overflow-y-auto">
+      <Modal
+        isOpen={!!selectedInvoice}
+        onClose={() => setSelectedInvoice(null)}
+        maxWidth="3xl"
+        showCloseButton={true}
+      >
+        {selectedInvoice && (
+          <div className="space-y-6 font-sans text-left">
             {/* Invoice Header */}
-            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-6">
+            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-6 pr-6">
               <div className="space-y-1">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-base shadow-md">
@@ -1108,7 +1114,7 @@ export default function BillingPage() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer font-sans"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print / Save PDF</span>
@@ -1130,45 +1136,28 @@ export default function BillingPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedInvoice(null)}
-                  className="px-5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all cursor-pointer font-sans"
                 >
                   Close
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* PLAN UPGRADE CONFIRMATION POPUP MODAL */}
-      {upgradePlanModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-xl w-full space-y-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 text-left">
-            
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-100 dark:bg-purple-950/80 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 font-heading">
-                    Confirm Subscription Upgrade
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                    Review your new billing cycle, credit allocation & plan features.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setUpgradePlanModal(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold p-1 cursor-pointer transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
+      <Modal
+        isOpen={!!upgradePlanModal}
+        onClose={() => setUpgradePlanModal(null)}
+        title="Confirm Subscription Upgrade"
+        subtitle="Review your new billing cycle, credit allocation & plan features."
+        icon={<Sparkles className="w-5 h-5" />}
+        maxWidth="2xl"
+        showCloseButton={true}
+      >
+        {upgradePlanModal && (
+          <div className="space-y-6 text-left font-sans">
             {/* Current vs Upgraded Side-by-Side Comparison */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
@@ -1205,12 +1194,12 @@ export default function BillingPage() {
               </div>
 
               {/* NEW UPGRADED PLAN BOX */}
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 via-indigo-50/50 to-white dark:from-purple-950/40 dark:via-indigo-950/20 dark:to-slate-900 border border-purple-300 dark:border-purple-700 space-y-2 shadow-xs">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-white dark:from-primary/20 dark:via-primary/10 dark:to-slate-900 border border-primary/30 dark:border-primary/40 space-y-2 shadow-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary">
                     Upgrading To
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-purple-600 text-white text-[9px] font-extrabold uppercase">
+                  <span className="px-2 py-0.5 rounded-full bg-primary text-white text-[9px] font-extrabold uppercase">
                     SELECTED
                   </span>
                 </div>
@@ -1220,7 +1209,7 @@ export default function BillingPage() {
                 <div className="text-[11px] text-slate-600 dark:text-slate-300 space-y-1 font-medium pt-1">
                   <p className="flex items-center justify-between">
                     <span>Billing Starts:</span>
-                    <span className="font-bold text-purple-700 dark:text-purple-300 font-mono">
+                    <span className="font-bold text-primary font-mono">
                       Today ({new Date().toLocaleDateString(undefined, { dateStyle: 'short' })})
                     </span>
                   </p>
@@ -1231,7 +1220,7 @@ export default function BillingPage() {
                       {upgradePlanModal.credits} / mo
                     </span>
                   </p>
-                  <p className="flex items-center justify-between pt-1 border-t border-purple-200/60 dark:border-purple-800/60">
+                  <p className="flex items-center justify-between pt-1 border-t border-primary/20">
                     <span>Est. Combined Balance:</span>
                     <span className="font-black text-slate-900 dark:text-white font-mono flex items-center gap-1">
                       <CreditTokenIcon size="xs" />
@@ -1245,8 +1234,8 @@ export default function BillingPage() {
 
             {/* UPGRADE BENEFITS EXPLANATION */}
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 space-y-2 text-xs">
-              <h5 className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 font-heading">
-                <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />
+              <h5 className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 font-sans">
+                <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
                 <span>What happens upon upgrade payment?</span>
               </h5>
               <ul className="space-y-1.5 text-slate-600 dark:text-slate-300 font-medium pl-5 list-disc text-[11px] leading-relaxed">
@@ -1260,7 +1249,7 @@ export default function BillingPage() {
             {/* NEED CREDITS RIGHT NOW ALTERNATIVE CALLOUT */}
             <div className="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <div className="space-y-0.5 text-left">
-                <p className="font-extrabold text-amber-950 dark:text-amber-200 font-heading">
+                <p className="font-extrabold text-amber-950 dark:text-amber-200 font-sans">
                   Just need extra credits for today's project?
                 </p>
                 <p className="text-[11px] text-amber-800/90 dark:text-amber-300 font-medium">
@@ -1298,7 +1287,7 @@ export default function BillingPage() {
                   setUpgradePlanModal(null);
                   router.push(`/checkout?plan=${code.toLowerCase()}`);
                 }}
-                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all font-heading"
+                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-primary hover:opacity-90 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all font-sans"
               >
                 <span>Proceed to Stripe Checkout (${isAnnual ? upgradePlanModal.priceAnnual : upgradePlanModal.priceMonthly}/mo)</span>
                 <ArrowUpRight className="w-4 h-4" />
@@ -1306,8 +1295,8 @@ export default function BillingPage() {
             </div>
 
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }
