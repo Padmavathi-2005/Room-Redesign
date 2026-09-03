@@ -67,7 +67,7 @@ const PRICING_PLANS: Plan[] = [
 
 export default function SubscriptionPlans() {
   return (
-    <section id="pricing" className="relative w-full pt-36 sm:pt-40 pb-20 bg-[#4f46e5]/10 dark:bg-[#4f46e5]/20 border-y border-[#4f46e5]/15 dark:border-[#4f46e5]/30 text-slate-900 dark:text-white selection:bg-indigo-600 selection:text-white">
+    <section id="pricing" className="relative w-full pt-36 sm:pt-40 pb-20 bg-slate-100/60 dark:bg-slate-900/60 border-y border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
 
         {/* Section Header */}
@@ -76,9 +76,9 @@ export default function SubscriptionPlans() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold text-indigo-800 dark:text-indigo-300 shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary shadow-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span>Simple, Transparent Pricing</span>
           </motion.div>
 
@@ -112,13 +112,13 @@ export default function SubscriptionPlans() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className={`relative flex flex-col justify-between p-7 rounded-3xl transition-all duration-300 ${
                 plan.popular
-                  ? 'bg-white dark:bg-slate-900 border-2 border-indigo-600 shadow-2xl shadow-indigo-500/15 scale-105 z-10'
+                  ? 'bg-white dark:bg-slate-900 border-2 border-primary shadow-2xl shadow-primary/15 scale-105 z-10'
                   : 'bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-black/40 hover:shadow-2xl'
               }`}
             >
               {/* Popular Badge */}
               {plan.popular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-extrabold uppercase tracking-wider rounded-full shadow-md">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary text-white text-[11px] font-extrabold uppercase tracking-wider rounded-full shadow-md">
                   Most Popular
                 </div>
               )}
@@ -177,8 +177,8 @@ export default function SubscriptionPlans() {
                   <button
                     className={`w-full py-3.5 px-6 rounded-2xl text-xs font-extrabold tracking-wide uppercase transition-all duration-200 focus:outline-none cursor-pointer ${
                       plan.popular
-                        ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-[1.02]'
-                        : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-indigo-600 dark:hover:bg-indigo-500 hover:text-white shadow-md'
+                        ? 'bg-primary hover:opacity-90 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-[1.02]'
+                        : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-primary hover:text-white shadow-md'
                     }`}
                   >
                     Get Started

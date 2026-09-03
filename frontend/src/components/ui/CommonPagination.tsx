@@ -63,7 +63,7 @@ export default function CommonPagination({
           <select
             value={limit}
             onChange={handlePageSizeSelect}
-            className="px-2 py-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40 cursor-pointer shadow-2xs"
+            className="px-2 py-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer shadow-2xs"
           >
             {pageSizeOptions.map((opt) => (
               <option key={opt} value={opt}>
@@ -101,7 +101,7 @@ export default function CommonPagination({
                     onClick={() => onPageChange(page)}
                     className={`px-3 py-1 rounded-2xl text-xs font-extrabold transition-all ${
                       currentPage === page
-                        ? 'bg-purple-600 text-white shadow-xs'
+                        ? 'bg-primary text-white shadow-xs'
                         : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >

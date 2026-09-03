@@ -90,32 +90,22 @@ export default function Header() {
     if (token && storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        const isAdmin = parsed && parsed.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(parsed.role);
-        if (!isAdmin) {
-          if (parsed.email === 'client@yopmail.com' || parsed.email === 'test@yopmail.com') {
-            parsed.email = 'user@yopmail.com';
-            parsed.firstName = 'Alex';
-            parsed.name = 'Alex';
-            parsed.credits = 0;
-            localStorage.setItem('user', JSON.stringify(parsed));
-          }
+        const rawName = parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim();
+        const emailName = parsed.email ? parsed.email.split('@')[0] : '';
+        const displayName = rawName || (emailName ? emailName.charAt(0).toUpperCase() + emailName.slice(1) : 'User');
 
-          const rawName = parsed.name || `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim();
-          const emailName = parsed.email ? parsed.email.split('@')[0] : '';
-          const displayName = rawName || (emailName ? emailName.charAt(0).toUpperCase() + emailName.slice(1) : 'Alex');
+        const userPlan = (parsed.plan || '').toUpperCase();
+        const isProPlan = ['PRO', 'PREMIUM', 'ENTERPRISE', 'VIP'].includes(userPlan);
 
-          setUser({
-            name: displayName,
-            email: parsed.email || 'user@yopmail.com',
-            credits: parsed.credits ?? 0,
-            plan: parsed.plan ? `${parsed.plan.toUpperCase()}` : 'FREE',
-            avatar: parsed.avatar || parsed.avatarUrl || '',
-            role: parsed.role,
-            isProfileHighlightEnabled: parsed.isProfileHighlightEnabled ?? (parsed.plan ? ['PREMIUM', 'PRO', 'ENTERPRISE', 'VIP'].includes(parsed.plan.toUpperCase()) : false),
-          });
-        } else {
-          setUser(null);
-        }
+        setUser({
+          name: displayName,
+          email: parsed.email || 'user@yopmail.com',
+          credits: parsed.credits ?? 0,
+          plan: userPlan || 'FREE',
+          avatar: parsed.avatar || parsed.avatarUrl || '',
+          role: parsed.role || 'user',
+          isProfileHighlightEnabled: isProPlan,
+        });
       } catch {
         setUser(null);
       }

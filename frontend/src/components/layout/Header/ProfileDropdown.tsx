@@ -71,31 +71,32 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
   const initials = getInitials(user.name);
   const credits = user.credits ?? 0;
   
-  // Check if profile highlight / premium features are enabled for the user
-  const isPremiumUser = user.isProfileHighlightEnabled ?? (user.plan ? ['PREMIUM', 'PRO', 'ENTERPRISE', 'VIP'].includes(user.plan.toUpperCase()) : false);
+  // Check if profile highlight / premium features are enabled ONLY for Pro plan users
+  const planUpper = (user.plan || '').toUpperCase();
+  const isProPlan = ['PRO', 'PREMIUM', 'ENTERPRISE', 'VIP'].includes(planUpper);
+  const isPremiumUser = isProPlan && (user.isProfileHighlightEnabled ?? true);
 
   return (
     <div ref={dropdownRef} className="relative">
       {/* Profile Capsule Trigger Badge */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+      <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 hover:border-blue-300 dark:hover:border-slate-700 transition-all focus:outline-none cursor-pointer group shadow-2xs overflow-visible"
+        className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 hover:border-blue-300 dark:hover:border-slate-700 transition-colors focus:outline-none cursor-pointer group shadow-2xs overflow-visible"
       >
         {/* Avatar Image / Initials Container */}
         <div className="relative shrink-0 flex items-center justify-center overflow-visible">
           {isPremiumUser ? (
-            /* Premium User: Compact 32px Avatar Circle + Rotating Conic Ring + Tilted Crown */
-            <div className="relative w-8 h-8 flex items-center justify-center shrink-0 overflow-visible">
-              {/* Outer Rotating Multi-Color Conic Ring */}
-              <div className="absolute -inset-[2px] rounded-full bg-[conic-gradient(from_0deg,#2563eb,#06b6d4,#8b5cf6,#ec4899,#f97316,#2563eb)] animate-[spin_5s_linear_infinite]" />
+            /* Premium User: 36px Avatar with 2px Conic Gradient Ring + 2px Symmetrical Gap + Static Crown */
+            <div className="relative w-9 h-9 rounded-full flex items-center justify-center shrink-0">
+              {/* Outer Rotating Multi-Color Conic Gradient Ring (2px border thickness) */}
+              <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#2563eb,#06b6d4,#8b5cf6,#ec4899,#f97316,#2563eb)] animate-[spin_5s_linear_infinite]" />
 
-              {/* Inner White Gap Ring */}
-              <div className="absolute inset-[1.5px] rounded-full bg-white dark:bg-slate-900 z-0" />
+              {/* Inner Gap Ring (2px gap thickness - White in Light Mode / Slate-900 in Dark Mode) */}
+              <div className="absolute inset-[2px] rounded-full bg-white dark:bg-slate-900 z-0" />
 
-              {/* Inner Solid Primary Blue Avatar Box (25px x 25px) */}
-              <div className="relative z-10 w-[25px] h-[25px] rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white font-extrabold text-[10px] tracking-wider shadow-2xs shrink-0">
+              {/* Core Upright Avatar Picture / Initials (28px x 28px) */}
+              <div className="relative z-10 w-[28px] h-[28px] rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white font-extrabold text-[11px] tracking-wider shadow-2xs shrink-0">
                 {user.avatar ? (
                   <img src={user.avatar} alt={capitalizedName} className="w-full h-full object-cover" />
                 ) : (
@@ -103,14 +104,14 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
                 )}
               </div>
 
-              {/* Tilted Golden King Crown Icon sitting on top-right of the ring */}
-              <div className="absolute -top-2 -right-1.5 z-20 pointer-events-none transform rotate-[25deg]">
+              {/* Static Tilted Golden King Crown Icon sitting on top-right of the ring */}
+              <div className="absolute -top-1 -right-1 z-20 pointer-events-none transform rotate-[25deg]">
                 <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400 drop-shadow-[0_1px_2px_rgba(245,158,11,0.9)]" />
               </div>
             </div>
           ) : (
-            /* Standard User: Compact 32px Primary Blue Circle */
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold text-[11px] shadow-2xs overflow-hidden shrink-0">
+            /* Standard User: Compact 36px Primary Brand Circle */
+            <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-extrabold text-[11px] shadow-2xs overflow-hidden shrink-0">
               {user.avatar ? (
                 <img src={user.avatar} alt={capitalizedName} className="w-full h-full object-cover" />
               ) : (
@@ -136,7 +137,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
             <span className="text-[11px] font-black text-amber-600 dark:text-amber-400 tracking-tight">{credits}</span>
           </div>
         </div>
-      </motion.button>
+      </button>
 
       {/* Dropdown Menu Box */}
       <AnimatePresence>
@@ -220,15 +221,6 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
               >
                 <Settings className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 <span>Account Settings</span>
-              </Link>
-
-              <Link
-                href="/admin/settings"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-bold text-purple-700 dark:text-purple-300"
-              >
-                <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <span>Admin Console Settings</span>
               </Link>
             </div>
 

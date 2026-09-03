@@ -9,11 +9,12 @@ import { ProjectsService } from '../modules/projects/projects.service';
 import { User, UserDocument } from '../modules/users/schemas/user.schema';
 import { QueueWorkerService } from '../queue/queue-worker.service';
 
+import { SubscriptionService } from '../modules/subscription/subscription.service';
+
 @Injectable()
 export class RoomsService implements OnModuleInit {
   private readonly logger = new Logger(RoomsService.name);
 
-  // Clean dataset (empty array so no sample images show up in My Designs)
   private inMemoryRooms: Array<any> = [];
 
   constructor(
@@ -25,19 +26,12 @@ export class RoomsService implements OnModuleInit {
     private readonly providerManagerService: ProviderManagerService,
     private readonly projectsService: ProjectsService,
     private readonly queueWorkerService: QueueWorkerService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   async onModuleInit() {
     try {
-      // Set all user accounts without a paid plan to 0 credits
-      await this.userModel.updateMany(
-        { subscriptionTier: { $in: ['FREE', null, undefined] } },
-        { $set: { credits: 0 } }
-      ).exec();
-      // Remove all previous room generations from DB
-      await this.roomModel.deleteMany({}).exec();
-      this.inMemoryRooms = [];
-      this.logger.log('Reset user credits to 0 and cleared old room redesign generations.');
+      this.logger.log('RoomsService initialized.');
     } catch (e) {
       this.logger.warn('Initial cleanup warning:', e);
     }
@@ -50,66 +44,70 @@ export class RoomsService implements OnModuleInit {
   }
 
   /**
-   * Triggers room redesign generation by enqueuing a background job
-   * and synchronously waiting for the background QueueWorker to finish processing it.
+   * Server-calculated credit cost based on requested tool and parameters
    */
-  async generateRoomRedesign(dto: CreateRoomDto): Promise<any> {
+  calculateGenerationCost(toolSlug?: string): number {
+    const tool = toolSlug || 'interior-design';
+    if (['3d-floor-plan', 'sketch-to-render', '8k-render'].includes(tool)) {
+      return 4;
+    }
+    return 2;
+  }
+
+  /**
+   * Triggers room redesign generation with atomic credit deduction and auto-refund
+   */
+  async generateRoomRedesign(authenticatedUserId: string, dto: CreateRoomDto): Promise<any> {
     const { 
       originalImage, roomType, theme, userPrompt, designStyle, colorPalette, 
       lighting, customInstructions, toolSlug, houseAngle, cameraAngle, 
       perspective, buildingType, roofType, environment, timeOfDay,
-      projectId, manusChatId, userId, creditsCost
+      projectId, manusChatId
     } = dto;
 
-    // Credit Verification & Deduction Logic
-    const cost = Math.max(1, creditsCost || 1);
-    let targetUser: UserDocument | null = null;
+    const requestedTool = toolSlug || 'interior-design';
+    const cost = this.calculateGenerationCost(requestedTool);
 
-    if (userId && userId.length === 24) {
-      targetUser = await this.userModel.findById(userId).exec();
+    let targetUser: UserDocument | null = null;
+    if (authenticatedUserId && authenticatedUserId.length === 24) {
+      targetUser = await this.userModel.findById(authenticatedUserId).exec();
     }
     if (!targetUser) {
-      targetUser = await this.userModel.findOne({ email: 'test@yopmail.com' }).exec()
-        || await this.userModel.findOne().exec();
+      targetUser = await this.userModel.findOne().exec();
     }
 
-    if (targetUser) {
-      // 1. Verify requested tool / AI model accessibility based on active subscription plan
-      const requestedTool = toolSlug || 'interior-design';
-      const userPlanCode = targetUser.plan || 'free';
-      
-      try {
-        const planDefinition = await this.userModel.db.model('SubscriptionPlanDefinition').findOne({
-          code: userPlanCode.toLowerCase(),
-          isActive: true,
-        }).exec();
-
-        if (planDefinition) {
-          const allowedModels = planDefinition.accessibleModels || [];
-          if (!allowedModels.includes(requestedTool)) {
-            throw new ForbiddenException(
-              `Your active ${userPlanCode.toUpperCase()} subscription tier does not have access to the "${requestedTool}" tool. Please upgrade your plan in the billing tab to unlock this feature.`
-            );
-          }
-        }
-      } catch (err: any) {
-        if (err instanceof ForbiddenException) {
-          throw err;
-        }
-        this.logger.warn(`Failed to verify model access boundaries for user plan ${userPlanCode}: ${err.message}`);
-      }
-
-      // 2. Credit Verification & Deduction Logic
-      const userCredits = targetUser.credits ?? 0;
-      if (userCredits < cost) {
-        throw new BadRequestException(
-          `Insufficient credits! You have ${userCredits} credits remaining, but this generation requires ${cost} credit(s). Please top up your account or upgrade your plan.`
-        );
-      }
-      targetUser.credits = Math.max(0, userCredits - cost);
-      await targetUser.save();
-      this.logger.log(`Deducted ${cost} credit(s) from user "${targetUser.email}". Remaining credits: ${targetUser.credits}`);
+    if (!targetUser) {
+      throw new NotFoundException('User account not found for generation');
     }
+
+    // 1. Verify plan tool access
+    const userPlanCode = targetUser.plan || 'free';
+    try {
+      const planDefinition = await this.userModel.db.model('SubscriptionPlanDefinition').findOne({
+        code: userPlanCode.toLowerCase(),
+        isActive: true,
+      }).exec();
+
+      if (planDefinition) {
+        const allowedModels = planDefinition.accessibleModels || [];
+        if (!allowedModels.includes(requestedTool)) {
+          throw new ForbiddenException(
+            `Your active ${userPlanCode.toUpperCase()} subscription tier does not have access to the "${requestedTool}" tool. Please upgrade your plan in the billing tab to unlock this feature.`
+          );
+        }
+      }
+    } catch (err: any) {
+      if (err instanceof ForbiddenException) throw err;
+      this.logger.warn(`Failed to verify model access boundaries for plan ${userPlanCode}: ${err.message}`);
+    }
+
+    // 2. Atomic credit deduction
+    targetUser = await this.subscriptionService.deductCreditsAtomic(
+      targetUser._id.toString(),
+      cost,
+      `AI Generation Deducted: ${requestedTool} (${roomType})`,
+      { toolSlug: requestedTool, roomType },
+    );
 
     let targetTheme = designStyle || theme;
     let targetColorPalette = colorPalette || '';
@@ -226,15 +224,32 @@ export class RoomsService implements OnModuleInit {
         }
         if (currentRoom.status === 'failed') {
           this.logger.error(`Job failed (ID: ${createdRoom._id}). Error: ${currentRoom.error}`);
+          if (targetUser) {
+            await this.subscriptionService.refundCreditsAtomic(
+              targetUser._id.toString(),
+              cost,
+              'Auto-refund: Room redesign generation failed',
+              { toolSlug: requestedTool, roomId: createdRoom._id },
+            );
+          }
           throw new BadRequestException(`Image generation failed: ${currentRoom.error || 'Unknown error'}`);
         }
       }
     }
 
-    // Mark as failed in DB on timeout
+    // Mark as failed in DB on timeout and issue credit refund
     await this.roomModel.findByIdAndUpdate(createdRoom._id, {
       $set: { status: 'failed', error: 'Generation timed out' },
     });
+
+    if (targetUser) {
+      await this.subscriptionService.refundCreditsAtomic(
+        targetUser._id.toString(),
+        cost,
+        'Auto-refund: Room redesign generation timed out',
+        { toolSlug: requestedTool, roomId: createdRoom._id },
+      );
+    }
 
     throw new GatewayTimeoutException('Image generation request timed out. Please try again.');
   }
@@ -303,48 +318,55 @@ export class RoomsService implements OnModuleInit {
     }
   }
 
-  async findAll(): Promise<any[]> {
+  /**
+   * Returns room design records scoped to user (or all if admin)
+   */
+  async findAllForUser(userId: string, isAdmin = false): Promise<any[]> {
     try {
-      const mongoRooms = await this.roomModel.find().sort({ createdAt: -1 }).exec();
-      if (mongoRooms && mongoRooms.length > 0) {
+      const filter = isAdmin ? {} : { userId };
+      const mongoRooms = await this.roomModel.find(filter).sort({ createdAt: -1 }).exec();
+      if (mongoRooms) {
         return mongoRooms;
       }
     } catch (e: any) {
       this.logger.warn(`MongoDB fetch fallback: ${e.message}`);
     }
-    return this.inMemoryRooms;
+    return this.inMemoryRooms.filter((r) => isAdmin || r.userId?.toString() === userId);
   }
 
   /**
-   * Returns a single room design by ID
+   * Returns a single room design by ID with user ownership check
    */
-  async findOne(id: string): Promise<any> {
+  async findOneForUser(id: string, userId: string, isAdmin = false): Promise<any> {
+    let room: any = null;
     try {
       if (id.length === 24) {
-        const room = await this.roomModel.findById(id).exec();
-        if (room) return room;
+        room = await this.roomModel.findById(id).exec();
       }
-    } catch (e) {
-      // Fall through to memory lookup
+    } catch (e) {}
+
+    if (!room) {
+      room = this.inMemoryRooms.find((r) => r._id === id);
     }
 
-    const found = this.inMemoryRooms.find((r) => r._id === id);
-    if (!found) {
+    if (!room) {
       throw new NotFoundException(`Room design with ID ${id} not found`);
     }
-    return found;
+
+    if (!isAdmin && room.userId?.toString() !== userId) {
+      throw new ForbiddenException('You do not have permission to access this room design.');
+    }
+
+    return room;
   }
 
   /**
-   * Deletes a room design record
+   * Deletes a room design record with user ownership check
    */
-  async remove(id: string): Promise<{ success: boolean; id: string }> {
-    try {
-      if (id.length === 24) {
-        await this.roomModel.findByIdAndDelete(id).exec();
-      }
-    } catch (e) {
-      // Fall through
+  async removeForUser(id: string, userId: string, isAdmin = false): Promise<{ success: boolean; id: string }> {
+    const room = await this.findOneForUser(id, userId, isAdmin);
+    if (room._id && room._id.length === 24) {
+      await this.roomModel.findByIdAndDelete(room._id).exec();
     }
     this.inMemoryRooms = this.inMemoryRooms.filter((r) => r._id !== id);
     return { success: true, id };

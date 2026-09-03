@@ -44,16 +44,8 @@ export class UsersService implements OnModuleInit {
     } else {
       existingUser.email = defaultUserEmail;
       existingUser.firstName = 'Alex';
-      existingUser.credits = 0;
-      existingUser.subscriptionTier = 'FREE';
       await existingUser.save();
     }
-
-    // 3. Reset all user accounts without active paid plans to 0 credits
-    await this.userModel.updateMany(
-      { subscriptionTier: { $in: ['FREE', null, undefined] } },
-      { $set: { credits: 0 } }
-    ).exec();
   }
 
   async create(userData: Partial<User>): Promise<UserDocument> {

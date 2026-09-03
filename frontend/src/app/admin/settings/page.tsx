@@ -26,12 +26,15 @@ import {
   Percent,
 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useToast } from '@/context/ToastContext';
+import { CreditTokenIcon } from '@/components/ui';
 
-type TabType = 'branding' | 'oauth' | 'ai-engine' | 'stripe' | 'tax' | 'storage' | 'smtp' | 'economy';
+type TabType = 'branding' | 'oauth' | 'ai-engine' | 'stripe' | 'tax' | 'storage' | 'smtp' | 'economy' | 'credit-packs';
 
 export default function AdminSettingsPage() {
   const router = useRouter();
   const { settings, isLoading: isThemeLoading, updateSettings } = useSettings();
+  const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<TabType>('branding');
   const [token, setToken] = useState<string | null>(null);
@@ -132,6 +135,142 @@ export default function AdminSettingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // 8. Admin Credit Packs Management State
+  const [adminPacks, setAdminPacks] = useState<any[]>([]);
+  const [loadingPacks, setLoadingPacks] = useState(false);
+  const [editingPackId, setEditingPackId] = useState<string | null>(null);
+  const [showPackModal, setShowPackModal] = useState(false);
+  const [packFormData, setPackFormData] = useState({
+    name: '',
+    code: '',
+    description: '',
+    credits: 20,
+    price: 12,
+    currency: 'usd',
+    validityDays: 10,
+    stripePriceId: '',
+    eligiblePlans: ['starter', 'pro'],
+    isActive: true,
+    isPopular: false,
+    sortOrder: 1,
+    badge: 'BOOSTER',
+  });
+
+  const fetchAdminCreditPacks = async () => {
+    if (!token) return;
+    setLoadingPacks(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const res = await fetch(`${apiUrl}/subscription/admin/credit-packs`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        setAdminPacks(data.data || []);
+      }
+    } catch (e) {}
+    setLoadingPacks(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'credit-packs' && token) {
+      fetchAdminCreditPacks();
+    }
+  }, [activeTab, token]);
+
+  const handleOpenCreatePack = () => {
+    setEditingPackId(null);
+    setPackFormData({
+      name: '',
+      code: '',
+      description: '',
+      credits: 20,
+      price: 12,
+      currency: 'usd',
+      validityDays: 10,
+      stripePriceId: '',
+      eligiblePlans: ['starter', 'pro'],
+      isActive: true,
+      isPopular: false,
+      sortOrder: adminPacks.length + 1,
+      badge: 'BOOSTER',
+    });
+    setShowPackModal(true);
+  };
+
+  const handleOpenEditPack = (pack: any) => {
+    setEditingPackId(pack._id);
+    setPackFormData({
+      name: pack.name,
+      code: pack.code,
+      description: pack.description || '',
+      credits: pack.credits,
+      price: pack.price,
+      currency: pack.currency || 'usd',
+      validityDays: pack.validityDays,
+      stripePriceId: pack.stripePriceId || '',
+      eligiblePlans: pack.eligiblePlans || ['starter', 'pro'],
+      isActive: pack.isActive ?? true,
+      isPopular: pack.isPopular ?? false,
+      sortOrder: pack.sortOrder || 1,
+      badge: pack.badge || '',
+    });
+    setShowPackModal(true);
+  };
+
+  const handleSavePackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+
+    try {
+      const url = editingPackId
+        ? `${apiUrl}/subscription/admin/credit-packs/${editingPackId}`
+        : `${apiUrl}/subscription/admin/credit-packs`;
+      const method = editingPackId ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(packFormData),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`Credit booster pack "${packFormData.name}" saved successfully!`, 'Pack Saved');
+        setShowPackModal(false);
+        fetchAdminCreditPacks();
+      } else {
+        toast.error(data.message || 'Failed to save credit pack.', 'Pack Save Failed');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Network error saving pack.', 'Network Error');
+    }
+  };
+
+  const handleDeletePackClick = async (id: string, name: string) => {
+    if (!token || !window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    try {
+      const res = await fetch(`${apiUrl}/subscription/admin/credit-packs/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`Credit pack "${name}" deleted.`, 'Pack Deleted');
+        fetchAdminCreditPacks();
+      } else {
+        toast.error(data.message || 'Failed to delete pack.', 'Delete Error');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Network error deleting pack.', 'Network Error');
+    }
+  };
 
   const toggleShowMask = (key: string) => {
     setShowMaskedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -310,9 +449,13 @@ export default function AdminSettingsPage() {
           supportEmail,
         } as any),
       });
-      setSuccess('Admin Settings & System Configurations saved successfully!');
+      const msg = 'Admin Settings & System Configurations saved successfully to database!';
+      setSuccess(msg);
+      toast.success(msg, 'Settings Saved', 5000);
     } catch (err: any) {
-      setError(err.message || 'Failed to update settings in database.');
+      const errMsg = err.message || 'Failed to update settings in database.';
+      setError(errMsg);
+      toast.error(errMsg, 'Settings Save Failed', 6000);
     } finally {
       setIsSaving(false);
     }
@@ -352,6 +495,7 @@ export default function AdminSettingsPage() {
     { id: 'storage', label: 'Cloud Storage', icon: Cloud, color: 'text-blue-600' },
     { id: 'smtp', label: 'Email & SMTP', icon: Mail, color: 'text-amber-600' },
     { id: 'economy', label: 'Credits & Toggles', icon: Sliders, color: 'text-rose-600' },
+    { id: 'credit-packs', label: 'Credit Packs Management', icon: Zap, color: 'text-amber-500' },
   ];
 
   return (
@@ -360,7 +504,7 @@ export default function AdminSettingsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
               <Settings className="w-5 h-5" />
             </div>
             <div>
@@ -375,7 +519,7 @@ export default function AdminSettingsPage() {
         <button
           onClick={handleSubmit}
           disabled={isSaving}
-          className="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center gap-2 text-xs font-extrabold shadow-sm disabled:opacity-50 transition-all cursor-pointer shrink-0"
+          className="px-5 py-2.5 rounded-2xl bg-primary hover:opacity-90 text-white flex items-center justify-center gap-2 text-xs font-extrabold shadow-sm disabled:opacity-50 transition-all cursor-pointer shrink-0"
         >
           <Save className="w-4 h-4" />
           <span>{isSaving ? 'Saving Configurations...' : 'Save All Settings'}</span>
@@ -413,7 +557,7 @@ export default function AdminSettingsPage() {
                 onClick={() => setActiveTab(t.id as TabType)}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs transition-all duration-150 font-bold text-left cursor-pointer ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-sm'
+                    ? 'bg-primary text-white shadow-sm'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                 }`}
               >
@@ -858,6 +1002,8 @@ export default function AdminSettingsPage() {
                       <label className="text-slate-800 font-bold block">Stripe Publishable Key</label>
                       <input
                         type="text"
+                        autoComplete="off"
+                        name="stripe_pub_key_input"
                         placeholder="pk_test_..."
                         value={stripePublishableKey}
                         onChange={(e) => setStripePublishableKey(e.target.value)}
@@ -869,6 +1015,8 @@ export default function AdminSettingsPage() {
                       <label className="text-slate-800 font-bold block">Stripe Secret Key</label>
                       <input
                         type="password"
+                        autoComplete="new-password"
+                        name="stripe_sec_key_input"
                         placeholder="sk_test_..."
                         value={stripeSecretKey}
                         onChange={(e) => setStripeSecretKey(e.target.value)}
@@ -880,6 +1028,8 @@ export default function AdminSettingsPage() {
                       <label className="text-slate-800 font-bold block">Stripe Webhook Secret Signature</label>
                       <input
                         type="password"
+                        autoComplete="new-password"
+                        name="stripe_wh_sec_input"
                         placeholder="whsec_..."
                         value={stripeWebhookSecret}
                         onChange={(e) => setStripeWebhookSecret(e.target.value)}
@@ -927,6 +1077,8 @@ export default function AdminSettingsPage() {
                       <label className="text-slate-800 font-bold block">PayPal Client ID</label>
                       <input
                         type="text"
+                        autoComplete="off"
+                        name="paypal_client_id_input"
                         placeholder="A... or Client ID"
                         value={paypalClientId}
                         onChange={(e) => setPaypalClientId(e.target.value)}
@@ -938,7 +1090,9 @@ export default function AdminSettingsPage() {
                       <label className="text-slate-800 font-bold block">PayPal Client Secret</label>
                       <input
                         type="password"
-                        placeholder="E... or Client Secret"
+                        autoComplete="new-password"
+                        name="paypal_client_sec_input"
+                        placeholder="Secret Key"
                         value={paypalClientSecret}
                         onChange={(e) => setPaypalClientSecret(e.target.value)}
                         className="w-full px-3 py-2 bg-white border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
@@ -948,8 +1102,10 @@ export default function AdminSettingsPage() {
                     <div className="space-y-1">
                       <label className="text-slate-800 font-bold block">PayPal Webhook ID</label>
                       <input
-                        type="password"
-                        placeholder="Webhook ID signature"
+                        type="text"
+                        autoComplete="off"
+                        name="paypal_wh_id_input"
+                        placeholder="Webhook Event ID"
                         value={paypalWebhookId}
                         onChange={(e) => setPaypalWebhookId(e.target.value)}
                         className="w-full px-3 py-2 bg-white border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono text-xs"
@@ -1305,6 +1461,325 @@ export default function AdminSettingsPage() {
                       className="w-4 h-4 text-rose-600 rounded cursor-pointer"
                     />
                   </label>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 9: CREDIT PACKS MANAGEMENT */}
+            {activeTab === 'credit-packs' && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-amber-500" />
+                      <span>One-Time Credit Booster Packs</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Configure one-time booster packs for active paid subscribers. Subscriptions remain separate.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenCreatePack}
+                    className="px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create Credit Pack</span>
+                  </button>
+                </div>
+
+                {loadingPacks ? (
+                  <div className="flex items-center justify-center p-8 text-slate-400 gap-2">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <span className="text-xs font-bold">Loading Credit Packs...</span>
+                  </div>
+                ) : adminPacks.length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 space-y-2">
+                    <Zap className="w-8 h-8 text-amber-400 mx-auto" />
+                    <p className="text-xs font-bold">No credit booster packs found in database.</p>
+                    <button
+                      type="button"
+                      onClick={handleOpenCreatePack}
+                      className="px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                      Create First Pack
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {adminPacks.map((pack) => (
+                      <div
+                        key={pack._id}
+                        className={`p-5 rounded-3xl border transition-all space-y-4 relative flex flex-col justify-between ${
+                          pack.isActive
+                            ? 'bg-white border-slate-200 hover:border-amber-400 shadow-xs'
+                            : 'bg-slate-50 border-slate-200 opacity-60'
+                        }`}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold uppercase tracking-wider">
+                              {pack.badge || 'BOOSTER'}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              {pack.isPopular && (
+                                <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[9px] font-bold">
+                                  POPULAR
+                                </span>
+                              )}
+                              <span className={`w-2 h-2 rounded-full ${pack.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="text-base font-extrabold text-slate-900">{pack.name}</h4>
+                            <p className="text-[11px] text-slate-500 font-mono mt-0.5">Code: {pack.code}</p>
+                          </div>
+
+                          <p className="text-xs text-slate-600 font-medium line-clamp-2 leading-relaxed">
+                            {pack.description}
+                          </p>
+
+                          <div className="pt-2 border-t border-slate-100 flex items-baseline justify-between">
+                            <div>
+                              <span className="text-2xl font-black text-slate-900">${pack.price}</span>
+                              <span className="text-[11px] text-slate-400"> USD</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-base font-black text-amber-600 flex items-center justify-end gap-1">
+                                <CreditTokenIcon size="xs" />
+                                <span>{pack.credits}</span>
+                              </span>
+                              <p className="text-[10px] text-slate-400 font-mono">{pack.validityDays} Day Validity</p>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 flex items-center justify-between text-[11px] font-medium text-slate-500 bg-slate-50 p-2.5 rounded-2xl">
+                            <span>Eligible Plans:</span>
+                            <span className="font-bold text-slate-800 uppercase font-mono">
+                              {(pack.eligiblePlans || []).join(', ')}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditPack(pack)}
+                            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition-all"
+                          >
+                            Edit Pack
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePackClick(pack._id, pack.name)}
+                            className="p-1.5 rounded-xl hover:bg-rose-50 text-rose-500 hover:text-rose-700 transition-all cursor-pointer"
+                            title="Delete Pack"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* CREATE / EDIT CREDIT PACK MODAL */}
+            {showPackModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+                <div className="bg-white rounded-3xl p-6 max-w-lg w-full space-y-5 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-150">
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-amber-500" />
+                      <span>{editingPackId ? 'Edit Credit Booster Pack' : 'Create Credit Booster Pack'}</span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowPackModal(false)}
+                      className="text-slate-400 hover:text-slate-600 font-bold p-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSavePackSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-800">Pack Name *</label>
+                        <input
+                          type="text"
+                          required
+                          value={packFormData.name}
+                          onChange={(e) => setPackFormData({ ...packFormData, name: e.target.value })}
+                          placeholder="Quick Boost"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-800">Unique Code *</label>
+                        <input
+                          type="text"
+                          required
+                          value={packFormData.code}
+                          onChange={(e) => setPackFormData({ ...packFormData, code: e.target.value.toLowerCase().trim() })}
+                          placeholder="quick-boost"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-800">Description</label>
+                      <input
+                        type="text"
+                        value={packFormData.description}
+                        onChange={(e) => setPackFormData({ ...packFormData, description: e.target.value })}
+                        placeholder="Fast 20-credit booster for single room projects."
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-800">Credits *</label>
+                        <input
+                          type="number"
+                          min={1}
+                          required
+                          value={packFormData.credits}
+                          onChange={(e) => setPackFormData({ ...packFormData, credits: Number(e.target.value) })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-amber-600"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-800">Price ($ USD) *</label>
+                        <input
+                          type="number"
+                          min={0.01}
+                          step={0.01}
+                          required
+                          value={packFormData.price}
+                          onChange={(e) => setPackFormData({ ...packFormData, price: Number(e.target.value) })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-800">Validity (Days) *</label>
+                        <input
+                          type="number"
+                          min={1}
+                          required
+                          value={packFormData.validityDays}
+                          onChange={(e) => setPackFormData({ ...packFormData, validityDays: Number(e.target.value) })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-800">Badge Text</label>
+                        <input
+                          type="text"
+                          value={packFormData.badge}
+                          onChange={(e) => setPackFormData({ ...packFormData, badge: e.target.value })}
+                          placeholder="QUICK BOOST"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-800">Stripe Price ID</label>
+                        <input
+                          type="text"
+                          value={packFormData.stripePriceId}
+                          onChange={(e) => setPackFormData({ ...packFormData, stripePriceId: e.target.value })}
+                          placeholder="price_xxx (optional)"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      <label className="text-xs font-bold text-slate-800 block">Eligible Subscription Plans</label>
+                      <div className="flex items-center gap-4 text-xs font-medium">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={packFormData.eligiblePlans.includes('starter')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setPackFormData((prev) => ({
+                                ...prev,
+                                eligiblePlans: checked
+                                  ? [...prev.eligiblePlans, 'starter']
+                                  : prev.eligiblePlans.filter((p) => p !== 'starter'),
+                              }));
+                            }}
+                            className="rounded text-amber-500"
+                          />
+                          <span>Starter Plan</span>
+                        </label>
+
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={packFormData.eligiblePlans.includes('pro')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setPackFormData((prev) => ({
+                                ...prev,
+                                eligiblePlans: checked
+                                  ? [...prev.eligiblePlans, 'pro']
+                                  : prev.eligiblePlans.filter((p) => p !== 'pro'),
+                              }));
+                            }}
+                            className="rounded text-amber-500"
+                          />
+                          <span>Pro Plan</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold">
+                        <input
+                          type="checkbox"
+                          checked={packFormData.isActive}
+                          onChange={(e) => setPackFormData({ ...packFormData, isActive: e.target.checked })}
+                          className="rounded text-amber-500"
+                        />
+                        <span>Active for Purchase</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold">
+                        <input
+                          type="checkbox"
+                          checked={packFormData.isPopular}
+                          onChange={(e) => setPackFormData({ ...packFormData, isPopular: e.target.checked })}
+                          className="rounded text-amber-500"
+                        />
+                        <span>Highlight Popular</span>
+                      </label>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-150 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowPackModal(false)}
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs shadow-xs cursor-pointer"
+                      >
+                        {editingPackId ? 'Update Pack' : 'Create Pack'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}

@@ -9,22 +9,37 @@ interface CreditTokenIconProps {
 }
 
 export function CreditTokenIcon({
-  className = 'w-4.5 h-4.5',
-  size,
+  className = '',
+  size = 'sm',
   animated = false,
 }: CreditTokenIconProps) {
-  let sizeClass = className;
-  if (size === 'xs') sizeClass = 'w-3.5 h-3.5';
-  if (size === 'sm') sizeClass = 'w-4.5 h-4.5';
-  if (size === 'md') sizeClass = 'w-6 h-6';
-  if (size === 'lg') sizeClass = 'w-8 h-8';
+  let sizeClass = 'w-4.5 h-4.5';
+  let pxSize = 18;
+
+  if (size === 'xs') {
+    sizeClass = 'w-3.5 h-3.5';
+    pxSize = 14;
+  } else if (size === 'sm') {
+    sizeClass = 'w-4.5 h-4.5';
+    pxSize = 18;
+  } else if (size === 'md') {
+    sizeClass = 'w-5.5 h-5.5';
+    pxSize = 22;
+  } else if (size === 'lg') {
+    sizeClass = 'w-7 h-7';
+    pxSize = 28;
+  }
+
+  const finalClass = className ? `${sizeClass} ${className}` : sizeClass;
 
   return (
     <svg
+      width={pxSize}
+      height={pxSize}
       viewBox="0 0 512 512"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={`${sizeClass} inline-block shrink-0 align-middle ${animated ? 'animate-pulse' : ''}`}
+      className={`${finalClass} inline-block shrink-0 align-middle ${animated ? 'animate-pulse' : ''}`}
     >
       <defs>
         {/* Bright Vibrant Gold Metallic Gradient */}

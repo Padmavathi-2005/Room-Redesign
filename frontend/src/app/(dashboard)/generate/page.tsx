@@ -623,11 +623,10 @@ function GenerateStudioContent() {
 
   const handleSendRatingFeedback = async () => {
     setHasSubmittedRating(true);
-    showToast({
-      type: 'success',
-      title: 'Rating Submitted!',
-      message: 'Thank you! Your feedback helps us continuously improve AI model quality. Your data remains 100% private.',
-    });
+    toast.success(
+      'Thank you! Your feedback helps us continuously improve AI model quality. Your data remains 100% private.',
+      'Rating Submitted!',
+    );
   };
 
   const toggleProductSelection = (productName: string) => {
@@ -655,7 +654,7 @@ function GenerateStudioContent() {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [isWorkflowExpanded, setIsWorkflowExpanded] = useState<boolean>(true);
   const [generatedImagesList, setGeneratedImagesList] = useState<string[]>([]);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   // Execution panel states
   const [isCreditChecking, setIsCreditChecking] = useState<boolean>(false);
@@ -683,7 +682,7 @@ function GenerateStudioContent() {
   const handleCreateProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjectName.trim()) {
-      showToast({ type: 'error', title: 'Required Field', message: 'Please enter a project name.' });
+      toast.error('Please enter a project name.', 'Required Field');
       return;
     }
     try {
@@ -702,13 +701,13 @@ function GenerateStudioContent() {
         const pId = newProject._id || newProject.id || '';
         setProjectsList((prev) => [newProject, ...prev]);
         setSelectedProjectId(pId);
-        showToast({ type: 'success', title: 'Project Created', message: `🎉 Project "${newProject.name}" created and selected!` });
+        toast.success(`🎉 Project "${newProject.name}" created and selected!`, 'Project Created');
         setIsCreateProjectModalOpen(false);
         setNewProjectName('');
         setNewProjectDescription('');
       }
     } catch (err: any) {
-      showToast({ type: 'error', title: 'Project Creation Failed', message: err.message || 'Failed to create project' });
+      toast.error(err.message || 'Failed to create project', 'Project Creation Failed');
     } finally {
       setIsCreatingProject(false);
     }
@@ -1087,11 +1086,10 @@ function GenerateStudioContent() {
           const w = img.naturalWidth;
           const h = img.naturalHeight;
           if (w < 450 || h < 450) {
-            showToast({
-              type: 'info',
-              title: 'Low Resolution Photo Detected',
-              message: `Uploaded image is ${w}×${h}px. Recommended resolution is 512×512px or higher for crisp 8K UHD architectural details. AI will automatically upscale and enhance pixel clarity while preserving original shape.`,
-            });
+            toast.info(
+              `Uploaded image is ${w}×${h}px. Recommended resolution is 512×512px or higher for crisp 8K UHD architectural details. AI will automatically upscale and enhance pixel clarity while preserving original shape.`,
+              'Low Resolution Photo Detected',
+            );
           }
         };
         img.src = dataUrl;
@@ -1118,11 +1116,7 @@ function GenerateStudioContent() {
     }
 
     if (!uploadedImage) {
-      showToast({
-        type: 'error',
-        title: 'Photo Required',
-        message: 'Please upload a photo or fetch an image URL before starting AI redesign.',
-      });
+      toast.error('Please upload a photo or fetch an image URL before starting AI redesign.', 'Photo Required');
       return;
     }
 
@@ -1170,11 +1164,10 @@ function GenerateStudioContent() {
     if (currentBalance < reqCredits) {
       setCreditBlocked(true);
       setIsGenerating(false);
-      showToast({
-        type: 'error',
-        title: 'Insufficient Site Credits',
-        message: `You need ${reqCredits} credits to generate this render. You currently have ${currentBalance} credits. Generation request was blocked.`,
-      });
+      toast.error(
+        `You need ${reqCredits} credits to generate this render. You currently have ${currentBalance} credits. Generation request was blocked.`,
+        'Insufficient Site Credits',
+      );
       return; // STOP EXECUTION! DO NOT SEND GENERATION REQUEST!
     }
 
@@ -1231,11 +1224,7 @@ function GenerateStudioContent() {
           setGenerationError(errorMsg);
         }
 
-        showToast({
-          type: 'error',
-          title: 'Generation Interrupted',
-          message: errorMsg,
-        });
+        toast.error(errorMsg, 'Generation Interrupted');
         setIsGenerating(false);
         return;
       }
@@ -1249,11 +1238,10 @@ function GenerateStudioContent() {
         setGeneratedResult(output);
         setGeneratedImagesList(Array.isArray(allImgs) ? allImgs : [output]);
         setCompiledPrompt(resData.prompt || resData.data?.prompt || '');
-        showToast({
-          type: 'success',
-          title: 'AI Transformation Complete',
-          message: `Your redesign render has been generated successfully (${elapsed}s)!`,
-        });
+        toast.success(
+          `Your redesign render has been generated successfully (${elapsed}s)!`,
+          'AI Transformation Complete',
+        );
 
         // Save generated image to local storage user_generated_designs for My Designs showcase
         try {
@@ -2938,9 +2926,9 @@ function GenerateStudioContent() {
                 <>
                   <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
                   <span className="flex items-center gap-1.5">
-                    <span>Generate AI Redesign (4</span>
+                    <span>Generate AI Redesign (</span>
                     <CreditTokenIcon size="xs" />
-                    <span>)</span>
+                    <span>4)</span>
                   </span>
                 </>
               )}
@@ -2951,11 +2939,7 @@ function GenerateStudioContent() {
                 type="button"
                 onClick={() => {
                   setIsGenerating(false);
-                  showToast({
-                    type: 'info',
-                    title: 'Generation Stopped',
-                    message: 'Generation loading state cancelled.',
-                  });
+                  toast.info('Generation loading state cancelled.', 'Generation Stopped');
                 }}
                 className="w-full py-2 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-300 hover:text-rose-600 font-extrabold text-xs transition-all cursor-pointer font-heading border border-slate-200 dark:border-slate-700"
               >

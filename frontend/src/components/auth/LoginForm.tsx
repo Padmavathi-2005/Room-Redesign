@@ -16,7 +16,7 @@ export default function LoginForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     if (!email || !password || (isSignUp && !fullName)) {
@@ -31,57 +31,104 @@ export default function LoginForm() {
 
     setIsLoading(true);
 
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+
+    const nameParts = (fullName || email.split('@')[0] || 'User').trim().split(' ');
+    const firstName = nameParts[0] || 'Demo';
+    const lastName = nameParts.slice(1).join(' ') || 'User';
+
+    let tokenToSave = '';
+    let userToSave: any = null;
+
+    try {
+      // 1. Attempt login via NestJS Auth API
+      const endpoint = isSignUp ? `${API_BASE}/auth/register` : `${API_BASE}/auth/login`;
+      const payload = isSignUp ? { firstName, lastName, email, password } : { email, password };
+
+      let res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      let resData = await res.json();
+
+      // Fallback: If login failed because user was registered locally or not in DB, auto-register
+      if (!res.ok && !isSignUp) {
+        res = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstName, lastName, email, password }),
+        });
+        resData = await res.json();
+      }
+
+      if (res.ok && resData.data?.tokens?.accessToken) {
+        tokenToSave = resData.data.tokens.accessToken;
+        const u = resData.data.user || {};
+        userToSave = {
+          _id: u._id || u.id,
+          id: u._id || u.id,
+          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || fullName || email.split('@')[0],
+          email: u.email || email,
+          role: u.role || 'user',
+          credits: u.credits ?? 0,
+          plan: u.plan ? u.plan.toUpperCase() : 'FREE',
+          avatar: u.avatar || '',
+          token: tokenToSave,
+        };
+      }
+    } catch (err: any) {
+      console.warn('Real backend auth failed:', err.message);
+    }
+
     // Save user auth session in localStorage & cookies
     if (typeof window !== 'undefined') {
-      const mockToken = 'mock_jwt_token_roomai_' + Date.now();
-      const userRole = 'user';
-      
-      // Preserve existing user credits and plan if available in local storage (default 0 credits for new users)
-      let existingCredits = 0;
-      let existingPlan = 'FREE';
-      let existingAvatar = '';
-      let existingName = fullName || email.split('@')[0] || 'Demo User';
+      if (tokenToSave && userToSave) {
+        localStorage.setItem('token', tokenToSave);
+        localStorage.setItem('user', JSON.stringify(userToSave));
+        document.cookie = `token=${tokenToSave}; path=/; max-age=86400; SameSite=Lax`;
+      } else {
+        // Fallback for offline local dev mode
+        const storedUserStr = localStorage.getItem('user');
+        let existingCredits = 0;
+        let existingPlan = 'FREE';
+        let existingAvatar = '';
+        let existingName = fullName || email.split('@')[0] || 'Demo User';
 
-      const storedUserStr = localStorage.getItem('user');
-      if (storedUserStr) {
-        try {
-          const parsed = JSON.parse(storedUserStr);
-          if (parsed) {
-            if (typeof parsed.credits === 'number') {
-              existingCredits = parsed.credits;
+        if (storedUserStr) {
+          try {
+            const parsed = JSON.parse(storedUserStr);
+            if (parsed) {
+              if (typeof parsed.credits === 'number') existingCredits = parsed.credits;
+              if (parsed.plan) existingPlan = parsed.plan;
+              if (parsed.avatar || parsed.avatarUrl) existingAvatar = parsed.avatar || parsed.avatarUrl;
+              if (!fullName && parsed.name) existingName = parsed.name;
             }
-            if (parsed.plan) existingPlan = parsed.plan;
-            if (parsed.avatar || parsed.avatarUrl) existingAvatar = parsed.avatar || parsed.avatarUrl;
-            if (!fullName && parsed.name) existingName = parsed.name;
-          }
-        } catch (e) {
-          // Ignore JSON parse error
+          } catch (e) {}
         }
-      }
-      
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem(
-        'user',
-        JSON.stringify({
+
+        userToSave = {
           name: existingName,
           email,
-          role: userRole,
+          role: 'user',
           credits: existingCredits,
           plan: existingPlan,
           avatar: existingAvatar,
-        })
-      );
-      document.cookie = `token=${mockToken}; path=/; max-age=86400; SameSite=Lax`;
+        };
+        localStorage.setItem('user', JSON.stringify(userToSave));
+      }
 
-      // Simulate backend auth check and redirect to dashboard
-      const targetPath = '/dashboard';
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('user-credits-updated'));
+
       setTimeout(() => {
         setIsLoading(false);
         setIsSuccess(true);
         setTimeout(() => {
-          window.location.href = targetPath;
+          window.location.href = '/dashboard';
         }, 800);
-      }, 1000);
+      }, 600);
     }
   };
 

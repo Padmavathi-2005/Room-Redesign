@@ -7,11 +7,16 @@ import { SettingsModule } from '../settings/settings.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { SubscriptionPlanDefinition, SubscriptionPlanDefinitionSchema } from '../subscription/schemas/subscription-plan.schema';
 
+import { StripeEvent, StripeEventSchema } from './schemas/stripe-event.schema';
+import { Invoice, InvoiceSchema } from '../subscription/schemas/invoice.schema';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: SubscriptionPlanDefinition.name, schema: SubscriptionPlanDefinitionSchema },
+      { name: StripeEvent.name, schema: StripeEventSchema },
+      { name: Invoice.name, schema: InvoiceSchema },
     ]),
     SubscriptionModule,
     SettingsModule,

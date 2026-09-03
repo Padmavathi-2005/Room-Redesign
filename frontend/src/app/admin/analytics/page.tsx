@@ -17,6 +17,8 @@ import {
   Layers,
 } from 'lucide-react';
 
+import { CreditTokenIcon } from '@/components/ui';
+
 interface AnalyticsData {
   overview: {
     totalRevenue: number;

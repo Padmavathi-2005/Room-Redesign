@@ -27,8 +27,8 @@ export default function DashboardTopBar({
             <span className="inline-block animate-bounce">👋</span>
           </h1>
 
-          <span className="px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5" /> AI Engine Active
+          <span className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Engine Active
           </span>
         </div>
 
@@ -52,7 +52,7 @@ export default function DashboardTopBar({
         {/* Start Redesign Primary CTA */}
         <Link
           href="/generate"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-purple-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-primary hover:opacity-90 text-white text-xs font-extrabold shadow-md shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" />
           <span>New Redesign</span>

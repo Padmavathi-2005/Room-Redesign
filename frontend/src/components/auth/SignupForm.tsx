@@ -15,7 +15,7 @@ export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreeTerms) {
       setErrorMsg('Please agree to the Terms of Service & Privacy Policy');
@@ -24,38 +24,64 @@ export default function SignupForm() {
     setIsLoading(true);
     setErrorMsg('');
 
-    // Save user auth session in localStorage & cookies
-    if (typeof window !== 'undefined') {
-      const mockToken = 'mock_jwt_token_roomai_' + Date.now();
-      // Preserve existing user credits if available in local storage (default 0 credits for new signups)
-      let initialCredits = 0;
-      const storedUserStr = localStorage.getItem('user');
-      if (storedUserStr) {
-        try {
-          const parsed = JSON.parse(storedUserStr);
-          if (parsed && typeof parsed.credits === 'number') {
-            initialCredits = parsed.credits;
-          }
-        } catch (e) {}
-      }
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    const nameParts = (fullName || email.split('@')[0] || 'User').trim().split(' ');
+    const firstName = nameParts[0] || 'Demo';
+    const lastName = nameParts.slice(1).join(' ') || 'User';
 
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem(
-        'user',
-        JSON.stringify({
-          name: fullName || email.split('@')[0] || 'Demo User',
-          email,
-          role: 'Architect',
-          credits: initialCredits,
-        })
-      );
-      document.cookie = `token=${mockToken}; path=/; max-age=86400; SameSite=Lax`;
+    let tokenToSave = '';
+    let userToSave: any = null;
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName, lastName, email, password }),
+      });
+      const resData = await res.json();
+      if (res.ok && resData.data?.tokens?.accessToken) {
+        tokenToSave = resData.data.tokens.accessToken;
+        const u = resData.data.user || {};
+        userToSave = {
+          _id: u._id || u.id,
+          id: u._id || u.id,
+          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || fullName || email.split('@')[0],
+          email: u.email || email,
+          role: u.role || 'user',
+          credits: u.credits ?? 0,
+          plan: u.plan ? u.plan.toUpperCase() : 'FREE',
+          avatar: u.avatar || '',
+          token: tokenToSave,
+        };
+      }
+    } catch (err: any) {
+      console.warn('Real backend auth failed:', err.message);
     }
 
-    setTimeout(() => {
-      setIsLoading(false);
-      window.location.href = '/dashboard';
-    }, 1000);
+    if (typeof window !== 'undefined') {
+      if (tokenToSave && userToSave) {
+        localStorage.setItem('token', tokenToSave);
+        localStorage.setItem('user', JSON.stringify(userToSave));
+        document.cookie = `token=${tokenToSave}; path=/; max-age=86400; SameSite=Lax`;
+      } else {
+        userToSave = {
+          name: fullName || email.split('@')[0] || 'Demo User',
+          email,
+          role: 'user',
+          credits: 0,
+          plan: 'FREE',
+        };
+        localStorage.setItem('user', JSON.stringify(userToSave));
+      }
+
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('user-credits-updated'));
+
+      setTimeout(() => {
+        setIsLoading(false);
+        window.location.href = '/dashboard';
+      }, 600);
+    }
   };
 
   return (

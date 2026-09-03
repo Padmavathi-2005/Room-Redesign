@@ -133,9 +133,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
-            const fetched = { ...DEFAULT_SETTINGS, ...local, ...json.data } as AppSettings;
+            const fetched = { ...DEFAULT_SETTINGS, ...json.data } as AppSettings;
             setSettings(fetched);
             applyThemeToDOM(fetched);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('app_settings', JSON.stringify(fetched));
+            }
             return;
           }
         }
@@ -163,8 +166,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      await fetch(`${API_BASE_URL}/settings`, {
+      const token = typeof window !== 'undefined'
+        ? (localStorage.getItem('admin_token') || localStorage.getItem('token'))
+        : null;
+
+      const res = await fetch(`${API_BASE_URL}/settings`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -172,8 +178,24 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         },
         body: JSON.stringify(newSettings),
       });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          const fresh = { ...DEFAULT_SETTINGS, ...json.data } as AppSettings;
+          setSettings(fresh);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('app_settings', JSON.stringify(fresh));
+          }
+        }
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        console.error('Settings DB persist failed:', res.status, errJson.message);
+        throw new Error(errJson.message || `Server returned ${res.status} when saving settings.`);
+      }
     } catch (err) {
-      console.error('Error persisting theme settings to DB:', err);
+      console.error('Error persisting settings to DB:', err);
+      throw err;
     }
   };
 

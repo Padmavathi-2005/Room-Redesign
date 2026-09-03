@@ -18,8 +18,7 @@ export enum UserRole {
 export enum SubscriptionPlan {
   FREE = 'free',
   STARTER = 'starter',
-  STANDARD = 'standard',
-  PROFESSIONAL = 'professional',
+  PRO = 'pro',
 }
 
 @Schema({ timestamps: true, collection: 'users' })
@@ -71,6 +70,12 @@ export class User {
 
   @Prop({ default: 'active' })
   subscriptionStatus: string;
+
+  @Prop({ default: null })
+  lastRefilledPeriodEnd?: Date;
+
+  @Prop({ type: Array, default: [] })
+  creditLots: any[];
 
   @Prop({ default: false })
   emailVerified: boolean;

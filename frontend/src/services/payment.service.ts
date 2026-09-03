@@ -5,13 +5,13 @@ export const paymentService = {
    * Request Stripe checkout session URL
    */
   async createCheckoutSession(plan: string, billingCycle: 'monthly' | 'annual', token: string) {
-    const res = await fetch(`${API_URL}/payments/checkout`, {
+    const res = await fetch(`${API_URL}/subscription/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ plan, billingCycle }),
+      body: JSON.stringify({ planCode: plan, billingCycle }),
     });
     return res.json();
   },
@@ -26,51 +26,6 @@ export const paymentService = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-    });
-    return res.json();
-  },
-
-  /**
-   * Mock sandbox plan activation helper
-   */
-  async mockUpgrade(plan: string, token: string) {
-    const res = await fetch(`${API_URL}/payments/mock-activate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ plan }),
-    });
-    return res.json();
-  },
-
-  /**
-   * Request PayPal order creation
-   */
-  async createPayPalOrder(plan: string, billingCycle: 'monthly' | 'annual', token: string) {
-    const res = await fetch(`${API_URL}/payments/paypal/create-order`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ plan, billingCycle }),
-    });
-    return res.json();
-  },
-
-  /**
-   * Request PayPal order capture
-   */
-  async capturePayPalOrder(orderId: string, plan: string, token: string) {
-    const res = await fetch(`${API_URL}/payments/paypal/capture-order`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ orderId, plan }),
     });
     return res.json();
   },

@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { SubscriptionService } from './subscription.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -25,7 +26,7 @@ export class SubscriptionController {
 
   /**
    * GET /api/v1/subscription/status
-   * Fetch subscription details of the logged in user
+   * Fetch server-authoritative subscription & credit details
    */
   @UseGuards(JwtAuthGuard)
   @Get('status')
@@ -49,12 +50,14 @@ export class SubscriptionController {
   async createCheckoutSession(
     @CurrentUser('_id') userId: string,
     @Body('planCode') planCode: string,
+    @Body('billingCycle') billingCycle: 'monthly' | 'annual' = 'monthly',
     @Body('successUrl') successUrl?: string,
     @Body('cancelUrl') cancelUrl?: string,
   ) {
     const data = await this.subscriptionService.createCheckoutSession(
       userId.toString(),
       planCode,
+      billingCycle,
       successUrl,
       cancelUrl,
     );
@@ -66,18 +69,72 @@ export class SubscriptionController {
   }
 
   /**
-   * POST /api/v1/subscription/upgrade
-   * Upgrade user subscription plan
+   * POST /api/v1/subscription/confirm-checkout-success
+   * Authenticated return-sync endpoint to verify Stripe Checkout Session server-side
    */
   @UseGuards(JwtAuthGuard)
-  @Post('upgrade')
+  @Post('confirm-checkout-success')
   @HttpCode(HttpStatus.OK)
-  async upgradePlan(@CurrentUser('_id') userId: string, @Body('planCode') planCode: string) {
-    const data = await this.subscriptionService.upgradeUserPlan(userId.toString(), planCode);
+  async confirmCheckoutSuccess(
+    @CurrentUser('_id') userId: string,
+    @Body('sessionId') sessionId: string,
+  ) {
+    if (!sessionId || typeof sessionId !== 'string' || !sessionId.trim()) {
+      throw new BadRequestException('Stripe Session ID parameter is required for payment verification.');
+    }
+
+    const user = await this.subscriptionService.confirmCheckoutSuccess(
+      userId.toString(),
+      sessionId.trim(),
+    );
+
+    const status = await this.subscriptionService.getSubscriptionStatus(userId.toString());
+
     return {
       success: true,
-      message: `Plan upgraded successfully to ${planCode.toUpperCase()}`,
-      data,
+      message: `Payment verified. Your ${user.subscriptionTier || 'Starter Plan'} subscription and generation credits are active.`,
+      data: {
+        user: {
+          _id: user._id.toString(),
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          email: user.email,
+          plan: user.plan,
+          credits: user.credits,
+        },
+        subscription: status,
+      },
+    };
+  }
+
+  /**
+   * GET /api/v1/subscription/credit-ledger
+   * Fetch server-side credit audit transaction history
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('credit-ledger')
+  @HttpCode(HttpStatus.OK)
+  async getCreditLedger(@CurrentUser('_id') userId: string) {
+    const ledger = await this.subscriptionService.getCreditLedger(userId.toString());
+    return {
+      success: true,
+      message: 'Credit ledger retrieved successfully',
+      data: ledger,
+    };
+  }
+
+  /**
+   * GET /api/v1/subscription/invoices
+   * Fetch verified database billing invoices
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('invoices')
+  @HttpCode(HttpStatus.OK)
+  async getInvoices(@CurrentUser('_id') userId: string) {
+    const invoices = await this.subscriptionService.getUserInvoices(userId.toString());
+    return {
+      success: true,
+      message: 'User invoices retrieved successfully',
+      data: invoices,
     };
   }
 
@@ -148,6 +205,180 @@ export class SubscriptionController {
       success: true,
       message: 'Subscription plan deleted successfully',
       data: null,
+    };
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                      CUSTOMER CREDIT PACK ENDPOINTS                        */
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * GET /api/v1/subscription/credit-packs
+   * Fetch active credit booster packs eligible for user's active paid plan
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('credit-packs')
+  @HttpCode(HttpStatus.OK)
+  async getEligibleCreditPacks(@CurrentUser('_id') userId: string) {
+    const result = await this.subscriptionService.getEligibleCreditPacks(userId.toString());
+    return {
+      success: true,
+      message: result.message,
+      data: result,
+    };
+  }
+
+  /**
+   * POST /api/v1/subscription/credit-packs/create-checkout-session
+   * Generate Stripe Checkout session for one-time credit pack purchase
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('credit-packs/create-checkout-session')
+  @HttpCode(HttpStatus.OK)
+  async createCreditPackCheckoutSession(
+    @CurrentUser('_id') userId: string,
+    @Body('packId') packId?: string,
+    @Body('packCode') packCode?: string,
+    @Body('successUrl') successUrl?: string,
+    @Body('cancelUrl') cancelUrl?: string,
+  ) {
+    const targetCode = packId || packCode;
+    if (!targetCode) {
+      throw new BadRequestException('Credit pack ID or pack code is required.');
+    }
+
+    const data = await this.subscriptionService.createCreditPackCheckoutSession(
+      userId.toString(),
+      targetCode,
+      successUrl,
+      cancelUrl,
+    );
+
+    return {
+      success: true,
+      message: 'Stripe Credit Pack Checkout session initialized',
+      data,
+    };
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                        ADMIN CREDIT PACK CRUD ENDPOINTS                   */
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * GET /api/v1/subscription/admin/credit-packs
+   * Admin only: List all credit packs
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/credit-packs')
+  @HttpCode(HttpStatus.OK)
+  async getAllCreditPacksAdmin() {
+    const packs = await this.subscriptionService.getAllCreditPacksAdmin();
+    return {
+      success: true,
+      message: 'Credit booster packs retrieved successfully',
+      data: packs,
+    };
+  }
+
+  /**
+   * POST /api/v1/subscription/admin/credit-packs
+   * Admin only: Create a new credit booster pack
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/credit-packs')
+  @HttpCode(HttpStatus.CREATED)
+  async createCreditPack(@Body() packData: any) {
+    const pack = await this.subscriptionService.createCreditPack(packData);
+    return {
+      success: true,
+      message: 'Credit booster pack created successfully',
+      data: pack,
+    };
+  }
+
+  /**
+   * PATCH /api/v1/subscription/admin/credit-packs/:id
+   * Admin only: Update an existing credit booster pack
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('admin/credit-packs/:id')
+  @HttpCode(HttpStatus.OK)
+  async updateCreditPack(@Param('id') id: string, @Body() packData: any) {
+    const pack = await this.subscriptionService.updateCreditPack(id, packData);
+    return {
+      success: true,
+      message: 'Credit booster pack updated successfully',
+      data: pack,
+    };
+  }
+
+  /**
+   * DELETE /api/v1/subscription/admin/credit-packs/:id
+   * Admin only: Delete a credit booster pack
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete('admin/credit-packs/:id')
+  @HttpCode(HttpStatus.OK)
+  async deleteCreditPack(@Param('id') id: string) {
+    await this.subscriptionService.deleteCreditPack(id);
+    return {
+      success: true,
+      message: 'Credit booster pack deleted successfully',
+      data: null,
+    };
+  }
+}
+
+/**
+  * Alias Controller for /api/v1/credit-packs to satisfy requirement #4
+  */
+@Controller('credit-packs')
+export class CreditPacksController {
+  constructor(private readonly subscriptionService: SubscriptionService) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  async getEligibleCreditPacks(@CurrentUser('_id') userId: string) {
+    const result = await this.subscriptionService.getEligibleCreditPacks(userId.toString());
+    return {
+      success: true,
+      message: result.message,
+      data: result,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('create-checkout-session')
+  @HttpCode(HttpStatus.OK)
+  async createCreditPackCheckoutSession(
+    @CurrentUser('_id') userId: string,
+    @Body('packId') packId?: string,
+    @Body('packCode') packCode?: string,
+    @Body('successUrl') successUrl?: string,
+    @Body('cancelUrl') cancelUrl?: string,
+  ) {
+    const targetCode = packId || packCode;
+    if (!targetCode) {
+      throw new BadRequestException('Credit pack ID or pack code is required.');
+    }
+
+    const data = await this.subscriptionService.createCreditPackCheckoutSession(
+      userId.toString(),
+      targetCode,
+      successUrl,
+      cancelUrl,
+    );
+
+    return {
+      success: true,
+      message: 'Stripe Credit Pack Checkout session initialized',
+      data,
     };
   }
 }

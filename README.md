@@ -53,8 +53,22 @@ All backend APIs are scoped under `/api/v1`:
 - `/api/v1/payment` - Stripe payments & subscriptions
 - `/api/v1/admin` - Admin analytics & platform settings
 
-## 🔒 Security & Best Practices
-- Strict TypeScript configurations across all modules
-- Modular dependency injection with NestJS
-- Clean architecture and feature-based folder structure
-- Global Exception Filters & Data Transfer Objects (DTOs) with class-validator
+## 💳 Local Stripe Testing Documentation
+
+To test Stripe Checkout payments and webhooks in local development (`localhost`):
+
+1. **CLI Webhook Tunnel Setup**:
+   ```powershell
+   stripe login
+   stripe listen --forward-to http://localhost:5000/api/v1/payments/webhook
+   ```
+2. **Webhook Signing Secret**:
+   The `stripe listen` command outputs a local webhook signing secret (`whsec_...`). Copy this key into `backend/.env`:
+   ```env
+   STRIPE_WEBHOOK_SECRET=whsec_...
+   ```
+3. **Dual Verification Architecture**:
+   - **Stripe Webhooks**: Primary production authority (`POST /api/v1/payments/webhook`).
+   - **Return-Sync Flow**: Verified fallback (`POST /api/v1/subscription/confirm-checkout-success`).
+   - Returning users hitting `/billing?checkout=success&session_id=cs_...` trigger a server-side Stripe SDK verification call (`stripe.checkout.sessions.retrieve`).
+   - Durable period-level idempotency (`stripeSubscriptionId:currentPeriodEnd`) prevents double-crediting if both return-sync and webhooks execute.

@@ -10,6 +10,8 @@ import { ProjectsModule } from '../modules/projects/projects.module';
 import { UsersModule } from '../modules/users/users.module';
 import { QueueModule } from '../queue/queue.module';
 
+import { SubscriptionModule } from '../modules/subscription/subscription.module';
+
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: RoomGeneration.name, schema: RoomSchema }]),
@@ -19,6 +21,7 @@ import { QueueModule } from '../queue/queue.module';
     ProjectsModule,
     UsersModule,
     QueueModule,
+    SubscriptionModule,
   ],
   controllers: [RoomsController],
   providers: [RoomsService],

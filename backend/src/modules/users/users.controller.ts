@@ -4,18 +4,35 @@ import {
   Patch,
   Param,
   Body,
+  UseGuards,
   NotFoundException,
+  ForbiddenException,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { SubscriptionService } from '../subscription/subscription.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserRole } from './schemas/user.schema';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly subscriptionService: SubscriptionService,
+  ) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getUser(@Param('id') id: string) {
+  async getUser(@CurrentUser() currentUser: any, @Param('id') id: string) {
+    const isAdmin = currentUser && (currentUser.role === UserRole.ADMIN || currentUser.role === 'admin');
+    if (!isAdmin && currentUser._id.toString() !== id) {
+      throw new ForbiddenException('You are not authorized to view this user profile.');
+    }
+
     const user = await this.usersService.findById(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -26,8 +43,14 @@ export class UsersController {
     };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id/credits')
-  async getUserCredits(@Param('id') id: string) {
+  async getUserCredits(@CurrentUser() currentUser: any, @Param('id') id: string) {
+    const isAdmin = currentUser && (currentUser.role === UserRole.ADMIN || currentUser.role === 'admin');
+    if (!isAdmin && currentUser._id.toString() !== id) {
+      throw new ForbiddenException('You are not authorized to view this user\'s credit balance.');
+    }
+
     const user = await this.usersService.findById(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -39,27 +62,24 @@ export class UsersController {
     };
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Patch(':id/credits')
   @HttpCode(HttpStatus.OK)
   async updateUserCredits(
     @Param('id') id: string,
-    @Body() body: { credits?: number; delta?: number },
+    @Body() body: { credits?: number; delta?: number; description?: string },
   ) {
-    const user = await this.usersService.findById(id);
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
+    const user = await this.subscriptionService.adminAdjustCredits(
+      id,
+      body.credits,
+      body.delta,
+      body.description || 'Manual Admin Adjustment',
+    );
 
-    if (body.credits !== undefined) {
-      user.credits = Math.max(0, body.credits);
-    } else if (body.delta !== undefined) {
-      user.credits = Math.max(0, (user.credits ?? 0) + body.delta);
-    }
-
-    await user.save();
     return {
       success: true,
-      message: 'User credits updated successfully',
+      message: 'User credits adjusted successfully with server-side audit ledger',
       credits: user.credits,
       user,
     };

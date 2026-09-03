@@ -8,12 +8,8 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
-  Star,
   CheckCircle2,
 } from 'lucide-react';
-
-import CheckoutModal, { CheckoutPlan } from '@/components/ui/CheckoutModal';
-import { CreditTokenIcon } from '@/components/ui';
 
 export interface SubscriptionPlan {
   id: string;
@@ -30,61 +26,56 @@ export interface SubscriptionPlan {
 
 const PRICING_TIERS: SubscriptionPlan[] = [
   {
+    id: 'free',
+    name: 'Free Plan',
+    priceMonthly: 0,
+    priceAnnual: 0,
+    credits: 0,
+    description: 'Explore RoomAI design tools. Upgrade to receive generation credits.',
+    popular: false,
+    ctaText: 'Current Plan',
+    features: [
+      '0 Initial Credits',
+      '30-Day Cycle',
+      'Standard AI Render Engines',
+      'Access to Basic Design Categories',
+      'Upgrade Anytime',
+    ],
+  },
+  {
     id: 'starter',
-    name: 'Starter Pro',
+    name: 'Starter Plan',
+    badge: 'MOST POPULAR',
     priceMonthly: 19,
     priceAnnual: 15,
-    credits: 200,
-    description: 'Perfect for homeowners and design enthusiasts redesigning their personal room spaces.',
-    popular: false,
-    ctaText: 'Get Started',
+    credits: 40,
+    description: 'Ideal for homeowners & design enthusiasts starting single-room projects.',
+    popular: true,
+    ctaText: 'Upgrade to Starter',
     features: [
-      '200 AI Generation Credits / mo',
-      'Full HD (1080p) Render Quality',
-      '5 Active Workspace Projects',
-      'All 18 AI Design Tools Included',
-      'Standard Image Processing Speed',
-      'Email Support & Community Access',
+      '40 AI Generation Credits / mo',
+      '8K UHD Architectural Quality',
+      'All AI Design Tools Included',
+      'Standard Processing Speed',
+      'Verified Stripe Payment',
     ],
   },
   {
     id: 'pro',
-    name: 'Pro Studio',
-    badge: 'MOST POPULAR',
+    name: 'Pro Plan',
+    badge: 'PROFESSIONAL CHOICE',
     priceMonthly: 39,
     priceAnnual: 31,
-    credits: 650,
-    description: 'For interior designers, real estate stagers, and creators who need maximum quality.',
-    popular: true,
-    ctaText: 'Upgrade to Pro Studio',
-    features: [
-      '650 AI Generation Credits / mo',
-      '4K Ultra-HD Crisp Renders',
-      'Unlimited Workspace Projects',
-      'Priority Fast-Track AI Generation',
-      'Full Commercial Usage Rights',
-      'High-Res Image Downloads',
-      '24/7 Priority VIP Support',
-    ],
-  },
-  {
-    id: 'master',
-    name: 'Agency Master',
-    badge: 'UNLIMITED POWER',
-    priceMonthly: 89,
-    priceAnnual: 71,
-    credits: 1800,
-    description: 'For professional architectural firms, design agencies, and high-volume commercial teams.',
+    credits: 100,
+    description: 'For professional interior designers & architects needing priority generation.',
     popular: false,
-    ctaText: 'Get Agency Master',
+    ctaText: 'Upgrade to Pro',
     features: [
-      '1,800 AI Generation Credits / mo',
-      '8K Extreme Resolution Renders',
-      'Unlimited Workspace Projects',
-      'Dedicated High-Speed AI Pipeline',
-      'Full Commercial & Resell License',
-      'Custom AI Model Preset Training',
-      'Dedicated Account Manager',
+      '100 AI Generation Credits / mo',
+      'Priority Processing Queue',
+      'Full 8K UHD Quality',
+      'Multi-Room Project Consistency',
+      'Priority Email & Chat Support',
     ],
   },
 ];
@@ -92,252 +83,126 @@ const PRICING_TIERS: SubscriptionPlan[] = [
 export default function PricingPage() {
   const router = useRouter();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [currentPlan, setCurrentPlan] = useState<string>('starter');
-  const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<CheckoutPlan | null>(null);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const handleSelectPlan = (tier: SubscriptionPlan) => {
-    const price = billingCycle === 'monthly' ? tier.priceMonthly : tier.priceAnnual;
-    setSelectedPlanForCheckout({
-      id: tier.id,
-      name: tier.name,
-      price: price,
-      billingCycle: billingCycle,
-      credits: tier.credits,
-      features: tier.features,
-    });
-    setIsCheckoutOpen(true);
-  };
-
-  const handleCheckoutSuccess = (creditsAdded: number, planName: string) => {
-    setCurrentPlan(selectedPlanForCheckout?.id || 'pro');
+    if (tier.id === 'free') {
+      router.push('/billing');
+      return;
+    }
+    router.push(`/checkout?plan=${tier.id}&interval=${billingCycle}`);
   };
 
   return (
-    <div className="space-y-10 pb-16">
-      {/* Header Banner */}
-      <div className="text-center max-w-3xl mx-auto space-y-4 pt-2">
-        <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 text-xs font-bold shadow-2xs">
-          <Sparkles className="w-4 h-4 text-purple-600 fill-purple-600/20" />
-          <span>Flexible SaaS Pricing & Credit Plans</span>
-        </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="max-w-6xl mx-auto space-y-10">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-extrabold uppercase tracking-wider border border-primary/20">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            Flexible AI Credit Tiers
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-heading">
+            Simple, Transparent Pricing
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            Choose the ideal credit package for your architectural & interior redesign project load.
+          </p>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white font-heading tracking-tight">
-          Simple, Transparent <span className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-500 bg-clip-text text-transparent">Pricing</span>
-        </h1>
-
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
-          Choose the ideal credit plan to transform your room spaces. Upgrade, downgrade, or cancel anytime.
-        </p>
-
-        {/* Billing Cycle Selector Pill */}
-        <div className="flex justify-center pt-3">
-          <div className="p-1 bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl flex items-center shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-5 py-2 text-xs font-extrabold rounded-2xl transition-all cursor-pointer ${
-                billingCycle === 'monthly'
-                  ? 'bg-purple-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
+          {/* Billing Cycle Toggle */}
+          <div className="pt-4 flex items-center justify-center gap-3">
+            <span className={`text-xs font-bold ${billingCycle === 'monthly' ? 'text-primary' : 'text-slate-400'}`}>
               Monthly Billing
-            </button>
+            </span>
             <button
-              type="button"
-              onClick={() => setBillingCycle('annual')}
-              className={`px-5 py-2 text-xs font-extrabold rounded-2xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                billingCycle === 'annual'
-                  ? 'bg-purple-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
+              onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+              className="w-12 h-6 rounded-full bg-slate-200 dark:bg-slate-800 p-0.5 transition-colors relative cursor-pointer"
             >
+              <div
+                className={`w-5 h-5 rounded-full bg-primary transition-transform ${
+                  billingCycle === 'annual' ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              />
+            </button>
+            <span className={`text-xs font-bold flex items-center gap-1 ${billingCycle === 'annual' ? 'text-primary' : 'text-slate-400'}`}>
               <span>Annual Billing</span>
-              <span className="px-2 py-0.5 rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 text-[10px] font-black border border-purple-200 dark:border-purple-800">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[9px] font-extrabold">
                 Save 20%
               </span>
-            </button>
+            </span>
           </div>
         </div>
-      </div>
 
-      {/* Spacious 3-Column Pricing Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
-        {PRICING_TIERS.map((tier) => {
-          const isCurrent = currentPlan === tier.id;
-          const price = billingCycle === 'monthly' ? tier.priceMonthly : tier.priceAnnual;
-          const annualSavings = tier.priceMonthly * 12 - tier.priceAnnual * 12;
+        {/* Pricing Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {PRICING_TIERS.map((tier) => {
+            const price = billingCycle === 'annual' ? tier.priceAnnual : tier.priceMonthly;
+            const annualTotal = tier.priceAnnual * 12;
 
-          return (
-            <div
-              key={tier.id}
-              className={`relative flex flex-col justify-between rounded-2xl p-7 transition-all duration-300 group ${
-                tier.popular
-                  ? 'bg-gradient-to-b from-purple-50/70 via-white to-purple-50/30 dark:from-purple-950/30 dark:via-slate-900 dark:to-slate-900 border-2 border-purple-600 shadow-xl shadow-purple-500/10 ring-4 ring-purple-600/10 scale-[1.02]'
-                  : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-800'
-              }`}
-            >
-              {/* Floating Top Badge */}
-              {tier.badge && (
-                <div className="absolute top-0 right-6 -translate-y-1/2">
-                  <span className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md">
-                    {tier.badge}
-                  </span>
-                </div>
-              )}
-
-              {/* Card Header Section */}
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400 fill-purple-600/20" />
+            return (
+              <div
+                key={tier.id}
+                className={`p-6 sm:p-8 rounded-3xl border transition-all duration-300 flex flex-col justify-between space-y-6 ${
+                  tier.popular
+                    ? 'bg-white dark:bg-slate-900 border-primary shadow-xl ring-2 ring-primary/20'
+                    : 'bg-white/80 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-primary/40'
+                }`}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
                     <h3 className="text-xl font-extrabold text-slate-900 dark:text-white font-heading">
                       {tier.name}
                     </h3>
+                    {tier.badge && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-extrabold uppercase tracking-wider">
+                        {tier.badge}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                    <CreditTokenIcon size="sm" />
-                    <span>{tier.credits.toLocaleString()} AI Tokens / month</span>
+
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                    {tier.description}
                   </p>
-                </div>
 
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal min-h-[36px]">
-                  {tier.description}
-                </p>
-
-                {/* Price Display */}
-                <div className="py-2 border-y border-slate-100 dark:border-slate-800/80">
-                  <div className="flex items-baseline gap-1 text-slate-900 dark:text-white">
-                    <span className="text-2xl font-extrabold">$</span>
-                    <span className="text-5xl font-black tracking-tight font-heading">{price}</span>
-                    <span className="text-slate-400 text-xs font-bold">/ month</span>
+                  <div className="pt-2">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-black text-slate-900 dark:text-white font-heading">
+                        ${price}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-400">/ month</span>
+                    </div>
+                    {billingCycle === 'annual' && price > 0 && (
+                      <p className="text-[11px] font-bold text-emerald-600 mt-1">
+                        Billed as ${annualTotal}/year
+                      </p>
+                    )}
                   </div>
-                  {billingCycle === 'annual' && tier.priceAnnual > 0 && (
-                    <p className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 pt-1 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Billed annually (Save ${annualSavings}/yr)</span>
-                    </p>
-                  )}
-                </div>
 
-                {/* Included Features List */}
-                <div className="space-y-3">
-                  <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                    Included Features
-                  </p>
-                  <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                    {tier.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-2.5">
-                        <Check className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5 stroke-[2.5]" />
-                        <span>{feature}</span>
-                      </li>
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+                    {tier.features.map((feat, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <Check className="w-4 h-4 text-primary shrink-0" />
+                        <span>{feat}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
+
+                <button
+                  onClick={() => handleSelectPlan(tier)}
+                  className={`w-full py-3.5 px-4 rounded-2xl text-xs font-bold font-heading transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    tier.id === 'free'
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200'
+                      : 'bg-primary hover:opacity-90 text-white shadow-md shadow-primary/20'
+                  }`}
+                >
+                  <span>{tier.ctaText}</span>
+                  {tier.id !== 'free' && <ArrowRight className="w-4 h-4" />}
+                </button>
               </div>
-
-              {/* Action Button */}
-              <div className="pt-8">
-                {isCurrent ? (
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full py-3 px-4 rounded-2xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 font-extrabold text-xs flex items-center justify-center gap-2 cursor-default"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-purple-600" />
-                    <span>Your Active Plan</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPlan(tier)}
-                    className={`w-full py-3 px-4 rounded-2xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                      tier.popular
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-500/25 hover:scale-[1.01]'
-                        : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 shadow-2xs'
-                    }`}
-                  >
-                    <span>{tier.ctaText}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Feature Comparison Table */}
-      <div className="max-w-6xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm p-6 space-y-4">
-        <div>
-          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white font-heading">
-            Feature Comparison Matrix
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Compare individual resolution capabilities and credit allowances side-by-side.
-          </p>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-[11px] font-extrabold uppercase text-slate-400">
-                <th className="py-3 px-4">Feature</th>
-                <th className="py-3 px-4">Starter Pro ($19/mo)</th>
-                <th className="py-3 px-4 text-purple-600 dark:text-purple-400">Pro Studio ($39/mo)</th>
-                <th className="py-3 px-4">Agency Master ($89/mo)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300 font-medium">
-              <tr>
-                <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">Credits Allowance</td>
-                <td className="py-3.5 px-4">
-                  <span className="inline-flex items-center gap-1"><span>200</span> <CreditTokenIcon size="xs" /> <span>/ mo</span></span>
-                </td>
-                <td className="py-3.5 px-4 font-extrabold text-purple-600 dark:text-purple-400">
-                  <span className="inline-flex items-center gap-1"><span>650</span> <CreditTokenIcon size="xs" /> <span>/ mo</span></span>
-                </td>
-                <td className="py-3.5 px-4">
-                  <span className="inline-flex items-center gap-1"><span>1,800</span> <CreditTokenIcon size="xs" /> <span>/ mo</span></span>
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">Max Render Quality</td>
-                <td className="py-3.5 px-4">Full HD (1080p)</td>
-                <td className="py-3.5 px-4 font-extrabold text-purple-600 dark:text-purple-400">4K Ultra-HD</td>
-                <td className="py-3.5 px-4">8K Extreme Resolution</td>
-              </tr>
-              <tr>
-                <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">Active Projects</td>
-                <td className="py-3.5 px-4">5 Projects</td>
-                <td className="py-3.5 px-4 font-extrabold text-purple-600 dark:text-purple-400">Unlimited</td>
-                <td className="py-3.5 px-4">Unlimited</td>
-              </tr>
-              <tr>
-                <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">Commercial Rights</td>
-                <td className="py-3.5 px-4 text-slate-400">Personal Use</td>
-                <td className="py-3.5 px-4 font-extrabold text-purple-600 dark:text-purple-400">Full Commercial License</td>
-                <td className="py-3.5 px-4">Commercial & Reselling</td>
-              </tr>
-              <tr>
-                <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">Support SLA</td>
-                <td className="py-3.5 px-4">Standard Email</td>
-                <td className="py-3.5 px-4 font-extrabold text-purple-600 dark:text-purple-400">24/7 VIP Priority Chat</td>
-                <td className="py-3.5 px-4">Dedicated Account Manager</td>
-              </tr>
-            </tbody>
-          </table>
+            );
+          })}
         </div>
       </div>
-
-      {/* Subscription Checkout Modal */}
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        plan={selectedPlanForCheckout}
-        onSuccess={handleCheckoutSuccess}
-      />
     </div>
   );
 }
