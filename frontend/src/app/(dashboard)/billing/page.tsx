@@ -21,6 +21,8 @@ import {
   Copy,
   Download,
   ClipboardCheck,
+  Printer,
+  X,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { CreditTokenIcon } from '@/components/ui';
@@ -946,26 +948,37 @@ export default function BillingPage() {
                           {inv.status}
                         </span>
                       </td>
-                      {/* Receipt / Invoice — Download PDF directly, View Receipt opens Stripe portal */}
+                      {/* Receipt / Invoice Actions */}
                       <td className="py-4 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedInvoice(inv)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs transition-all cursor-pointer"
+                            title="View RoomAI Official Branded Invoice"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>View Invoice</span>
+                          </button>
+
                           {inv.invoicePdfUrl && (
                             <a
                               href={inv.invoicePdfUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               download
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-all"
-                              title="Download PDF Invoice"
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 transition-all"
+                              title="Download Stripe PDF"
                             >
                               <Download className="w-4 h-4" />
                             </a>
                           )}
+
                           <button
                             type="button"
                             onClick={handleOpenStripePortal}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary text-slate-600 dark:text-slate-300 font-bold text-xs transition-all cursor-pointer"
-                            title="Open Stripe billing portal"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all cursor-pointer"
+                            title="Open Stripe Billing Portal"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                             <span>Stripe Portal</span>
@@ -976,13 +989,153 @@ export default function BillingPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-slate-400 font-medium">
+                    <td colSpan={6} className="py-12 text-center text-slate-400 font-medium">
                       No verified Stripe database invoices recorded yet.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ROOMAI OFFICIAL BRANDED INVOICE MODAL */}
+      {selectedInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-2xl w-full space-y-6 shadow-2xl border border-slate-200 dark:border-slate-800 text-left font-sans max-h-[90vh] overflow-y-auto">
+            {/* Invoice Header */}
+            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-6">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-base shadow-md">
+                    R
+                  </div>
+                  <span className="text-xl font-black text-slate-900 dark:text-white tracking-tight">RoomAI Inc.</span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  AI Interior Architectural & Room Redesign Platform
+                </p>
+                <p className="text-[11px] text-slate-400 font-mono">support@roomai.com • https://roomai.com</p>
+              </div>
+
+              <div className="text-right space-y-1">
+                <span className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-black text-xs uppercase tracking-wider border border-emerald-300/40 inline-flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  PAID INVOICE
+                </span>
+                <p className="text-xs font-mono text-slate-500 dark:text-slate-400 pt-1">
+                  Date: {new Date(selectedInvoice.paidAt).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+
+            {/* Customer & Invoice Meta Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-xs">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
+                  Billed To Customer
+                </span>
+                <p className="font-black text-slate-900 dark:text-white text-sm">
+                  {currentUser?.name || currentUser?.email || 'Valued Customer'}
+                </p>
+                <p className="text-slate-500 dark:text-slate-400 font-mono mt-0.5">{currentUser?.email || 'user@example.com'}</p>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
+                  Invoice Reference ID
+                </span>
+                <p className="font-mono text-xs font-extrabold text-slate-800 dark:text-slate-200 break-all">
+                  {selectedInvoice.stripeInvoiceId}
+                </p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  Payment Method: <span className="font-bold text-slate-700 dark:text-slate-300">{selectedInvoice.paymentMethod || 'Stripe Checkout'}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Line Items Table */}
+            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold border-b border-slate-200 dark:border-slate-800">
+                    <th className="py-3 px-4">Item Description</th>
+                    <th className="py-3 px-4">Billing Cycle</th>
+                    <th className="py-3 px-4 text-center">Qty</th>
+                    <th className="py-3 px-4 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                  <tr>
+                    <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white capitalize">
+                      {selectedInvoice.planCode.replace('-', ' ')} Plan / Credit Pack
+                    </td>
+                    <td className="py-3.5 px-4 capitalize text-slate-600 dark:text-slate-400">
+                      {selectedInvoice.billingCycle}
+                    </td>
+                    <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-700 dark:text-slate-300">
+                      1
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-black text-slate-900 dark:text-white font-mono">
+                      ${selectedInvoice.amountPaid.toFixed(2)} USD
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Total Amount Box */}
+            <div className="flex justify-end pt-2">
+              <div className="w-full sm:w-64 space-y-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs">
+                <div className="flex justify-between text-slate-500 font-medium">
+                  <span>Subtotal:</span>
+                  <span>${selectedInvoice.amountPaid.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-500 font-medium">
+                  <span>Tax (0%):</span>
+                  <span>$0.00</span>
+                </div>
+                <div className="flex justify-between text-slate-900 dark:text-white font-black text-sm pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <span>Total Paid:</span>
+                  <span className="text-primary font-mono">${selectedInvoice.amountPaid.toFixed(2)} USD</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print / Save PDF</span>
+              </button>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                {selectedInvoice.invoicePdfUrl && (
+                  <a
+                    href={selectedInvoice.invoicePdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Stripe PDF</span>
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedInvoice(null)}
+                  className="px-5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
