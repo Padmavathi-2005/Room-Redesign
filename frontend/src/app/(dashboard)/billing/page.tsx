@@ -18,6 +18,9 @@ import {
   Check,
   AlertCircle,
   FileText,
+  Copy,
+  Download,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { CreditTokenIcon } from '@/components/ui';
@@ -123,6 +126,14 @@ export default function BillingPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [upgradePlanModal, setUpgradePlanModal] = useState<DatabasePlan | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'lots' | 'ledger' | 'invoices'>('overview');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -387,37 +398,32 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto py-6 px-4 text-left font-sans animate-in fade-in duration-300">
-      {/* VERIFYING SESSION LOADING STATE */}
+      {/* VERIFYING SESSION — slim top banner only, toast handles full message */}
       {isVerifyingSession && (
-        <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-semibold flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-3">
-            <RefreshCw className="w-5 h-5 text-purple-600 animate-spin shrink-0" />
-            <div>
-              <p className="font-bold font-heading">Stripe Payment Verification</p>
-              <p className="text-[11px] mt-0.5">Verifying your Stripe payment...</p>
-            </div>
-          </div>
+        <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-xs font-semibold flex items-center gap-2.5">
+          <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
+          <span>Verifying your Stripe payment — please wait…</span>
         </div>
       )}
 
       {/* VERIFICATION ERROR ALERT WITH RETRY */}
       {verifyError && (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center justify-between shadow-xs">
+        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
             <div>
-              <p className="font-bold font-heading">Payment Verification Failed</p>
-              <p className="text-[11px] mt-0.5">{verifyError}</p>
+              <p className="font-bold">Payment Verification Failed</p>
+              <p className="text-[11px] mt-0.5 font-normal">{verifyError}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {searchParams.get('session_id') && (
               <button
                 type="button"
                 onClick={() => verifyCheckoutSession(searchParams.get('session_id'), token || '')}
-                className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs cursor-pointer transition-all"
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs cursor-pointer transition-all"
               >
-                Retry Verification
+                Retry
               </button>
             )}
             <button
@@ -431,25 +437,6 @@ export default function BillingPage() {
         </div>
       )}
 
-      {/* SUCCESS ALERT */}
-      {successMessage && (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-            <div>
-              <p className="font-bold font-heading">Payment Notification</p>
-              <p className="text-[11px] mt-0.5">{successMessage}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSuccessMessage(null)}
-            className="text-emerald-500 hover:text-emerald-700 font-bold text-xs cursor-pointer"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
 
       {/* PAGE HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-5">
@@ -914,14 +901,35 @@ export default function BillingPage() {
                   <th className="py-3.5 px-4">Plan / Interval</th>
                   <th className="py-3.5 px-4">Amount</th>
                   <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4 text-right">Receipt / Invoice</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {invoices.length > 0 ? (
                   invoices.map((inv) => (
-                    <tr key={inv._id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                      <td className="py-4 px-4 font-mono font-black text-slate-900 dark:text-slate-100">
-                        {inv.stripeInvoiceId}
+                    <tr key={inv._id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 group">
+                      {/* Invoice ID — truncated with copy on hover */}
+                      <td className="py-4 px-4 max-w-[180px]">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[120px]"
+                            title={inv.stripeInvoiceId}
+                          >
+                            {inv.stripeInvoiceId.slice(0, 18)}…
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyId(inv.stripeInvoiceId)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-primary cursor-pointer"
+                            title="Copy full Invoice ID"
+                          >
+                            {copiedId === inv.stripeInvoiceId ? (
+                              <ClipboardCheck className="w-3.5 h-3.5 text-emerald-500" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </td>
                       <td className="py-4 px-4 font-semibold text-slate-600 dark:text-slate-400">
                         {new Date(inv.paidAt).toLocaleDateString()}
@@ -929,7 +937,7 @@ export default function BillingPage() {
                       <td className="py-4 px-4 font-extrabold capitalize text-slate-900 dark:text-slate-100">
                         {inv.planCode} ({inv.billingCycle})
                       </td>
-                      <td className="py-4 px-4 font-black text-slate-900 dark:text-slate-100 font-heading">
+                      <td className="py-4 px-4 font-black text-slate-900 dark:text-slate-100">
                         ${inv.amountPaid.toFixed(2)}
                       </td>
                       <td className="py-4 px-4">
@@ -937,6 +945,32 @@ export default function BillingPage() {
                           <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                           {inv.status}
                         </span>
+                      </td>
+                      {/* Receipt / Invoice — Download PDF directly, View Receipt opens Stripe portal */}
+                      <td className="py-4 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {inv.invoicePdfUrl && (
+                            <a
+                              href={inv.invoicePdfUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-all"
+                              title="Download PDF Invoice"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={handleOpenStripePortal}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary text-slate-600 dark:text-slate-300 font-bold text-xs transition-all cursor-pointer"
+                            title="Open Stripe billing portal"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Stripe Portal</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

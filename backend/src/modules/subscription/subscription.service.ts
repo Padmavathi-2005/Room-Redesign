@@ -396,52 +396,65 @@ export class SubscriptionService implements OnModuleInit {
 
     // Honor database plan definition credits dynamically
     const creditsToGrant = planDef ? planDef.credits : (targetPlan === SubscriptionPlan.PRO ? 100 : targetPlan === SubscriptionPlan.STARTER ? 40 : 0);
+    const subscriptionTier = targetPlan === SubscriptionPlan.PRO ? 'Pro Plan' : targetPlan === SubscriptionPlan.STARTER ? 'Starter Plan' : 'Free Plan';
 
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
+    // Read current user to check idempotency (read-only, never .save() on this doc)
+    const existingUser = await this.userModel.findById(userId).exec();
+    if (!existingUser) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    user.plan = targetPlan;
-    user.subscriptionTier = targetPlan === SubscriptionPlan.PRO ? 'Pro Plan' : targetPlan === SubscriptionPlan.STARTER ? 'Starter Plan' : 'Free Plan';
-    user.stripeCustomerId = stripeCustomerId;
-    user.stripeSubscriptionId = stripeSubscriptionId;
-    user.subscriptionPeriodStart = periodStart;
-    user.subscriptionPeriodEnd = periodEnd;
-    user.subscriptionStatus = 'active';
-
     // Period-level Idempotency Check: Avoid double crediting if same period was already refilled
-    const isSamePeriod = user.lastRefilledPeriodEnd && user.lastRefilledPeriodEnd.getTime() === periodEnd.getTime();
-    if (!isSamePeriod) {
-      user.credits = creditsToGrant;
-      user.lastRefilledPeriodEnd = periodEnd;
+    const isSamePeriod =
+      existingUser.lastRefilledPeriodEnd &&
+      new Date(existingUser.lastRefilledPeriodEnd).getTime() === periodEnd.getTime();
 
+    if (!isSamePeriod) {
       const newLot = {
         lotId: `lot-${Date.now()}`,
-        source: `${user.subscriptionTier} (${billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1)})`,
+        source: `${subscriptionTier} (${billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1)})`,
         initialCredits: creditsToGrant,
         remainingCredits: creditsToGrant,
         startDate: periodStart.toISOString().split('T')[0],
         expiryDate: periodEnd.toISOString().split('T')[0],
       };
-      user.creditLots = [newLot, ...(user.creditLots || [])];
 
-      await user.save();
+      // Atomic update — avoids Mongoose VersionError race with concurrent webhook + return-sync
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            plan: targetPlan,
+            subscriptionTier,
+            stripeCustomerId,
+            stripeSubscriptionId,
+            subscriptionPeriodStart: periodStart,
+            subscriptionPeriodEnd: periodEnd,
+            subscriptionStatus: 'active',
+            credits: creditsToGrant,
+            lastRefilledPeriodEnd: periodEnd,
+          },
+          $push: {
+            creditLots: { $each: [newLot], $position: 0 },
+          },
+        },
+        { new: true },
+      ).exec();
 
       const idempotencyKey = `${stripeSubscriptionId}:${periodEnd.getTime()}`;
       await this.creditLedgerModel.create({
-        userId: user._id,
+        userId: existingUser._id,
         amount: creditsToGrant,
-        balanceAfter: user.credits,
+        balanceAfter: creditsToGrant,
         type: CreditTransactionType.GRANT,
-        description: `Subscription Provisioned: ${user.subscriptionTier}`,
+        description: `Subscription Provisioned: ${subscriptionTier}`,
         metadata: { stripeCustomerId, stripeSubscriptionId, planCode: code, billingCycle, idempotencyKey, periodEnd: periodEnd.toISOString() },
       });
 
       // Save Database Invoice if sessionId or invoice details provided
       const invId = stripeSessionId || `inv_${stripeSubscriptionId}_${periodEnd.getTime()}`;
       await this.invoiceModel.create({
-        userId: user._id,
+        userId: existingUser._id,
         stripeInvoiceId: invId,
         stripeSessionId: stripeSessionId || invId,
         amountPaid: amountPaid !== undefined ? amountPaid : (targetPlan === SubscriptionPlan.PRO ? 39 : 19),
@@ -454,10 +467,26 @@ export class SubscriptionService implements OnModuleInit {
         paidAt: new Date(),
       }).catch((err) => console.warn(`Duplicate invoice record ignored (${invId}): ${err.message}`));
     } else {
-      await user.save();
+      // Same period: just ensure subscription fields are up-to-date atomically
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            plan: targetPlan,
+            subscriptionTier,
+            stripeCustomerId,
+            stripeSubscriptionId,
+            subscriptionPeriodStart: periodStart,
+            subscriptionPeriodEnd: periodEnd,
+            subscriptionStatus: 'active',
+          },
+        },
+        { new: true },
+      ).exec();
     }
 
-    return user;
+    // Return fresh user doc
+    return this.userModel.findById(userId).exec();
   }
 
   /**
@@ -470,17 +499,17 @@ export class SubscriptionService implements OnModuleInit {
     amountPaid?: number,
     invoicePdfUrl: string = '',
   ): Promise<UserDocument> {
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
-    // Idempotency check: check if stripeSessionId was already provisioned
+    // Idempotency check FIRST — before loading user doc
     const existingInvoice = await this.invoiceModel.findOne({ stripeSessionId }).exec();
     const existingLedger = await this.creditLedgerModel.findOne({ 'metadata.stripeSessionId': stripeSessionId }).exec();
     if (existingInvoice || existingLedger) {
       console.log(`ℹ️ Credit pack payment [${stripeSessionId}] already provisioned. Skipping idempotently.`);
-      return user;
+      return this.userModel.findById(userId).exec();
+    }
+
+    const existingUser = await this.userModel.findById(userId).exec();
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
     // Resolve CreditPack from database
@@ -516,15 +545,24 @@ export class SubscriptionService implements OnModuleInit {
       packId: pack._id.toString(),
     };
 
-    user.creditLots = [newLot, ...(user.creditLots || [])];
-    user.credits = (user.credits || 0) + pack.credits;
-    await user.save();
+    const currentCredits = (existingUser.credits || 0);
+    const newBalance = currentCredits + pack.credits;
+
+    // Atomic update — avoids Mongoose VersionError race with concurrent webhook + return-sync
+    await this.userModel.findByIdAndUpdate(
+      userId,
+      {
+        $set: { credits: newBalance },
+        $push: { creditLots: { $each: [newLot], $position: 0 } },
+      },
+      { new: true },
+    ).exec();
 
     // Create CreditLedger GRANT entry
     await this.creditLedgerModel.create({
-      userId: user._id,
+      userId: existingUser._id,
       amount: pack.credits,
-      balanceAfter: user.credits,
+      balanceAfter: newBalance,
       type: CreditTransactionType.GRANT,
       description: `Credit Booster Purchased: ${pack.name} (+${pack.credits} Credits)`,
       metadata: {
@@ -537,7 +575,7 @@ export class SubscriptionService implements OnModuleInit {
 
     // Create Invoice record
     await this.invoiceModel.create({
-      userId: user._id,
+      userId: existingUser._id,
       stripeInvoiceId: stripeSessionId,
       stripeSessionId,
       amountPaid: amountPaid !== undefined ? amountPaid : pack.price,
@@ -550,7 +588,7 @@ export class SubscriptionService implements OnModuleInit {
       paidAt: new Date(),
     }).catch((err) => console.warn(`Duplicate pack invoice ignored (${stripeSessionId}): ${err.message}`));
 
-    return user;
+    return this.userModel.findById(userId).exec();
   }
 
   /**

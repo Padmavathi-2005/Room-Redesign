@@ -54,6 +54,16 @@ describe('Subscription, Credit & Room Protection Test Suite', () => {
         }
         return { exec: jest.fn().mockResolvedValue(mockUser) };
       }),
+      findByIdAndUpdate: jest.fn().mockImplementation((id, update) => {
+        if (update.$set) {
+          Object.assign(mockUser, update.$set);
+        }
+        if (update.$push && update.$push.creditLots) {
+          const lots = update.$push.creditLots.$each || [update.$push.creditLots];
+          mockUser.creditLots = [...lots, ...(mockUser.creditLots || [])];
+        }
+        return { exec: jest.fn().mockResolvedValue(mockUser) };
+      }),
       countDocuments: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(1) }),
     };
 
