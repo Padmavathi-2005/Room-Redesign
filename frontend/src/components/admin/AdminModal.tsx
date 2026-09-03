@@ -59,7 +59,7 @@ export default function AdminModal({
 
       {/* Modal Panel */}
       <div
-        className={`relative w-full ${maxWidth} bg-white border border-slate-200/80 rounded-3xl sm:rounded-[28px] shadow-2xl shadow-slate-900/10 flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp`}
+        className={`relative w-full ${maxWidth} bg-white border border-slate-200/80 rounded-2xl shadow-2xl shadow-slate-900/10 flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}

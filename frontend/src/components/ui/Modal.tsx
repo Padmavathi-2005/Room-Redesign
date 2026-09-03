@@ -96,11 +96,11 @@ export default function Modal({
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className={`relative w-full ${maxWidthClasses[maxWidth] || 'max-w-md'} bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl sm:rounded-[28px] p-6 sm:p-8 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto ${className}`}
+            className={`relative w-full ${maxWidthClasses[maxWidth] || 'max-w-md'} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 max-h-[88vh] flex flex-col overflow-hidden ${className}`}
           >
             {/* MODAL HEADER */}
             {(title || showCloseButton) && (
-              <div className="flex items-start justify-between gap-4 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800/80">
+              <div className="flex items-start justify-between gap-4 p-6 sm:px-8 sm:pt-7 sm:pb-4 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
                 <div className="flex items-center gap-3.5 min-w-0">
                   {icon && (
                     <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/70 text-purple-600 dark:text-purple-400 shrink-0 border border-purple-100 dark:border-purple-900/50">
@@ -110,14 +110,14 @@ export default function Modal({
                   {title && (
                     <div className="space-y-0.5 min-w-0">
                       {typeof title === 'string' ? (
-                        <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-heading truncate">
+                        <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-sans truncate">
                           {title}
                         </h3>
                       ) : (
                         title
                       )}
                       {subtitle && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium font-sans">
                           {subtitle}
                         </p>
                       )}
@@ -138,8 +138,8 @@ export default function Modal({
               </div>
             )}
 
-            {/* MODAL BODY */}
-            <div>{children}</div>
+            {/* MODAL BODY — Scrollable inside box */}
+            <div className="p-6 sm:p-8 overflow-y-auto flex-1">{children}</div>
           </motion.div>
         </div>
       )}
