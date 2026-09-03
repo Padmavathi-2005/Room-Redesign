@@ -251,6 +251,30 @@ export class PaymentsService {
         break;
       }
 
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge;
+        const customerId = charge.customer as string;
+
+        if (customerId) {
+          const user = await this.userModel.findOne({ stripeCustomerId: customerId }).exec();
+          if (user) {
+            user.plan = 'free' as any;
+            user.subscriptionTier = 'Free Plan';
+            user.subscriptionStatus = 'refunded';
+            user.credits = 0;
+            user.creditLots = [];
+            await user.save();
+
+            // Update invoice status in database
+            await this.invoiceModel.updateMany(
+              { userId: user._id, status: 'paid' },
+              { $set: { status: 'refunded' } },
+            ).exec();
+          }
+        }
+        break;
+      }
+
       default:
         console.log(`Unhandled Stripe event: ${event.type}`);
     }
