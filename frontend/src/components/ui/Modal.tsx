@@ -96,7 +96,7 @@ export default function Modal({
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className={`relative w-full ${maxWidthClasses[maxWidth] || 'max-w-md'} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto ${className}`}
+            className={`relative w-full ${maxWidthClasses[maxWidth] || 'max-w-md'} bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl sm:rounded-[28px] p-6 sm:p-8 shadow-2xl text-slate-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto ${className}`}
           >
             {/* MODAL HEADER */}
             {(title || showCloseButton) && (
