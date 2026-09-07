@@ -337,29 +337,6 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* PAGE TITLE & REFRESH BUTTON */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-extrabold rounded-full font-heading">
-            <UserIcon className="w-3.5 h-3.5" />
-            <span>Platform User Directory & Analytics</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-heading">Users Management</h1>
-          <p className="text-xs text-slate-500">
-            View registered user accounts, track subscription renewals, analyze credit consumption, and manage roles.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={loadUsers}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-all cursor-pointer font-heading border border-slate-200 shrink-0"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Refresh List</span>
-        </button>
-      </div>
-
       {/* NOTIFICATION MESSAGES */}
       {successMessage && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold flex items-center justify-between">
@@ -387,8 +364,6 @@ export default function AdminUsersPage() {
 
       {/* REUSABLE DATA TABLE */}
       <DataTable
-        title={`Registered Accounts (${users.length})`}
-        subtitle="Search by name, email, or filter columns"
         columns={columns}
         data={users}
         searchPlaceholder="Search users by name, email, or role..."

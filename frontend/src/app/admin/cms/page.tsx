@@ -133,41 +133,8 @@ export default function AdminCmsListPage() {
         </div>
       )}
 
-      {/* Controls Bar: Status Filters & Create Button */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 overflow-x-auto">
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
-              statusFilter === 'all'
-                ? 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            All Pages ({pages.length})
-          </button>
-          <button
-            onClick={() => setStatusFilter('published')}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
-              statusFilter === 'published'
-                ? 'bg-emerald-600 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Published ({publishedCount})
-          </button>
-          <button
-            onClick={() => setStatusFilter('draft')}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
-              statusFilter === 'draft'
-                ? 'bg-amber-600 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Drafts ({pages.length - publishedCount})
-          </button>
-        </div>
-
+      {/* Controls Bar: Create Button */}
+      <div className="flex items-center justify-end">
         <button
           onClick={() => router.push('/admin/cms/builder')}
           className="px-5 py-2.5 rounded-[10px] bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-2 text-xs font-black shadow-sm transition-all cursor-pointer whitespace-nowrap"
