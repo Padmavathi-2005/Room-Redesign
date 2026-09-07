@@ -155,7 +155,7 @@ export default function ShoppingListPage() {
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-12 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-800 shadow-2xs shrink-0"
+                        className="w-12 h-10 rounded-[10px] object-cover border border-slate-200 dark:border-slate-800 shadow-2xs shrink-0"
                       />
                       <div>
                         <h4 className="font-bold text-slate-900 dark:text-white font-heading line-clamp-1 max-w-[220px]">

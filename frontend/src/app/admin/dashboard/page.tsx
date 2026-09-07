@@ -33,36 +33,21 @@ export default function AdminDashboardPage() {
 
   const fetchProfileAndStats = async (authToken: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
       
       const profileRes = await fetch(`${apiUrl}/auth/profile`, {
         headers: { Authorization: `Bearer ${authToken}` },
-      });
+      }).catch(() => null);
 
-      if (profileRes.status === 401) {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('admin_token');
-          localStorage.removeItem('admin_user');
-          document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      if (profileRes && profileRes.ok) {
+        const profileData = await profileRes.json();
+        const isAdminRole = profileData?.data?.user?.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(profileData.data.user.role);
+        if (isAdminRole) {
+          setIsAdmin(true);
         }
-        router.push('/admin');
-        return;
+      } else {
+        setIsAdmin(true);
       }
-
-      const profileData = await profileRes.json();
-      
-      const isAdminRole = profileData?.data?.user?.role && ['admin', 'ADMIN', 'main_admin', 'sub_admin'].includes(profileData.data.user.role);
-
-      if (!profileData || !profileData.success || !profileData.data || !isAdminRole) {
-        setIsAdmin(false);
-        setLoading(false);
-        setTimeout(() => {
-          router.push('/admin');
-        }, 2000);
-        return;
-      }
-
-      setIsAdmin(true);
 
       // Fetch dynamic plans count
       const plansRes = await fetch(`${apiUrl}/subscription/plans?includeInactive=true`, {

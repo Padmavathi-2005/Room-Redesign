@@ -8,6 +8,8 @@ import { ProviderManagerModule } from '../modules/provider-manager/provider-mana
 import { StorageModule } from '../modules/storage/storage.module';
 import { ProjectsModule } from '../modules/projects/projects.module';
 
+import { SubscriptionModule } from '../modules/subscription/subscription.module';
+
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: RoomGeneration.name, schema: RoomSchema }]),
@@ -16,6 +18,7 @@ import { ProjectsModule } from '../modules/projects/projects.module';
     ProviderManagerModule,
     StorageModule,
     ProjectsModule,
+    SubscriptionModule,
   ],
   providers: [QueueWorkerService],
   exports: [QueueWorkerService],

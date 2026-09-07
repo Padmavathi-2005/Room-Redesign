@@ -99,30 +99,28 @@ export default function Modal({
             className={`relative w-full ${maxWidthClasses[maxWidth] || 'max-w-md'} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl text-slate-900 dark:text-slate-100 max-h-[88vh] flex flex-col overflow-hidden ${className}`}
           >
             {/* MODAL HEADER */}
-            {(title || showCloseButton) && (
+            {title ? (
               <div className="flex items-start justify-between gap-4 p-6 sm:px-8 sm:pt-7 sm:pb-4 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
                 <div className="flex items-center gap-3.5 min-w-0">
                   {icon && (
-                    <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/70 text-purple-600 dark:text-purple-400 shrink-0 border border-purple-100 dark:border-purple-900/50">
+                    <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0 border border-primary/20">
                       {icon}
                     </div>
                   )}
-                  {title && (
-                    <div className="space-y-0.5 min-w-0">
-                      {typeof title === 'string' ? (
-                        <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-sans truncate">
-                          {title}
-                        </h3>
-                      ) : (
-                        title
-                      )}
-                      {subtitle && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium font-sans">
-                          {subtitle}
-                        </p>
-                      )}
-                    </div>
-                  )}
+                  <div className="space-y-0.5 min-w-0">
+                    {typeof title === 'string' ? (
+                      <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-sans truncate">
+                        {title}
+                      </h3>
+                    ) : (
+                      title
+                    )}
+                    {subtitle && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium font-sans">
+                        {subtitle}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {showCloseButton && (
@@ -136,6 +134,17 @@ export default function Modal({
                   </button>
                 )}
               </div>
+            ) : (
+              showCloseButton && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="absolute top-4 right-4 z-20 p-2 rounded-2xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                  aria-label="Close modal"
+                >
+                  <X className="w-5 h-5 stroke-[2.2]" />
+                </button>
+              )
             )}
 
             {/* MODAL BODY — Scrollable inside box */}

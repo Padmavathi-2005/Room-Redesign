@@ -1068,7 +1068,7 @@ export default function DashboardGeneratorFormCard() {
           </label>
 
           {uploadedImage ? (
-            <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 group h-20">
+            <div className="relative rounded-[10px] overflow-hidden border border-slate-200 dark:border-slate-800 group h-20">
               <img src={uploadedImage} alt="Uploaded Room" className="w-full h-full object-cover" />
               <button
                 type="button"
@@ -1079,7 +1079,7 @@ export default function DashboardGeneratorFormCard() {
               </button>
             </div>
           ) : (
-            <label className="flex items-center justify-center gap-2 p-2.5 border border-dashed border-purple-300/80 hover:border-purple-600 rounded-2xl cursor-pointer bg-purple-50/20 dark:bg-slate-800/40 transition-colors group">
+            <label className="flex items-center justify-center gap-2 p-2.5 border border-dashed border-purple-300/80 hover:border-purple-600 rounded-[10px] cursor-pointer bg-purple-50/20 dark:bg-slate-800/40 transition-colors group">
               <ImageIcon className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Upload image (PNG, JPG)
@@ -1178,7 +1178,7 @@ export default function DashboardGeneratorFormCard() {
                 </a>
               </div>
 
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 h-44 group">
+              <div className="relative rounded-[10px] overflow-hidden border border-slate-200 dark:border-slate-800 h-44 group">
                 <img src={generatedResult} alt="Generated AI Redesign" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <a

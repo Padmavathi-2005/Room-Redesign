@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
   AlertCircle,
@@ -17,7 +18,7 @@ export interface Toast {
   title?: string;
   message: string;
   timestamp: string;
-  duration?: number; // in ms, default 5000
+  duration?: number; // in ms, default 4000
 }
 
 interface ToastContextType {
@@ -34,7 +35,7 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | null>(null);
 
-const DEFAULT_DURATION = 5000;
+const DEFAULT_DURATION = 4000;
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -50,11 +51,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       message,
       duration = DEFAULT_DURATION,
     }: Omit<Toast, 'id' | 'timestamp'>) => {
-      const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const timestamp = new Date().toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
       });
 
       const newToast: Toast = {
@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         duration,
       };
 
-      setToasts((prev) => [newToast, ...prev].slice(0, 5)); // Keep max 5 active toasts
+      setToasts((prev) => [newToast, ...prev].slice(0, 5));
     },
     []
   );
@@ -114,11 +114,13 @@ function ToastContainer({
   return (
     <div
       aria-live="assertive"
-      className="fixed top-5 right-5 z-[9999] flex flex-col gap-3 max-w-sm w-[90vw] sm:w-[380px] pointer-events-none"
+      className="fixed top-5 right-5 z-[999999] flex flex-col gap-2.5 max-w-sm w-[90vw] sm:w-[380px] pointer-events-none font-sans"
     >
-      {toasts.map((t) => (
-        <ToastCard key={t.id} toast={t} onDismiss={() => removeToast(t.id)} />
-      ))}
+      <AnimatePresence mode="sync">
+        {toasts.map((t) => (
+          <ToastCard key={t.id} toast={t} onDismiss={() => removeToast(t.id)} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
@@ -144,51 +146,59 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   const Icon = config.icon;
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -20, scale: 0.94 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -20, scale: 0.94 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className={`pointer-events-auto relative overflow-hidden rounded-2xl p-4 shadow-xl border backdrop-blur-xl transition-all duration-300 transform animate-in slide-in-from-top-4 fade-in-80 ${config.bgStyle} ${config.borderStyle}`}
+      className="pointer-events-auto relative overflow-hidden rounded-[14px] p-4 shadow-xl shadow-slate-950/10 dark:shadow-slate-950/40 border bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200/90 dark:border-slate-800 transition-all font-sans"
     >
       <div className="flex items-start gap-3">
-        <div className={`p-2 rounded-xl shrink-0 ${config.iconBgStyle}`}>
-          <Icon className={`w-5 h-5 ${config.iconColor}`} />
+        {/* Left Icon Container */}
+        <div className={`p-2.5 rounded-xl shrink-0 flex items-center justify-center border ${config.iconBgStyle}`}>
+          <Icon className={`w-4 h-4 ${config.iconColor}`} />
         </div>
 
-        <div className="flex-1 min-w-0 pr-2">
+        {/* Text Content */}
+        <div className="flex-1 min-w-0 pr-1">
           <div className="flex items-center justify-between gap-2">
-            <h4 className={`text-xs font-black uppercase tracking-wider font-heading ${config.titleColor}`}>
+            <h4 className={`text-xs font-bold font-sans ${config.titleColor}`}>
               {toast.title || config.defaultTitle}
             </h4>
-            <span className="text-[10px] font-mono text-slate-400 shrink-0">
+            <span className="text-[10px] font-sans text-slate-400 font-medium shrink-0">
               {toast.timestamp}
             </span>
           </div>
 
-          <p className={`text-xs font-medium mt-1 leading-relaxed ${config.textColor}`}>
+          <p className="text-xs font-sans text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed font-normal">
             {toast.message}
           </p>
         </div>
 
+        {/* Dismiss Button */}
         <button
           onClick={onDismiss}
           className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shrink-0"
           aria-label="Close notification"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* AUTO DISMISS PROGRESS BAR */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-200/40 dark:bg-slate-800/40 overflow-hidden">
+      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-slate-100 dark:bg-slate-800 overflow-hidden">
         <div
-          className={`h-full ${config.progressStyle} ${isPaused ? 'paused' : ''}`}
+          className={`h-full ${config.progressStyle}`}
           style={{
             animation: `toast-progress ${toast.duration}ms linear forwards`,
             animationPlayState: isPaused ? 'paused' : 'running',
           }}
         />
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -198,36 +208,27 @@ function getToastConfig(type: ToastType) {
       return {
         icon: CheckCircle2,
         defaultTitle: 'Success',
-        bgStyle: 'bg-emerald-50/95 dark:bg-emerald-950/90',
-        borderStyle: 'border-emerald-200 dark:border-emerald-800/80',
-        iconBgStyle: 'bg-emerald-100 dark:bg-emerald-900/60',
+        iconBgStyle: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 dark:bg-emerald-500/15',
         iconColor: 'text-emerald-600 dark:text-emerald-400',
-        titleColor: 'text-emerald-900 dark:text-emerald-200',
-        textColor: 'text-emerald-800 dark:text-emerald-300',
+        titleColor: 'text-slate-900 dark:text-white',
         progressStyle: 'bg-emerald-500',
       };
     case 'error':
       return {
         icon: AlertCircle,
         defaultTitle: 'Error',
-        bgStyle: 'bg-rose-50/95 dark:bg-rose-950/90',
-        borderStyle: 'border-rose-200 dark:border-rose-800/80',
-        iconBgStyle: 'bg-rose-100 dark:bg-rose-900/60',
+        iconBgStyle: 'bg-rose-500/10 border-rose-500/20 text-rose-500 dark:bg-rose-500/15',
         iconColor: 'text-rose-600 dark:text-rose-400',
-        titleColor: 'text-rose-900 dark:text-rose-200',
-        textColor: 'text-rose-800 dark:text-rose-300',
+        titleColor: 'text-slate-900 dark:text-white',
         progressStyle: 'bg-rose-500',
       };
     case 'warning':
       return {
         icon: AlertTriangle,
         defaultTitle: 'Warning',
-        bgStyle: 'bg-amber-50/95 dark:bg-amber-950/90',
-        borderStyle: 'border-amber-200 dark:border-amber-800/80',
-        iconBgStyle: 'bg-amber-100 dark:bg-amber-900/60',
+        iconBgStyle: 'bg-amber-500/10 border-amber-500/20 text-amber-500 dark:bg-amber-500/15',
         iconColor: 'text-amber-600 dark:text-amber-400',
-        titleColor: 'text-amber-900 dark:text-amber-200',
-        textColor: 'text-amber-800 dark:text-amber-300',
+        titleColor: 'text-slate-900 dark:text-white',
         progressStyle: 'bg-amber-500',
       };
     case 'info':
@@ -235,13 +236,11 @@ function getToastConfig(type: ToastType) {
       return {
         icon: Info,
         defaultTitle: 'Notification',
-        bgStyle: 'bg-indigo-50/95 dark:bg-indigo-950/90',
-        borderStyle: 'border-indigo-200 dark:border-indigo-800/80',
-        iconBgStyle: 'bg-indigo-100 dark:bg-indigo-900/60',
-        iconColor: 'text-indigo-600 dark:text-indigo-400',
-        titleColor: 'text-indigo-900 dark:text-indigo-200',
-        textColor: 'text-indigo-800 dark:text-indigo-300',
-        progressStyle: 'bg-indigo-500',
+        iconBgStyle: 'bg-purple-500/10 border-purple-500/20 text-purple-500 dark:bg-purple-500/15',
+        iconColor: 'text-purple-600 dark:text-purple-400',
+        titleColor: 'text-slate-900 dark:text-white',
+        progressStyle: 'bg-purple-600',
       };
   }
 }
+

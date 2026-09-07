@@ -185,6 +185,40 @@ export class ProjectsService {
   }
 
   /**
+   * Get Single Project Detail by ID or Name
+   */
+  async findOneOrByName(idOrName: string, userId?: string): Promise<any> {
+    if (!idOrName) return null;
+    try {
+      if (Types.ObjectId.isValid(idOrName)) {
+        const project = await this.projectModel.findById(idOrName).exec();
+        if (project) {
+          return await this.enrichProjectData(project);
+        }
+      }
+
+      const query: any = {
+        name: { $regex: new RegExp(`^${idOrName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+      };
+      if (userId && Types.ObjectId.isValid(userId)) {
+        query.userId = userId;
+      }
+
+      const projectByName = await this.projectModel.findOne(query).exec();
+      if (projectByName) {
+        return await this.enrichProjectData(projectByName);
+      }
+    } catch (err: any) {
+      this.logger.warn(`Project lookup by ID/Name failed for "${idOrName}": ${err.message}`);
+    }
+
+    const found = this.inMemoryProjects.find(
+      (p) => String(p._id) === String(idOrName) || (p.name && p.name.toLowerCase() === idOrName.toLowerCase())
+    );
+    return found || null;
+  }
+
+  /**
    * Update Project (PUT /api/v1/projects/:projectId)
    */
   async update(id: string, dto: UpdateProjectDto): Promise<any> {
@@ -217,26 +251,63 @@ export class ProjectsService {
   }
 
   /**
-   * Update Chat Session ID while preserving session history
+   * Atomically initializes or updates the master Manus Task ID for a Project.
+   * Concurrency Protection: Ensures two simultaneous requests do NOT create competing master tasks.
    */
-  async updateChatId(id: string, manusChatId: string): Promise<any> {
-    if (!manusChatId) return null;
+  async setMasterTaskIdAtomic(
+    id: string,
+    manusTaskId: string,
+    type: 'PRIMARY' | 'REPLACEMENT' = 'PRIMARY',
+    reason = 'initial_project_task'
+  ): Promise<any> {
+    if (!manusTaskId) return null;
     if (Types.ObjectId.isValid(id)) {
-      const project = await this.projectModel.findById(id).exec();
-      if (project) {
-        const history: string[] = Array.isArray(project.manusChatHistory) ? [...project.manusChatHistory] : [];
-        if (project.manusChatId && !history.includes(project.manusChatId)) {
-          history.push(project.manusChatId);
-        }
-        if (!history.includes(manusChatId)) {
-          history.push(manusChatId);
-        }
-        project.manusChatId = manusChatId;
-        project.manusChatHistory = history;
-        return project.save();
+      const historyEntry = {
+        taskId: manusTaskId,
+        type,
+        createdAt: new Date(),
+        reason,
+      };
+
+      const updatedProject = await this.projectModel.findOneAndUpdate(
+        { _id: id },
+        {
+          $set: { manusTaskId, manusChatId: manusTaskId },
+          $addToSet: {
+            manusChatHistory: manusTaskId,
+            manusTaskHistory: historyEntry,
+          },
+        },
+        { new: true }
+      ).exec();
+
+      if (updatedProject) {
+        this.logger.log(`✅ Master Manus Task ID set atomically for Project "${id}": ${manusTaskId} (${type})`);
+        return updatedProject;
       }
     }
-    return this.update(id, { manusChatId } as any);
+    return null;
+  }
+
+  /**
+   * Legacy alias: Update Chat Session ID while preserving session history
+   */
+  async updateChatId(id: string, manusChatId: string): Promise<any> {
+    return this.setMasterTaskIdAtomic(id, manusChatId, 'PRIMARY', 'update_chat_id');
+  }
+
+  /**
+   * Fetches all generated image URLs across all room generations belonging to a project.
+   * Used for result correlation to prevent GEN-002 from claiming GEN-001's output.
+   */
+  async getAllProjectImageUrls(projectId: string): Promise<string[]> {
+    if (!projectId || !Types.ObjectId.isValid(projectId)) return [];
+    try {
+      const rooms = await this.generationModel.find({ projectId }, { generatedImage: 1 }).exec();
+      return rooms.map((r) => r.generatedImage).filter((url) => Boolean(url && url.length > 0));
+    } catch (e) {
+      return [];
+    }
   }
 
   /**

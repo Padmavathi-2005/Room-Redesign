@@ -108,18 +108,60 @@ export const marketplaceService = {
     return res.json();
   },
 
-  async toggleWishlist(projectId: string, userId: string): Promise<{ wishlisted: boolean }> {
-    const res = await fetch(`${API_URL}/marketplace/${projectId}/wishlist`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (!res.ok) {
-      return { wishlisted: false };
+  async getUserWishlist(userId: string): Promise<PublishedProjectData[]> {
+    try {
+      const res = await fetch(`${API_URL}/marketplace/wishlist?userId=${encodeURIComponent(userId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return data;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch wishlist from API:', err);
     }
 
-    return res.json();
+    // Local storage fallback for offline / guest mode
+    try {
+      const storedIds: string[] = JSON.parse(localStorage.getItem('user_wishlist_ids') || '[]');
+      const storedGenerated = JSON.parse(localStorage.getItem('user_generated_designs') || '[]');
+      return (storedGenerated || []).filter((item: any) => storedIds.includes(item._id));
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async toggleWishlist(projectId: string, userId: string): Promise<{ wishlisted: boolean }> {
+    let wishlisted = false;
+    try {
+      const storedIds: string[] = JSON.parse(localStorage.getItem('user_wishlist_ids') || '[]');
+      if (storedIds.includes(projectId)) {
+        const updated = storedIds.filter((id) => id !== projectId);
+        localStorage.setItem('user_wishlist_ids', JSON.stringify(updated));
+        wishlisted = false;
+      } else {
+        storedIds.push(projectId);
+        localStorage.setItem('user_wishlist_ids', JSON.stringify(storedIds));
+        wishlisted = true;
+      }
+
+      const res = await fetch(`${API_URL}/marketplace/${projectId}/wishlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (typeof data.wishlisted === 'boolean') {
+          return { wishlisted: data.wishlisted };
+        }
+      }
+      return { wishlisted };
+    } catch (err) {
+      console.warn('Failed to sync wishlist with API:', err);
+      return { wishlisted };
+    }
   },
 
   async addReview(

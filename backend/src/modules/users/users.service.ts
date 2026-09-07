@@ -49,12 +49,14 @@ export class UsersService implements OnModuleInit {
   }
 
   async create(userData: Partial<User>): Promise<UserDocument> {
-    const existingUser = await this.userModel.findOne({ email: userData.email?.toLowerCase() });
+    const emailLower = userData.email?.toLowerCase();
+    const existingUser = await this.userModel.findOne({ email: emailLower });
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
     const newUser = new this.userModel({
       ...userData,
+      email: emailLower,
       credits: 0,
       subscriptionTier: 'FREE',
     });

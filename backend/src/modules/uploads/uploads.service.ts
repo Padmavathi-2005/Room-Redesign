@@ -469,13 +469,8 @@ export class UploadsService implements OnModuleInit {
           activeBuffer = Buffer.from(downloadResponse.data);
           activeMimeType = String(downloadResponse.headers['content-type'] || 'image/jpeg');
         } catch (downloadErr: any) {
-          this.logger.warn(`Could not download external image directly (${downloadErr.message}). Fetching fallback local sample buffer.`);
-          try {
-            activeBuffer = await this.storageService.retrieve('original/interior_before.png');
-            activeMimeType = 'image/png';
-          } catch (sErr: any) {
-            throw new BadRequestException(`Failed to resolve external image URL: ${downloadErr.message}`);
-          }
+          this.logger.error(`Failed to download external image URL (${fileData.externalUrl}): ${downloadErr.message}`);
+          throw new BadRequestException(`SOURCE_IMAGE_UNAVAILABLE: Could not retrieve image from provided URL (${downloadErr.message})`);
         }
       }
     }

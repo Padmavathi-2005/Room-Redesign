@@ -120,13 +120,6 @@ export class PromptBuilderService {
       }
     }
 
-    // If main original input image URL exists, prepend directly on the VERY FIRST LINE of prompt
-    const mainOriginalImage = options.originalImage || (options.imageUrl && !options.imageUrl.startsWith('data:image/') ? options.imageUrl : null);
-    if (mainOriginalImage && typeof mainOriginalImage === 'string' && mainOriginalImage.trim()) {
-      const cleanUrl = mainOriginalImage.trim();
-      result.finalPrompt = `[Original Input Image: ${cleanUrl}]\n${result.finalPrompt}`;
-    }
-
     return result;
   }
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown,
@@ -72,6 +73,7 @@ export interface ProductsDropdownProps {
 }
 
 export default function ProductsDropdown({ label = 'AI Tools' }: ProductsDropdownProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [categories, setCategories] = useState(DEFAULT_PRODUCT_CATEGORIES);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -100,7 +102,7 @@ export default function ProductsDropdown({ label = 'AI Tools' }: ProductsDropdow
       setPendingTargetUrl(href);
       setShowAuthModal(true);
     } else {
-      window.location.href = href;
+      router.push(href);
     }
   };
 
@@ -193,13 +195,13 @@ export default function ProductsDropdown({ label = 'AI Tools' }: ProductsDropdow
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.97 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute top-[calc(100%+28px)] left-[-320px] w-[94vw] max-w-[1040px] z-50 pointer-events-auto"
+              className="absolute top-[calc(100%+26px)] left-[-290px] w-[90vw] max-w-[960px] z-[100] pointer-events-auto"
             >
               {/* Invisible Hover Bridge */}
               <div className="absolute -top-8 left-0 right-0 h-8 bg-transparent" />
 
               {/* Glassmorphic Dropdown Card Container */}
-              <div className="relative p-7 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-2xl shadow-indigo-900/15 dark:shadow-black/80 backdrop-blur-2xl space-y-6 text-slate-800 dark:text-slate-100 after:content-[''] after:absolute after:-top-2.5 after:left-[352px] after:w-5 after:h-5 after:bg-white dark:after:bg-slate-900 after:border-t after:border-l after:border-slate-200/90 dark:after:border-slate-800 after:rotate-45">
+              <div className="relative p-6 sm:p-7 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-2xl shadow-indigo-900/15 dark:shadow-black/80 backdrop-blur-2xl space-y-6 text-slate-800 dark:text-slate-100 after:content-[''] after:absolute after:-top-2.5 after:left-[322px] after:w-5 after:h-5 after:bg-white dark:after:bg-slate-900 after:border-t after:border-l after:border-slate-200/90 dark:after:border-slate-800 after:rotate-45">
 
                 {/* 3 Columns Grid: FLOOR PLAN | INTERIOR | EXTERIOR */}
                 <div className="grid grid-cols-3 gap-5">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, Sparkles, Zap, ShieldAlert, User, X, CheckCheck, ArrowRight } from 'lucide-react';
@@ -13,8 +13,32 @@ interface NotificationCenterProps {
 
 export default function NotificationCenter({ userId, isAdmin = false }: NotificationCenterProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, activeToast, dismissToast, markAllAsRead, markSingleAsRead } =
     useSocketNotifications(userId, isAdmin);
+
+  // Close dropdown on outside click or page scroll
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleScroll = () => {
+      setIsOpen(false);
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const getIcon = (type?: string) => {
     switch (type) {
@@ -32,17 +56,17 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
   };
 
   return (
-    <div className="relative inline-block">
+    <div ref={containerRef} className="relative inline-block font-sans">
       {/* Bell Trigger Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs border border-slate-200/60 dark:border-slate-700/60"
+        className="relative p-2.5 rounded-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs border border-slate-200/60 dark:border-slate-700/60"
         title="Real-time Notifications"
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white font-black text-[10px] flex items-center justify-center border-2 border-white dark:border-slate-900 animate-pulse shadow-xs">
+          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white font-black text-[10px] flex items-center justify-center border-2 border-white dark:border-slate-900 animate-pulse shadow-xs font-sans">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -55,14 +79,14 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-5 right-5 z-[999999] max-w-sm w-full p-4 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 shadow-2xl flex items-start gap-3"
+            className="fixed top-5 right-5 z-[999999] max-w-sm w-full p-4 rounded-[10px] bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 shadow-2xl flex items-start gap-3 font-sans"
           >
-            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900">
+            <div className="p-2 rounded-[8px] bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900">
               {getIcon(activeToast.type)}
             </div>
             <div className="flex-1 space-y-1 text-left">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-tight font-sans">
                   {activeToast.title}
                 </h4>
                 <button
@@ -72,7 +96,7 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed font-sans">
                 {activeToast.message}
               </p>
             </div>
@@ -83,99 +107,93 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
       {/* Notifications Dropdown Panel */}
       <AnimatePresence>
         {isOpen && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setIsOpen(false)}
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="absolute right-0 mt-3 w-80 sm:w-96 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl z-50 overflow-hidden text-left"
-            >
-              {/* Dropdown Header */}
-              <div className="p-4 bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                    {isAdmin ? 'Admin System Notifications' : 'Real-time Notifications'}
-                  </h3>
-                </div>
-                {unreadCount > 0 && (
-                  <button
-                    onClick={markAllAsRead}
-                    className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <CheckCheck className="w-3 h-3" />
-                    <span>Mark all read</span>
-                  </button>
-                )}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 8 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 mt-3 w-80 sm:w-96 rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl z-50 overflow-hidden text-left font-sans"
+          >
+            {/* Dropdown Header */}
+            <div className="p-4 bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-sans">
+                  {isAdmin ? 'Admin System Notifications' : 'Real-time Notifications'}
+                </h3>
               </div>
-
-              {/* Notifications List */}
-              <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
-                {notifications.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400 space-y-2">
-                    <Bell className="w-8 h-8 mx-auto opacity-30" />
-                    <p className="text-xs font-bold">No notifications yet</p>
-                    <p className="text-[10px] text-slate-400">Real-time alerts will appear here instantly!</p>
-                  </div>
-                ) : (
-                  notifications.map((n) => {
-                    const notifId = n._id || n.id || Math.random().toString();
-                    return (
-                      <div
-                        key={notifId}
-                        onClick={() => markSingleAsRead(notifId)}
-                        className={`p-4 transition-colors cursor-pointer flex items-start gap-3 ${
-                          n.isRead
-                            ? 'opacity-70 bg-transparent'
-                            : 'bg-indigo-50/40 dark:bg-indigo-950/20'
-                        }`}
-                      >
-                        <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 shrink-0">
-                          {getIcon(n.type)}
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className={`text-xs font-bold ${n.isRead ? 'text-slate-700 dark:text-slate-300' : 'text-slate-900 dark:text-white font-extrabold'}`}>
-                              {n.title}
-                            </h4>
-                            {!n.isRead && (
-                              <span className="w-2 h-2 rounded-full bg-indigo-600 shrink-0" />
-                            )}
-                          </div>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                            {n.message}
-                          </p>
-                          <span className="text-[9px] font-bold text-slate-400 block pt-0.5">
-                            {n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Dropdown Footer: View All Link */}
-              <div className="p-3 bg-slate-50/90 dark:bg-slate-800/90 border-t border-slate-100 dark:border-slate-800 text-center">
-                <Link
-                  href={isAdmin ? '/admin/notifications' : '/notifications'}
-                  onClick={() => setIsOpen(false)}
-                  className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors inline-flex items-center gap-1.5"
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer font-sans"
                 >
-                  <span>View All Notifications</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </motion.div>
-          </>
+                  <CheckCheck className="w-3 h-3" />
+                  <span>Mark all read</span>
+                </button>
+              )}
+            </div>
+
+            {/* Notifications List */}
+            <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+              {notifications.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 space-y-2">
+                  <Bell className="w-8 h-8 mx-auto opacity-30 text-indigo-500" />
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 font-sans">No notifications yet</p>
+                  <p className="text-[10px] text-slate-400 font-sans">Real-time alerts will appear here instantly!</p>
+                </div>
+              ) : (
+                notifications.map((n) => {
+                  const notifId = n._id || n.id || Math.random().toString();
+                  return (
+                    <div
+                      key={notifId}
+                      onClick={() => markSingleAsRead(notifId)}
+                      className={`p-4 transition-colors cursor-pointer flex items-start gap-3 ${
+                        n.isRead
+                          ? 'opacity-70 bg-transparent'
+                          : 'bg-indigo-50/40 dark:bg-indigo-950/20'
+                      }`}
+                    >
+                      <div className="p-2 rounded-[8px] bg-slate-100 dark:bg-slate-800 shrink-0">
+                        {getIcon(n.type)}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className={`text-xs font-bold font-sans ${n.isRead ? 'text-slate-700 dark:text-slate-300' : 'text-slate-900 dark:text-white'}`}>
+                            {n.title}
+                          </h4>
+                          {!n.isRead && (
+                            <span className="w-2 h-2 rounded-full bg-indigo-600 shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium font-sans">
+                          {n.message}
+                        </p>
+                        <span className="text-[9px] font-bold text-slate-400 block pt-0.5 font-sans">
+                          {n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Dropdown Footer: View All Link */}
+            <div className="p-3 bg-slate-50/90 dark:bg-slate-800/90 border-t border-slate-100 dark:border-slate-800 text-center">
+              <Link
+                href={isAdmin ? '/admin/notifications' : '/notifications'}
+                onClick={() => setIsOpen(false)}
+                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors inline-flex items-center gap-1.5 font-sans"
+              >
+                <span>View All Notifications</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 }
+

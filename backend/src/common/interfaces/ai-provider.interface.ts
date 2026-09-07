@@ -11,8 +11,12 @@ export interface ImageGenerationInput {
   imageBuffer?: Buffer;
   imageMimeType?: string;
   imageUrl?: string; // Saved file URL (e.g. relative path /uploads/...)
-  chatId?: string; // Manus AI session / conversation thread ID
+  originalImageUrl?: string; // Public remote image URL (e.g. Unsplash CDN URL)
+  manusTaskId?: string; // Persistent Manus AI Task ID for thread continuity
+  chatId?: string; // Legacy alias for Manus AI session / conversation thread ID
   projectId?: string;
+  generationId?: string; // RoomAI generation correlation ID
+  existingImageUrls?: string[]; // Array of previously generated image URLs to ignore during message parsing
   options?: Record<string, any>;
   onProgress?: (progressData: { statusText: string; steps: WorkflowStepItem[] }) => void;
 }
@@ -24,7 +28,9 @@ export interface ImageGenerationOutput {
   costUSD: number;
   providerName: string;
   modelName: string;
-  chatId?: string; // Manus AI chat/session ID returned by provider
+  manusTaskId?: string; // Authoritative Manus AI Task ID
+  chatId?: string; // Legacy alias
+  isNewTask?: boolean; // True if task.create was called, false if task.sendMessage was called
 }
 
 export interface IAIProvider {

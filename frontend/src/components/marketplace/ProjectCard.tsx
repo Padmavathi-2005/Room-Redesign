@@ -82,19 +82,34 @@ export const ProjectCard: React.FC<PublishedProjectCardProps> = ({
           </span>
         </div>
 
-        {/* Top Right Delete Action */}
-        {onDeleteClick && (
+        {/* Top Right Actions: Wishlist Heart & Delete */}
+        <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteClick(id);
-            }}
-            title="Delete Design"
-            className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-slate-950/80 hover:bg-rose-600 backdrop-blur-md text-white border border-white/20 transition-colors shadow-md cursor-pointer"
+            type="button"
+            onClick={handleHeartClick}
+            title={liked ? 'Remove from Wishlist' : 'Add to Wishlist'}
+            className={`p-1.5 rounded-full backdrop-blur-md transition-all shadow-md cursor-pointer border ${
+              liked
+                ? 'bg-rose-500 text-white border-rose-400'
+                : 'bg-slate-950/80 text-slate-300 hover:text-white hover:bg-rose-500 border-white/20'
+            }`}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Heart className={`w-3.5 h-3.5 ${liked ? 'fill-white' : ''}`} />
           </button>
-        )}
+
+          {onDeleteClick && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteClick(id);
+              }}
+              title="Delete Design"
+              className="p-1.5 rounded-full bg-slate-950/80 hover:bg-rose-600 backdrop-blur-md text-white border border-white/20 transition-colors shadow-md cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
 
 
 

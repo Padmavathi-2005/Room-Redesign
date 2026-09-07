@@ -1,5 +1,5 @@
 const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
   const cleanUrl = envUrl.replace(/\/$/, '');
   return cleanUrl.endsWith('/api/v1') ? cleanUrl : `${cleanUrl}/api/v1`;
 };
@@ -112,6 +112,7 @@ const handleApiResponse = async (res: Response, fallbackMessage: string) => {
       localStorage.removeItem('admin_user');
       document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      window.dispatchEvent(new Event('user-logged-out'));
       window.location.href = '/admin';
     }
     throw new Error('Authentication token is invalid or expired. Please sign in again.');

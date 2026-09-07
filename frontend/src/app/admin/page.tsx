@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
       const res = await fetch(`${apiUrl}/auth/admin-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,13 +74,9 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FCFCFD] text-slate-900 flex flex-col items-center justify-center p-6 relative overflow-hidden selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col items-center justify-center p-6 relative overflow-hidden selection:bg-indigo-500 selection:text-white">
       {/* Blueprint Grid Pattern */}
-      <div className="fixed inset-0 blueprint-grid pointer-events-none z-0 opacity-40" />
-
-      {/* Glow Orbs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
+      <div className="fixed inset-0 blueprint-grid pointer-events-none z-0 opacity-25" />
 
       <motion.div
         initial={{ opacity: 0, y: 15, scale: 0.98 }}

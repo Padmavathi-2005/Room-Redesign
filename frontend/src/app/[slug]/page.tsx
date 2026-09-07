@@ -37,6 +37,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${page.title} - RoomAI`,
     description: page.description || `Official ${page.title} page for RoomAI platform.`,
+    openGraph: {
+      title: `${page.title} - RoomAI`,
+      description: page.description || `Official ${page.title} page for RoomAI platform.`,
+      images: page.ogImage ? [{ url: page.ogImage }] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${page.title} - RoomAI`,
+      description: page.description || `Official ${page.title} page for RoomAI platform.`,
+      images: page.ogImage ? [page.ogImage] : [],
+    },
   };
 }
 
@@ -56,15 +67,15 @@ export default async function PublicCmsPage({ params }: PageProps) {
       {/* Main Navigation Header */}
       <Header />
 
-      <main className="flex-1 relative z-10 pt-28 pb-20">
+      <main className="flex-1 relative z-10 pt-24 pb-20">
         {page.customHtml ? (
           /* Custom Raw HTML Mode Rendering */
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div dangerouslySetInnerHTML={{ __html: page.customHtml }} />
           </div>
         ) : (
           /* Component Blocks Renderer */
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
             {page.blocks && page.blocks.length > 0 ? (
               page.blocks.map((block: any, idx: number) => {
                 // 1. HERO BLOCK
@@ -72,32 +83,34 @@ export default async function PublicCmsPage({ params }: PageProps) {
                   return (
                     <section
                       key={block.id || idx}
-                      className="text-center space-y-6 py-12 px-6 sm:px-12 rounded-2xl bg-gradient-to-tr from-indigo-900 via-indigo-800 to-slate-900 text-white shadow-2xl relative overflow-hidden"
+                      className="text-center space-y-6 py-16 px-6 sm:px-14 rounded-[10px] bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-900 text-white shadow-xl relative overflow-hidden border border-indigo-900/50"
                     >
-                      <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+                      {/* Ambient background accent glows */}
+                      <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+                      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
 
                       {block.content?.badge && (
-                        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-white/20 text-white text-[10px] font-black uppercase tracking-widest backdrop-blur-md">
-                          <Sparkles className="w-3 h-3 text-cyan-400" />
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-[11px] font-black uppercase tracking-widest backdrop-blur-md shadow-inner">
+                          <Sparkles className="w-3.5 h-3.5 text-cyan-300 animate-pulse" />
                           <span>{block.content.badge}</span>
                         </div>
                       )}
 
-                      <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight max-w-3xl mx-auto">
+                      <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight max-w-4xl mx-auto text-white">
                         {block.content?.title || page.title}
                       </h1>
 
                       {block.content?.subtitle && (
-                        <p className="text-sm sm:text-base text-indigo-200 font-medium max-w-2xl mx-auto leading-relaxed">
+                        <p className="text-sm sm:text-base lg:text-lg text-indigo-200/90 font-medium max-w-3xl mx-auto leading-relaxed">
                           {block.content.subtitle}
                         </p>
                       )}
 
                       {block.content?.ctaText && (
-                        <div className="pt-2">
+                        <div className="pt-3">
                           <Link
                             href={block.content.ctaUrl || '/generate'}
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-indigo-900 font-black text-xs shadow-lg hover:bg-slate-100 transition-all"
+                            className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-[10px] bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                           >
                             <span>{block.content.ctaText}</span>
                             <ArrowRight className="w-4 h-4" />
@@ -111,10 +124,11 @@ export default async function PublicCmsPage({ params }: PageProps) {
                 // 2. RICH TEXT BLOCK
                 if (block.type === 'text') {
                   return (
-                    <section key={block.id || idx} className="bg-white p-8 sm:p-10 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+                    <section key={block.id || idx} className="bg-white p-8 sm:p-12 rounded-[10px] border border-slate-200/80 shadow-2xs space-y-4">
                       {block.content?.title && (
-                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                          {block.content.title}
+                        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+                          <span className="w-1.5 h-6 rounded-full bg-indigo-600 inline-block" />
+                          <span>{block.content.title}</span>
                         </h2>
                       )}
                       <div
@@ -130,20 +144,25 @@ export default async function PublicCmsPage({ params }: PageProps) {
                   return (
                     <section key={block.id || idx} className="space-y-8 text-center">
                       {block.content?.title && (
-                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                          {block.content.title}
-                        </h2>
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                            Key Features & Capabilities
+                          </span>
+                          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                            {block.content.title}
+                          </h2>
+                        </div>
                       )}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {block.content?.items?.map((item: any, i: number) => (
                           <div
                             key={i}
-                            className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs text-left space-y-3 hover:border-indigo-200 transition-all"
+                            className="p-7 rounded-[10px] bg-white border border-slate-200/80 shadow-2xs text-left space-y-4 hover:border-indigo-300 hover:shadow-md transition-all group"
                           >
-                            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                            <div className="w-11 h-11 rounded-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center font-bold group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                               <CheckCircle2 className="w-5 h-5" />
                             </div>
-                            <h3 className="text-sm font-black text-slate-900">{item.title}</h3>
+                            <h3 className="text-base font-black text-slate-900">{item.title}</h3>
                             <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.description}</p>
                           </div>
                         ))}
@@ -157,15 +176,15 @@ export default async function PublicCmsPage({ params }: PageProps) {
                   return (
                     <section
                       key={block.id || idx}
-                      className="p-8 sm:p-10 rounded-2xl bg-indigo-600 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-xl"
+                      className="p-8 sm:p-12 rounded-[10px] bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-xl border border-indigo-700/40 relative overflow-hidden"
                     >
-                      <div className="space-y-1.5">
-                        <h3 className="text-xl font-black">{block.content?.headline || 'Ready to Get Started?'}</h3>
-                        <p className="text-xs text-indigo-100 font-medium">{block.content?.subhead || 'Transform floor plans and rooms in seconds.'}</p>
+                      <div className="space-y-2 relative z-10">
+                        <h3 className="text-xl sm:text-2xl font-black tracking-tight">{block.content?.headline || 'Ready to Get Started?'}</h3>
+                        <p className="text-xs sm:text-sm text-indigo-200 font-medium max-w-xl">{block.content?.subhead || 'Transform floor plans and rooms in seconds.'}</p>
                       </div>
                       <Link
                         href={block.content?.buttonUrl || '/generate'}
-                        className="px-6 py-3 rounded-2xl bg-white text-indigo-600 font-black text-xs shadow hover:bg-slate-100 transition-all text-center shrink-0"
+                        className="px-7 py-3.5 rounded-[10px] bg-white text-indigo-900 font-black text-xs shadow-lg hover:bg-slate-100 transition-all text-center shrink-0 hover:scale-[1.02] active:scale-[0.98] cursor-pointer uppercase tracking-wider relative z-10"
                       >
                         {block.content?.buttonText || 'Get Started Now'}
                       </Link>
@@ -178,21 +197,21 @@ export default async function PublicCmsPage({ params }: PageProps) {
                   return (
                     <section key={block.id || idx} className="space-y-6">
                       {block.content?.title && (
-                        <h2 className="text-2xl font-black text-slate-900 text-center tracking-tight">
+                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 text-center tracking-tight">
                           {block.content.title}
                         </h2>
                       )}
-                      <div className="space-y-3">
+                      <div className="space-y-3.5 max-w-4xl mx-auto">
                         {block.content?.items?.map((item: any, i: number) => (
                           <details
                             key={i}
-                            className="group p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs font-semibold text-xs text-slate-900 [&_summary::-webkit-details-marker]:hidden cursor-pointer"
+                            className="group p-5 sm:p-6 rounded-[10px] bg-white border border-slate-200/80 shadow-2xs font-semibold text-xs text-slate-900 [&_summary::-webkit-details-marker]:hidden cursor-pointer hover:border-indigo-200 transition-all"
                           >
-                            <summary className="flex items-center justify-between font-extrabold text-slate-900">
+                            <summary className="flex items-center justify-between font-extrabold text-sm text-slate-900">
                               <span>{item.question}</span>
-                              <ChevronDown className="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform" />
+                              <ChevronDown className="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform shrink-0 ml-4" />
                             </summary>
-                            <p className="mt-3 text-slate-600 font-medium leading-relaxed border-t border-slate-100 pt-3">
+                            <p className="mt-4 text-xs sm:text-sm text-slate-650 font-medium leading-relaxed border-t border-slate-100 pt-4">
                               {item.answer}
                             </p>
                           </details>
@@ -205,14 +224,19 @@ export default async function PublicCmsPage({ params }: PageProps) {
                 // 6. IMAGE SHOWCASE BLOCK
                 if (block.type === 'image') {
                   return (
-                    <section key={block.id || idx} className="space-y-2 text-center">
-                      <img
-                        src={block.content?.imageUrl}
-                        alt="Showcase"
-                        className="w-full max-h-[500px] object-cover rounded-2xl border border-slate-200 shadow-xl"
-                      />
+                    <section key={block.id || idx} className="space-y-3 text-center">
+                      <div className="overflow-hidden rounded-[10px] border border-slate-200/80 shadow-2xl bg-slate-950">
+                        <img
+                          src={block.content?.imageUrl}
+                          alt={block.content?.caption || 'RoomAI Showcase'}
+                          className="w-full max-h-[580px] object-cover hover:scale-[1.01] transition-transform duration-500"
+                        />
+                      </div>
                       {block.content?.caption && (
-                        <p className="text-xs text-slate-500 font-semibold">{block.content.caption}</p>
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold border border-slate-200">
+                          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>{block.content.caption}</span>
+                        </div>
                       )}
                     </section>
                   );
@@ -230,7 +254,7 @@ export default async function PublicCmsPage({ params }: PageProps) {
                 return null;
               })
             ) : (
-              <div className="p-12 text-center bg-white rounded-2xl border border-slate-200/80 text-slate-500">
+              <div className="p-12 text-center bg-white rounded-[10px] border border-slate-200/80 text-slate-500">
                 <h1 className="text-2xl font-black text-slate-900">{page.title}</h1>
                 <p className="text-xs text-slate-500 mt-2 font-medium">This custom page is currently empty.</p>
               </div>

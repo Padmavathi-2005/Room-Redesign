@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import WorkflowProgressStepper from '@/components/layout/WorkflowProgressStepper';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload,
@@ -43,6 +45,7 @@ import {
   Coins,
   Wallet,
   CreditCard,
+  Maximize2,
   XCircle,
   Loader2,
 } from 'lucide-react';
@@ -51,6 +54,7 @@ import { projectService, ProjectData } from '@/services/project.service';
 import { useToast } from '@/context/ToastContext';
 import { CreditTokenIcon } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
+import { triggerImageDownload } from '@/utils/download';
 
 interface StudioToolConfig {
   id: string;
@@ -214,6 +218,113 @@ const ALL_STUDIO_TOOLS: StudioToolConfig[] = [
     icon: FileCode2,
   },
 ];
+
+const SAMPLE_PREVIEW_PRESETS: Record<string, Array<{ title: string; style: string; roomType: string; image: string }>> = {
+  interiors: [
+    {
+      title: 'Modern Minimalist Living',
+      style: 'Modern',
+      roomType: 'Living Room',
+      image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Scandinavian Airy Bedroom',
+      style: 'Scandinavian',
+      roomType: 'Bedroom',
+      image: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Japandi Warm Wood Kitchen',
+      style: 'Japandi',
+      roomType: 'Kitchen',
+      image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Luxury Marble Bathroom',
+      style: 'Luxury',
+      roomType: 'Bathroom',
+      image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=600&auto=format&fit=crop',
+    },
+  ],
+  exteriors: [
+    {
+      title: 'Modern Facade Villa',
+      style: 'Modern',
+      roomType: 'Villa',
+      image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Scandinavian Timber House',
+      style: 'Scandinavian',
+      roomType: 'House',
+      image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Contemporary Glass Facade',
+      style: 'Contemporary',
+      roomType: 'Office',
+      image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Luxury Modern Mansion',
+      style: 'Luxury',
+      roomType: 'Villa',
+      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600&auto=format&fit=crop',
+    },
+  ],
+  'floor-plans': [
+    {
+      title: '3D Isometric Apartment',
+      style: 'Modern',
+      roomType: 'Apartment',
+      image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: '2D Architectural Schematic',
+      style: 'Minimalist',
+      roomType: 'House',
+      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Open-Concept Villa Plan',
+      style: 'Luxury',
+      roomType: 'Villa',
+      image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Duplex Layout CAD',
+      style: 'Contemporary',
+      roomType: 'House',
+      image: 'https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?q=80&w=600&auto=format&fit=crop',
+    },
+  ],
+  gardens: [
+    {
+      title: 'Zen Japanese Rock Garden',
+      style: 'Japanese',
+      roomType: 'Garden',
+      image: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Modern Patio & Deck',
+      style: 'Modern',
+      roomType: 'Patio',
+      image: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Lush Tropical Backyard Oasis',
+      style: 'Tropical',
+      roomType: 'Backyard',
+      image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=600&auto=format&fit=crop',
+    },
+    {
+      title: 'Mediterranean Stone Terrace',
+      style: 'Mediterranean',
+      roomType: 'Terrace',
+      image: 'https://images.unsplash.com/photo-1540518614846-7ede433c5163?q=80&w=600&auto=format&fit=crop',
+    },
+  ],
+};
 
 const ROOM_SIZES = [
   { id: 'Small', label: 'Small (< 150 sq ft)' },
@@ -482,13 +593,306 @@ const DEFAULT_TOOLS_CONFIG = [
   }
 ];
 
+const CustomSelect: React.FC<{
+  value: string;
+  onChange: (val: string) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
+  className?: string;
+}> = ({ value, onChange, options, placeholder = 'Select option', className = '' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) setSearchQuery('');
+  }, [isOpen]);
+
+  const selectedItem = options.find((opt) => opt.value === value);
+  const displayLabel = selectedItem ? selectedItem.label : value || placeholder;
+
+  const showSearch = options.length > 5;
+  const filteredOptions = showSearch
+    ? options.filter((opt) =>
+        opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        opt.value.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : options;
+
+  return (
+    <div className={`relative w-full ${className}`} ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3.5 py-2 bg-white border border-slate-200 hover:border-blue-500 focus:border-blue-600 rounded-[10px] text-xs font-bold text-slate-900 flex items-center justify-between transition-all cursor-pointer shadow-2xs group hover:bg-blue-50/20"
+      >
+        <span className="truncate text-left font-heading">{displayLabel}</span>
+        <ChevronDown className={`w-4 h-4 text-primary transition-transform duration-200 shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white/95 backdrop-blur-md rounded-[10px] border border-blue-100 shadow-xl p-1.5 max-h-64 overflow-y-auto space-y-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {showSearch && (
+              <div className="sticky top-0 z-10 bg-white pb-1.5 pt-0.5 px-0.5 border-b border-slate-100 mb-1">
+                <div className="relative flex items-center">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search options..."
+                    className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 font-medium"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSearchQuery('');
+                      }}
+                      className="absolute right-2 p-0.5 text-slate-400 hover:text-slate-600 rounded-full"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-2 text-xs font-semibold text-slate-400 text-center">
+                No matching options found
+              </div>
+            ) : (
+              filteredOptions.map((opt, idx) => {
+                const isSelected = opt.value === value;
+                return (
+                  <button
+                    key={`${opt.value}-${idx}`}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs font-bold rounded-[10px] flex items-center justify-between transition-all cursor-pointer font-heading ${
+                      isSelected
+                        ? 'bg-primary text-white shadow-2xs'
+                        : 'text-slate-700 hover:bg-blue-50 hover:text-primary font-semibold'
+                    }`}
+                  >
+                    <span className="truncate">{opt.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-white shrink-0 ml-1.5" />}
+                  </button>
+                );
+              })
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 function GenerateStudioContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const toolSlug = searchParams.get('tool');
+  const { toast } = useToast();
+  const toolSlug = searchParams?.get('tool');
 
+  // React State Hooks
   const [activeSpace, setActiveSpace] = useState<'floor-plans' | 'interiors' | 'exteriors' | 'gardens'>('interiors');
   const [selectedToolId, setSelectedToolId] = useState<string>(toolSlug || 'interior-design');
+  const [isToolPickerOpen, setIsToolPickerOpen] = useState<boolean>(false);
+
+  // Model 01: Floor Plan Generator State
+  const [bedroomsCount, setBedroomsCount] = useState<number>(3);
+  const [bathroomsCount, setBathroomsCount] = useState<number>(2);
+  const [floorPlanStyle, setFloorPlanStyle] = useState<string>('Modern Open-Concept');
+  const [plotDimensions, setPlotDimensions] = useState<string>('40ft x 60ft');
+
+  // Interior state
+  const [selectedRoomType, setSelectedRoomType] = useState<string>('Living Room');
+  const [selectedStyle, setSelectedStyle] = useState<string>('Modern');
+  const [selectedSize, setSelectedSize] = useState<string>('Medium');
+  const [selectedPalette, setSelectedPalette] = useState<string>('beige');
+  const [selectedMood, setSelectedMood] = useState<string>('Cozy');
+  const [selectedLighting, setSelectedLighting] = useState<string>('Warm');
+  const [selectedBudget, setSelectedBudget] = useState<string>('medium');
+  const [furnitureHandling, setFurnitureHandling] = useState<string>('replace-all');
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [productCategoryFilter, setProductCategoryFilter] = useState<string>('all');
+  const [showCustomRequirements, setShowCustomRequirements] = useState<boolean>(false);
+  const [customRequirements, setCustomRequirements] = useState<string>('');
+  const [preserveStructure, setPreserveStructure] = useState<boolean>(true);
+
+  // Private Rating & Review Feedback State
+  const [userStarRating, setUserStarRating] = useState<number>(5);
+  const [hasSubmittedRating, setHasSubmittedRating] = useState<boolean>(false);
+
+  // Exterior & Garden state
+  const [houseAngle, setHouseAngle] = useState<string>('Side of house');
+  const [buildingType, setBuildingType] = useState<string>('House');
+  const [roofType, setRoofType] = useState<string>('Flat Roof');
+  const [environment, setEnvironment] = useState<string>('City');
+  const [timeOfDay, setTimeOfDay] = useState<string>('Morning');
+  const [exteriorTool, setExteriorTool] = useState<string>('Redesign');
+  const [exteriorStyle, setExteriorStyle] = useState<string>('Modern');
+  const [gardenType, setGardenType] = useState<string>('Backyard Oasis');
+  const [gardenStyle, setGardenStyle] = useState<string>('Modern Landscape');
+  const [aiInterventionIndex, setAiInterventionIndex] = useState<number>(2);
+  const [showCustomInstructions, setShowCustomInstructions] = useState<boolean>(false);
+  const [customAiInstructions, setCustomAiInstructions] = useState<string>('');
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isWorkflowExpanded, setIsWorkflowExpanded] = useState<boolean>(true);
+  const [generatedImagesList, setGeneratedImagesList] = useState<string[]>([]);
+  const [imageFitMode, setImageFitMode] = useState<'contain' | 'cover'>('contain');
+  const [lightboxImageUrl, setLightboxImageUrl] = useState<string | null>(null);
+
+  // Execution panel states
+  const [isCreditChecking, setIsCreditChecking] = useState<boolean>(false);
+  const [creditBlocked, setCreditBlocked] = useState<boolean>(false);
+  const [creditRequired, setCreditRequired] = useState<number>(4);
+  const [userCurrentCredits, setUserCurrentCredits] = useState<number>(0);
+  const [generationDurationSeconds, setGenerationDurationSeconds] = useState<number>(0);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState<boolean>(false);
+  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({
+    direction: false,
+    source: false,
+    generate: true,
+    review: false,
+  });
+
+  // Projects state
+  const [projectsList, setProjectsList] = useState<ProjectData[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState<boolean>(false);
+  const [newProjectName, setNewProjectName] = useState<string>('');
+  const [newProjectTheme, setNewProjectTheme] = useState<string>('Modern');
+  const [newProjectDescription, setNewProjectDescription] = useState<string>('');
+  const [isCreatingProject, setIsCreatingProject] = useState<boolean>(false);
+
+  // Upload & Generation state
+  const [isUserUploaded, setIsUserUploaded] = useState<boolean>(false);
+  const [dbTools, setDbTools] = useState<any[]>(DEFAULT_TOOLS_CONFIG);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState<string>('');
+  const [demoAfterResult, setDemoAfterResult] = useState<string | null>(null);
+  const [isStyleDropdownOpen, setIsStyleDropdownOpen] = useState<boolean>(false);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [dynamicWidgetValues, setDynamicWidgetValues] = useState<Record<string, any>>({});
+  const [generatedResult, setGeneratedResult] = useState<string | null>(null);
+  const [compiledPrompt, setCompiledPrompt] = useState<string>('');
+  const [sliderPosition, setSliderPosition] = useState<number>(50);
+  const [studioFitMode, setStudioFitMode] = useState<'contain' | 'cover'>('contain');
+  const [studioAspectRatio, setStudioAspectRatio] = useState<number | null>(null);
+  const [generationElapsedSeconds, setGenerationElapsedSeconds] = useState<number>(0);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+
+  // React Refs
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const isMouseDownRef = React.useRef<boolean>(false);
+  const startXRef = React.useRef<number>(0);
+  const scrollLeftRef = React.useRef<number>(0);
+  const sliderContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const toolPickerRef = React.useRef<HTMLDivElement>(null);
+
+  // Close tool picker popover when clicking outside or scrolling page
+  useEffect(() => {
+    if (!isToolPickerOpen) return;
+
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (toolPickerRef.current && !toolPickerRef.current.contains(e.target as Node)) {
+        setIsToolPickerOpen(false);
+      }
+    };
+
+    const handleScroll = () => {
+      setIsToolPickerOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isToolPickerOpen]);
+
+  // Preload image aspect ratio safely inside useEffect instead of render body side-effect
+  useEffect(() => {
+    const currToolConfig = ALL_STUDIO_TOOLS.find((t) => t.id === selectedToolId) || ALL_STUDIO_TOOLS[3];
+    const currDbTool = dbTools.find((t: any) => {
+      if (!t) return false;
+      const tSlug = (t.slug || t.id || '').toLowerCase();
+      const targetSlug = (selectedToolId || toolSlug || 'interior-design').toLowerCase();
+      return (
+        tSlug === targetSlug ||
+        t._id === targetSlug ||
+        tSlug.replace(/-/g, '') === targetSlug.replace(/-/g, '')
+      );
+    });
+
+    const sampleBeforeImg = currDbTool?.demoBeforeImage || currToolConfig?.demoBeforeImage ||
+      (activeSpace === 'exteriors'
+        ? 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=1200&auto=format&fit=crop'
+        : activeSpace === 'gardens'
+        ? 'https://images.unsplash.com/photo-1558904541-efa843a96f01?q=80&w=1200&auto=format&fit=crop'
+        : activeSpace === 'floor-plans'
+        ? 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200&auto=format&fit=crop'
+        : 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200&auto=format&fit=crop');
+
+    const sampleAfterImg = currDbTool?.demoAfterImage || currToolConfig?.demoAfterImage ||
+      (activeSpace === 'exteriors'
+        ? 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1200&auto=format&fit=crop'
+        : activeSpace === 'gardens'
+        ? 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=1200&auto=format&fit=crop'
+        : activeSpace === 'floor-plans'
+        ? 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=1200&auto=format&fit=crop'
+        : 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1200&auto=format&fit=crop');
+
+    const displayBefore = uploadedImage || sampleBeforeImg;
+    const displayAfter = generatedResult || (uploadedImage ? null : sampleAfterImg);
+    const activeSrc = displayAfter || displayBefore;
+
+    if (!activeSrc) return;
+
+    let isMounted = true;
+    const img = new Image();
+    img.src = activeSrc;
+    img.onload = () => {
+      if (isMounted && img.naturalWidth && img.naturalHeight && img.naturalHeight > 0) {
+        const ratio = img.naturalWidth / img.naturalHeight;
+        setStudioAspectRatio(ratio);
+      }
+    };
+
+    return () => {
+      isMounted = false;
+    };
+  }, [uploadedImage, generatedResult, activeSpace, selectedToolId, dbTools, toolSlug]);
+
+
 
   useEffect(() => {
     const currentSlug = toolSlug || 'interior-design';
@@ -512,11 +916,11 @@ function GenerateStudioContent() {
 
   // Pre-fill studio form fields & pre-load photo when coming from "Try This Style in Studio" or "View Generation Details"
   useEffect(() => {
-    const qpRoomType = searchParams.get('roomType');
-    const qpStyle = searchParams.get('style');
-    const qpPresetImage = searchParams.get('presetImage');
-    const qpGeneratedImage = searchParams.get('generatedImage');
-    const qpDesc = searchParams.get('desc');
+    const qpRoomType = searchParams?.get('roomType');
+    const qpStyle = searchParams?.get('style');
+    const qpPresetImage = searchParams?.get('presetImage');
+    const qpGeneratedImage = searchParams?.get('generatedImage');
+    const qpDesc = searchParams?.get('desc');
 
     if (qpRoomType) {
       setSelectedRoomType(qpRoomType);
@@ -540,10 +944,7 @@ function GenerateStudioContent() {
     }
   }, [searchParams]);
 
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const isMouseDownRef = React.useRef<boolean>(false);
-  const startXRef = React.useRef<number>(0);
-  const scrollLeftRef = React.useRef<number>(0);
+
 
   const onDragMouseDown = (e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return;
@@ -596,31 +997,6 @@ function GenerateStudioContent() {
   const activeToolConfig = ALL_STUDIO_TOOLS.find((t) => t.id === selectedToolId) || ALL_STUDIO_TOOLS[3];
   const ActiveToolIcon = activeToolConfig.icon;
 
-  // Model 01: Floor Plan Generator State
-  const [bedroomsCount, setBedroomsCount] = useState<number>(3);
-  const [bathroomsCount, setBathroomsCount] = useState<number>(2);
-  const [floorPlanStyle, setFloorPlanStyle] = useState<string>('Modern Open-Concept');
-  const [plotDimensions, setPlotDimensions] = useState<string>('40ft x 60ft');
-
-  // Interior state
-  const [selectedRoomType, setSelectedRoomType] = useState<string>('Living Room');
-  const [selectedStyle, setSelectedStyle] = useState<string>('Modern');
-  const [selectedSize, setSelectedSize] = useState<string>('Medium');
-  const [selectedPalette, setSelectedPalette] = useState<string>('beige');
-  const [selectedMood, setSelectedMood] = useState<string>('Cozy');
-  const [selectedLighting, setSelectedLighting] = useState<string>('Warm');
-  const [selectedBudget, setSelectedBudget] = useState<string>('medium');
-  const [furnitureHandling, setFurnitureHandling] = useState<string>('replace-all');
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [productCategoryFilter, setProductCategoryFilter] = useState<string>('all');
-  const [showCustomRequirements, setShowCustomRequirements] = useState<boolean>(false);
-  const [customRequirements, setCustomRequirements] = useState<string>('');
-  const [preserveStructure, setPreserveStructure] = useState<boolean>(true);
-
-  // Private Rating & Review Feedback State
-  const [userStarRating, setUserStarRating] = useState<number>(5);
-  const [hasSubmittedRating, setHasSubmittedRating] = useState<boolean>(false);
-
   const handleSendRatingFeedback = async () => {
     setHasSubmittedRating(true);
     toast.success(
@@ -637,47 +1013,6 @@ function GenerateStudioContent() {
       setSelectedProducts([...selectedProducts, productName]);
     }
   };
-
-  // Exterior & Garden state
-  const [houseAngle, setHouseAngle] = useState<string>('Side of house');
-  const [buildingType, setBuildingType] = useState<string>('House');
-  const [roofType, setRoofType] = useState<string>('Flat Roof');
-  const [environment, setEnvironment] = useState<string>('City');
-  const [timeOfDay, setTimeOfDay] = useState<string>('Morning');
-  const [exteriorTool, setExteriorTool] = useState<string>('Redesign');
-  const [exteriorStyle, setExteriorStyle] = useState<string>('Modern');
-  const [gardenType, setGardenType] = useState<string>('Backyard Oasis');
-  const [gardenStyle, setGardenStyle] = useState<string>('Modern Landscape');
-  const [aiInterventionIndex, setAiInterventionIndex] = useState<number>(2);
-  const [showCustomInstructions, setShowCustomInstructions] = useState<boolean>(false);
-  const [customAiInstructions, setCustomAiInstructions] = useState<string>('');
-  const [generationError, setGenerationError] = useState<string | null>(null);
-  const [isWorkflowExpanded, setIsWorkflowExpanded] = useState<boolean>(true);
-  const [generatedImagesList, setGeneratedImagesList] = useState<string[]>([]);
-  const { toast } = useToast();
-
-  // Execution panel states
-  const [isCreditChecking, setIsCreditChecking] = useState<boolean>(false);
-  const [creditBlocked, setCreditBlocked] = useState<boolean>(false);
-  const [creditRequired, setCreditRequired] = useState<number>(4);
-  const [userCurrentCredits, setUserCurrentCredits] = useState<number>(0);
-  const [generationDurationSeconds, setGenerationDurationSeconds] = useState<number>(0);
-  const [showTechnicalDetails, setShowTechnicalDetails] = useState<boolean>(false);
-  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({
-    direction: false,
-    source: false,
-    generate: true,
-    review: false,
-  });
-
-  // Projects state
-  const [projectsList, setProjectsList] = useState<ProjectData[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState<boolean>(false);
-  const [newProjectName, setNewProjectName] = useState<string>('');
-  const [newProjectTheme, setNewProjectTheme] = useState<string>('Modern');
-  const [newProjectDescription, setNewProjectDescription] = useState<string>('');
-  const [isCreatingProject, setIsCreatingProject] = useState<boolean>(false);
 
   const handleCreateProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -713,8 +1048,6 @@ function GenerateStudioContent() {
     }
   };
 
-  const [isUserUploaded, setIsUserUploaded] = useState<boolean>(false);
-  const [dbTools, setDbTools] = useState<any[]>(DEFAULT_TOOLS_CONFIG);
   const activeDbTool = dbTools.find((t: any) => {
     if (!t) return false;
     const tSlug = (t.slug || t.id || '').toLowerCase();
@@ -732,9 +1065,6 @@ function GenerateStudioContent() {
       (targetSlug.includes('interior') && tSlug.includes('interior'))
     );
   });
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [imageUrlInput, setImageUrlInput] = useState<string>('');
-  const [demoAfterResult, setDemoAfterResult] = useState<string | null>(null);
 
   const resolveDirectImageUrl = (rawUrl: string): string => {
     let cleanUrl = rawUrl.trim();
@@ -750,14 +1080,28 @@ function GenerateStudioContent() {
       return cleanUrl;
     }
 
-    // 1. Convert Unsplash photo webpage URLs (e.g. https://unsplash.com/photos/white-and-blue-knit-textile-53BjYSxca5g)
-    const unsplashMatch = cleanUrl.match(/unsplash\.com\/photos\/(?:[^\/]+-)?([a-zA-Z0-9_-]+)/i);
+    // 1. Convert Unsplash photo webpage URLs (e.g. https://unsplash.com/photos/a-living-room-filled-with-furniture-and-a-large-window-OtXADkUh3-I)
+    const unsplashMatch = cleanUrl.match(/unsplash\.com\/photos\/([^?#]+)/i);
     if (unsplashMatch && unsplashMatch[1]) {
-      const segment = unsplashMatch[1];
-      const photoId = segment.includes('-') ? segment.split('-').pop()! : segment;
-      if (photoId.startsWith('photo-')) {
-        return `https://images.unsplash.com/${photoId}?q=80&w=1200&auto=format&fit=crop`;
+      const rawPath = unsplashMatch[1].replace(/\/$/, '');
+      if (rawPath.startsWith('photo-')) {
+        return `https://images.unsplash.com/${rawPath}?q=80&w=1200&auto=format&fit=crop`;
       }
+
+      let photoId = rawPath;
+      const lastPart = rawPath.split('/').pop() || rawPath;
+      if (lastPart.includes('-')) {
+        const subParts = lastPart.split('-');
+        // If the last subpart is a short code (like 'I' in 'OtXADkUh3-I'), combine the last 2 subparts
+        if (subParts.length >= 2 && subParts[subParts.length - 1].length <= 3) {
+          photoId = `${subParts[subParts.length - 2]}-${subParts[subParts.length - 1]}`;
+        } else {
+          photoId = subParts[subParts.length - 1];
+        }
+      } else {
+        photoId = lastPart;
+      }
+
       return `https://unsplash.com/photos/${photoId}/download?force=true`;
     }
 
@@ -775,184 +1119,21 @@ function GenerateStudioContent() {
     const rawUrl = imageUrlInput.trim();
     if (!rawUrl) return;
 
-    // 1. Instant client-side resolution for Unsplash / Pexels / direct image links
+    if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://') && !rawUrl.startsWith('data:image/')) {
+      toast.error('Please enter a valid URL starting with http:// or https://', 'Invalid URL Format');
+      return;
+    }
+
+    // Instant client-side resolution for Unsplash / Pexels / direct image links
     const resolvedUrl = resolveDirectImageUrl(rawUrl);
-    if (resolvedUrl && resolvedUrl !== rawUrl) {
-      setUploadedImage(resolvedUrl);
-      setGeneratedResult(null);
-      setDemoAfterResult(null);
-      setIsUserUploaded(true);
-      return;
-    }
-
-    // 2. Direct image URL check (.jpg, .png, .webp, data:image, etc.)
-    if (
-      /\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i.test(rawUrl) ||
-      rawUrl.includes('images.unsplash.com') ||
-      rawUrl.includes('images.pexels.com') ||
-      rawUrl.startsWith('data:image/')
-    ) {
-      setUploadedImage(rawUrl);
-      setGeneratedResult(null);
-      setDemoAfterResult(null);
-      setIsUserUploaded(true);
-      return;
-    }
-
-    // 3. Fallback to Backend URL Scraper API if available
-    try {
-      const apiBase = getApiBaseUrl();
-      const res = await fetch(`${apiBase}/uploads/resolve-url`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: rawUrl }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const resolved = data.data?.url || data.url || data.directUrl;
-        if (resolved && (resolved.startsWith('http') || resolved.startsWith('data:image/'))) {
-          setUploadedImage(resolved);
-          setGeneratedResult(null);
-          setDemoAfterResult(null);
-          setIsUserUploaded(true);
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to resolve URL via backend API:', e);
-    }
-
-    setUploadedImage(rawUrl);
+    setUploadedImage(resolvedUrl);
     setGeneratedResult(null);
     setDemoAfterResult(null);
     setIsUserUploaded(true);
   };
 
-  const [isStyleDropdownOpen, setIsStyleDropdownOpen] = useState<boolean>(false);
 
-  const CustomSelect: React.FC<{
-    value: string;
-    onChange: (val: string) => void;
-    options: Array<{ value: string; label: string }>;
-    placeholder?: string;
-    className?: string;
-  }> = ({ value, onChange, options, placeholder = 'Select option', className = '' }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-          setIsOpen(false);
-        }
-      };
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-      if (!isOpen) setSearchQuery('');
-    }, [isOpen]);
-
-    const selectedItem = options.find((opt) => opt.value === value);
-    const displayLabel = selectedItem ? selectedItem.label : value || placeholder;
-
-    const showSearch = options.length > 5;
-    const filteredOptions = showSearch
-      ? options.filter((opt) =>
-          opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          opt.value.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      : options;
-
-    return (
-      <div className={`relative w-full ${className}`} ref={dropdownRef}>
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full px-3.5 py-2 bg-white border border-slate-200 hover:border-purple-500 focus:border-purple-600 rounded-lg text-xs font-bold text-slate-900 flex items-center justify-between transition-all cursor-pointer shadow-2xs group hover:bg-purple-50/20"
-        >
-          <span className="truncate text-left font-heading">{displayLabel}</span>
-          <ChevronDown className={`w-4 h-4 text-purple-600 transition-transform duration-200 shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
-
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -4, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -4, scale: 0.98 }}
-              transition={{ duration: 0.15 }}
-              className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white/95 backdrop-blur-md rounded-xl border border-purple-100 shadow-xl p-1.5 max-h-64 overflow-y-auto space-y-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            >
-              {showSearch && (
-                <div className="sticky top-0 z-10 bg-white pb-1.5 pt-0.5 px-0.5 border-b border-slate-100 mb-1">
-                  <div className="relative flex items-center">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search options..."
-                      className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 font-medium"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    {searchQuery && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSearchQuery('');
-                        }}
-                        className="absolute right-2 p-0.5 text-slate-400 hover:text-slate-600 rounded-full"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {filteredOptions.length === 0 ? (
-                <div className="px-3 py-2 text-xs font-semibold text-slate-400 text-center">
-                  No matching options found
-                </div>
-              ) : (
-                filteredOptions.map((opt, idx) => {
-                  const isSelected = opt.value === value;
-                  return (
-                    <button
-                      key={`${opt.value}-${idx}`}
-                      type="button"
-                      onClick={() => {
-                        onChange(opt.value);
-                        setIsOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-xs font-bold rounded-lg flex items-center justify-between transition-all cursor-pointer font-heading ${
-                        isSelected
-                          ? 'bg-purple-600 text-white shadow-2xs'
-                          : 'text-slate-700 hover:bg-purple-50 hover:text-purple-900 font-semibold'
-                      }`}
-                    >
-                      <span className="truncate">{opt.label}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-white shrink-0 ml-1.5" />}
-                    </button>
-                  );
-                })
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  };
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [dynamicWidgetValues, setDynamicWidgetValues] = useState<Record<string, any>>({});
-  const [generatedResult, setGeneratedResult] = useState<string | null>(null);
-  const [compiledPrompt, setCompiledPrompt] = useState<string>('');
-  const [sliderPosition, setSliderPosition] = useState<number>(50);
-  const [generationElapsedSeconds, setGenerationElapsedSeconds] = useState<number>(0);
 
   useEffect(() => {
     let timer: any;
@@ -968,15 +1149,13 @@ function GenerateStudioContent() {
   }, [isGenerating]);
 
   const getGenerationProgressStatus = (seconds: number) => {
-    if (seconds < 5) return '🚀 Task Enqueued • Initializing AI Model & Prompts...';
-    if (seconds < 15) return '📐 Preserving Structural Geometry, Windows & Walls...';
-    if (seconds < 45) return '🎨 Rendering Photorealistic 8K Architectural Transformation...';
-    if (seconds < 90) return '✨ Refining Materials, Lighting & Furniture Details...';
-    return '⚡ Finalizing High-Res Output & Updating Project Credits...';
+    if (seconds < 15) return 'Initializing Redesign...';
+    if (seconds < 60) return 'Rendering Architectural Space...';
+    if (seconds < 180) return 'Refining Details & Lighting...';
+    return 'Finalizing High-Res Render...';
   };
 
-  const sliderContainerRef = React.useRef<HTMLDivElement | null>(null);
-  const [containerWidth, setContainerWidth] = useState<number>(0);
+
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -984,9 +1163,6 @@ function GenerateStudioContent() {
       setProjectsList(projs);
 
         if (typeof window !== 'undefined') {
-          // Reset old cached designs to start 100% fresh
-          localStorage.removeItem('user_generated_designs');
-
           const params = new URLSearchParams(window.location.search);
           const pid = params.get('projectId');
           if (pid) {
@@ -1018,6 +1194,39 @@ function GenerateStudioContent() {
     };
     fetchProjects();
     fetchDbTools();
+
+    // Fetch and sync user credits balance on mount so real credit count (e.g. 60) is loaded immediately
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (typeof parsed?.credits === 'number') {
+            setUserCurrentCredits(parsed.credits);
+          }
+        }
+      } catch (e) {}
+
+      const syncUserCredits = async () => {
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+          const token = localStorage.getItem('token') || localStorage.getItem('admin_token') || '';
+          if (token) {
+            const res = await fetch(`${baseUrl}/users/me`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              const freshCredits = data?.data?.user?.credits ?? data?.credits ?? data?.user?.credits;
+              if (typeof freshCredits === 'number') {
+                setUserCurrentCredits(freshCredits);
+              }
+            }
+          }
+        } catch (e) {}
+      };
+      syncUserCredits();
+    }
   }, []);
 
   const handleSelectProject = (projId: string) => {
@@ -1138,14 +1347,15 @@ function GenerateStudioContent() {
         ? localStorage.getItem('token') || localStorage.getItem('admin_token') || ''
         : '';
 
-      if (currentUser?._id || currentUser?.id) {
+      if (token && (currentUser?._id || currentUser?.id)) {
         const userRes = await fetch(`${baseUrl}/users/me`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          headers: { Authorization: `Bearer ${token}` },
         });
         if (userRes.ok) {
           const userData = await userRes.json();
-          if (userData && typeof userData.credits === 'number') {
-            currentBalance = userData.credits;
+          const freshCredits = userData?.data?.user?.credits ?? userData?.credits ?? userData?.user?.credits;
+          if (typeof freshCredits === 'number') {
+            currentBalance = freshCredits;
             if (currentUser) {
               currentUser.credits = currentBalance;
               localStorage.setItem('user', JSON.stringify(currentUser));
@@ -1199,32 +1409,73 @@ function GenerateStudioContent() {
       floorPlanStyle,
       plotDimensions,
       aiIntervention: INTERVENTION_LEVELS[aiInterventionIndex],
-      customRequirements: showCustomRequirements ? customRequirements : (showCustomInstructions ? customAiInstructions : ''),
       projectId: selectedProjectId || undefined,
+      projectName: projectsList.find((p) => (p._id || p.id) === selectedProjectId)?.name || undefined,
     };
 
     const startTime = Date.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes (600,000 ms) timeout limit
 
     try {
       const baseUrl = getApiBaseUrl();
+      const token = typeof window !== 'undefined'
+        ? localStorage.getItem('token') || localStorage.getItem('admin_token') || ''
+        : '';
+
       const response = await fetch(`${baseUrl}/rooms/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(bodyPayload),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const resData = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const errorMsg = resData.message || resData.error || `Generation API failed with HTTP status ${response.status}`;
-        
+        let errorMsg = resData.message || resData.error || `Generation API failed with HTTP status ${response.status}`;
+
+        if (response.status === 401 || errorMsg.toLowerCase().includes('token') || errorMsg.toLowerCase().includes('unauthorized')) {
+          errorMsg = 'Your login session is invalid or expired. Please log out and log in again to generate redesigns.';
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.dispatchEvent(new Event('user-updated'));
+          }
+        }
+
+        if (token) {
+          try {
+            const userRes = await fetch(`${baseUrl}/users/me`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              const freshCredits = userData?.data?.user?.credits ?? userData?.credits ?? userData?.user?.credits;
+              if (typeof freshCredits === 'number') {
+                setUserCurrentCredits(freshCredits);
+                if (currentUser) {
+                  currentUser.credits = freshCredits;
+                  localStorage.setItem('user', JSON.stringify(currentUser));
+                  window.dispatchEvent(new Event('user-updated'));
+                }
+              }
+            }
+          } catch (e) {}
+        }
+
         if (response.status === 400 && errorMsg.toLowerCase().includes('credit')) {
           setCreditBlocked(true);
         } else {
           setGenerationError(errorMsg);
         }
 
-        toast.error(errorMsg, 'Generation Interrupted');
+        toast.error(errorMsg, 'Generation Notice');
         setIsGenerating(false);
         return;
       }
@@ -1232,12 +1483,47 @@ function GenerateStudioContent() {
       const elapsed = Math.round(((Date.now() - startTime) / 1000) * 10) / 10;
       setGenerationDurationSeconds(elapsed);
 
-      const output = resData.generatedImage || resData.data?.generatedImage || resData.image || resData.url;
-      if (output) {
-        const allImgs = resData.generatedImages || resData.images || resData.data?.generatedImages || [output];
+      const rawOutput = resData.generatedImage || resData.data?.generatedImage || resData.image || resData.url;
+
+      const formatRenderUrl = (urlStr: any): string => {
+        if (!urlStr || typeof urlStr !== 'string') return '';
+        const clean = urlStr.trim();
+        if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('data:image/')) {
+          return clean;
+        }
+        if (clean.startsWith('/uploads/') || clean.startsWith('uploads/')) {
+          const apiOrigin = getApiBaseUrl().replace(/\/api\/v1\/?$/, '');
+          const cleanPath = clean.startsWith('/') ? clean : `/${clean}`;
+          return `${apiOrigin}${cleanPath}`;
+        }
+        return clean;
+      };
+
+      const output = formatRenderUrl(rawOutput);
+
+      const isValidImageOutput = output &&
+        typeof output === 'string' &&
+        (output.startsWith('http://') || output.startsWith('https://') || output.startsWith('data:image/')) &&
+        !output.includes('manus.ai/share/') &&
+        !output.includes('manus.ai/task/') &&
+        !output.includes('/tasks/');
+
+      if (isValidImageOutput) {
+        const rawImgs = resData.generatedImages || resData.images || resData.data?.generatedImages || [rawOutput];
+        const allImgs = (Array.isArray(rawImgs) ? rawImgs : [rawOutput]).map((u) => formatRenderUrl(u)).filter(Boolean);
+
         setGeneratedResult(output);
-        setGeneratedImagesList(Array.isArray(allImgs) ? allImgs : [output]);
+        setGeneratedImagesList(allImgs.length > 0 ? allImgs : [output]);
         setCompiledPrompt(resData.prompt || resData.data?.prompt || '');
+        if (typeof resData.remainingCredits === 'number') {
+          setUserCurrentCredits(resData.remainingCredits);
+          if (currentUser) {
+            currentUser.credits = resData.remainingCredits;
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            window.dispatchEvent(new Event('user-updated'));
+          }
+        }
+
         toast.success(
           `Your redesign render has been generated successfully (${elapsed}s)!`,
           'AI Transformation Complete',
@@ -1272,10 +1558,18 @@ function GenerateStudioContent() {
           window.dispatchEvent(new Event('user-updated'));
         }
       } else {
-        setGenerationError('The image generation service did not return a visual result.');
+        const failureMsg = resData.error || resData.message || 'AI generation task finished but no valid output image was generated.';
+        setGenerationError(failureMsg);
+        toast.error(failureMsg, 'Generation Result Missing');
       }
     } catch (err: any) {
-      setGenerationError(err.message || 'We couldn\'t complete the room render because the network request failed.');
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError' || controller.signal.aborted) {
+        setGenerationError('Generation request timed out after waiting 10 minutes for Manus AI to complete.');
+        toast.error('The 10-minute generation window expired. Please try again.', 'Generation Timeout');
+      } else {
+        setGenerationError(err.message || 'We couldn\'t complete the room render because the network request failed.');
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -1283,113 +1577,150 @@ function GenerateStudioContent() {
 
   // SINGLE COMMON BACKGROUND CARD BOX WRAPPING ENTIRE STUDIO
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 md:p-8 space-y-8 shadow-2xs">
-      {/* TOP SPACE & TOOL SELECTOR BAR */}
-      <div className="flex flex-col items-center justify-center space-y-4">
-        {/* SPACE CATEGORY TAB BUTTONS (FLOATING DESIGN WITHOUT GREY BOX) */}
-        <div className="inline-flex flex-wrap items-center justify-center gap-2.5 p-1">
-          {(
-            [
-              { id: 'floor-plans', label: 'Floor Plans', icon: Ruler },
-              { id: 'interiors', label: 'Interiors', icon: Layout },
-              { id: 'exteriors', label: 'Exteriors', icon: Home },
-              { id: 'gardens', label: 'Gardens', icon: Flower2 },
-            ] as const
-          ).map((space) => {
-            const SpaceIcon = space.icon;
-            const isSpaceActive = activeSpace === space.id;
-            const spaceToolCount = ALL_STUDIO_TOOLS.filter((t) => t.category === space.id).length;
-            return (
-              <button
-                key={space.id}
-                type="button"
-                onClick={() => handleSelectSpace(space.id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer border ${isSpaceActive
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 border-purple-600 font-black scale-[1.02]'
-                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-purple-50 hover:text-purple-700 border-slate-200/90 dark:border-slate-700 shadow-2xs'
-                  }`}
-              >
-                <SpaceIcon className={`w-3.5 h-3.5 ${isSpaceActive ? 'text-white' : 'text-purple-600'}`} />
-                <span>{space.label}</span>
-                <span
-                  className={`px-2 py-0.5 rounded-2xl text-[10px] font-extrabold ${isSpaceActive ? 'bg-white/20 text-white backdrop-blur-xs' : 'bg-slate-100 text-slate-600'
-                    }`}
-                >
-                  {spaceToolCount}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 18 AI TOOLS SINGLE-ROW HORIZONTAL SCROLLBAR */}
-        <div
-          ref={scrollContainerRef}
-          onMouseDown={onDragMouseDown}
-          onMouseUp={onDragMouseUp}
-          onMouseLeave={onDragMouseLeave}
-          onMouseMove={onDragMouseMove}
-          className="flex flex-nowrap items-center justify-start gap-2.5 w-full max-w-full h-[68px] overflow-x-auto overflow-y-hidden px-2 py-2 custom-scrollbar-horizontal select-none cursor-grab active:cursor-grabbing"
-        >
-          {ALL_STUDIO_TOOLS.filter((t) => t.category === activeSpace).map((t) => {
-            const ToolIcon = t.icon;
-            const isSelected = selectedToolId === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => handleSelectToolWithDrag(t.id)}
-                data-selected={isSelected}
-                className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs whitespace-nowrap transition-all cursor-pointer border ${isSelected
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-600 shadow-md shadow-purple-500/20 font-extrabold scale-[1.02]'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200/90 dark:border-slate-800 hover:border-purple-300 hover:text-purple-700 hover:bg-purple-50/40 hover:-translate-y-0.5 shadow-2xs font-semibold'
-                  }`}
-              >
-                <ToolIcon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-white' : 'text-purple-600'}`} />
-                <span>{t.name}</span>
-                {t.badge && (
-                  <span
-                    className={`px-1.5 py-0.2 rounded-2xl text-[9px] font-black uppercase tracking-wider ${isSelected
-                        ? 'bg-white/20 text-purple-100 backdrop-blur-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700'
-                      }`}
-                  >
-                    {t.badge}
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 sm:p-6 md:p-8 space-y-6 sm:space-y-8 shadow-2xs">
+      {/* SLEEK COMPACT TOOL HEADER BAR (2 ROWS ON MOBILE <640px, 1 ROW ON DESKTOP) */}
+      <div className="relative z-20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/70 shadow-2xs">
+        {/* ROW 1 ON MOBILE / LEFT SIDE ON DESKTOP: Tool Info & Switch Tool Button */}
+        <div className="flex items-center justify-between gap-3 min-w-0 w-full sm:w-auto">
+          {/* Active Tool Icon & Title */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0">
+              <ActiveToolIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+            <div className="flex flex-col min-w-0 text-left">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white font-heading truncate">
+                  {activeToolConfig.name}
+                </h2>
+                {activeToolConfig.badge && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800 shrink-0">
+                    {activeToolConfig.badge}
                   </span>
                 )}
-              </button>
-            );
-          })}
+              </div>
+              <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-sm sm:max-w-xl">
+                {activeToolConfig.description}
+              </p>
+            </div>
+          </div>
+
+          {/* Switch Tool Button (Positioned on Right in Row 1 on Mobile) */}
+          <div className="relative shrink-0" ref={toolPickerRef}>
+            <button
+              type="button"
+              onClick={() => setIsToolPickerOpen(!isToolPickerOpen)}
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-2xs transition-all cursor-pointer font-heading hover:bg-blue-50/50 dark:hover:bg-blue-950/40 whitespace-nowrap shrink-0"
+            >
+              <Wand2 className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="whitespace-nowrap">Switch Tool</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${isToolPickerOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Tool Switcher Popover Menu */}
+            <AnimatePresence>
+              {isToolPickerOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 z-[100] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-2 space-y-1 max-h-96 overflow-y-auto"
+                >
+                  <div className="px-2 py-1.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 font-heading">
+                      {activeSpace} AI Models ({ALL_STUDIO_TOOLS.filter((t) => t.category === activeSpace).length})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsToolPickerOpen(false)}
+                      className="text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1 pt-1">
+                    {ALL_STUDIO_TOOLS.filter((t) => t.category === activeSpace).map((t) => {
+                      const ToolIcon = t.icon;
+                      const isSelected = selectedToolId === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => {
+                            handleSelectTool(t.id);
+                            setIsToolPickerOpen(false);
+                          }}
+                          className={`w-full text-left p-2 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-heading ${
+                            isSelected
+                              ? 'bg-primary text-white shadow-2xs font-extrabold'
+                              : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold'
+                          }`}
+                        >
+                          <ToolIcon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : 'text-primary'}`} />
+                          <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                            <span className="text-xs truncate font-bold">{t.name}</span>
+                            {t.badge && (
+                              <span
+                                className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-wider shrink-0 ml-auto ${
+                                  isSelected
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                                }`}
+                              >
+                                {t.badge}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* ROW 2 ON MOBILE / RIGHT SIDE ON DESKTOP: Space Category Filter Pills */}
+        <div className="w-full sm:w-auto overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60 dark:border-slate-700/60">
+          <div className="flex items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-2xs min-w-max">
+            {(
+              [
+                { id: 'interiors', label: 'Interiors' },
+                { id: 'exteriors', label: 'Exteriors' },
+                { id: 'floor-plans', label: 'Floor Plans' },
+                { id: 'gardens', label: 'Gardens' },
+              ] as const
+            ).map((space) => {
+              const isSpaceActive = activeSpace === space.id;
+              return (
+                <button
+                  key={space.id}
+                  type="button"
+                  onClick={() => {
+                    handleSelectSpace(space.id);
+                    setIsToolPickerOpen(false);
+                  }}
+                  className={`px-2.5 sm:px-3 py-1 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer font-heading whitespace-nowrap shrink-0 ${
+                    isSpaceActive
+                      ? 'bg-primary text-white shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {space.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* MAIN STUDIO TWO-COLUMN LAYOUT (INSIDE SINGLE COMMON BACKGROUND) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-1">
 
-        {/* LEFT COLUMN: Latest from Our Community & AI Render Interactive Viewer */}
-        <div className="lg:col-span-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-extrabold text-slate-900 font-heading">
-                Latest from Our Community
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Real AI architectural transformations with structural preservation.
-              </p>
-            </div>
-            {generatedResult && (
-              <a
-                href={generatedResult}
-                download="redesign_render.jpg"
-                target="_blank"
-                rel="noreferrer"
-                title="Download HD Image"
-                className="p-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-sm hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-              </a>
-            )}
-          </div>
+        {/* LEFT COLUMN: AI Render Interactive Viewer */}
+        <div className="lg:col-span-7 space-y-5">
 
           {/* GENERATION ERROR ALERT BANNER */}
           {generationError && (
@@ -1406,12 +1737,24 @@ function GenerateStudioContent() {
                   <button
                     type="button"
                     onClick={() => {
-                      setGenerationError(null);
-                      handleGenerate();
+                      if (generationError?.toLowerCase().includes('log in') || generationError?.toLowerCase().includes('token')) {
+                        if (typeof window !== 'undefined') {
+                          localStorage.removeItem('token');
+                          localStorage.removeItem('user');
+                          window.dispatchEvent(new Event('user-updated'));
+                          window.location.href = '/';
+                        }
+                      } else {
+                        setGenerationError(null);
+                        handleGenerate();
+                      }
                     }}
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-600 text-white text-[11px] font-extrabold shadow-xs hover:bg-amber-700 transition-colors mt-1 cursor-pointer font-heading"
                   >
-                    <Sparkles className="w-3 h-3" /> Retry Generation
+                    <Sparkles className="w-3 h-3" />
+                    {generationError?.toLowerCase().includes('log in') || generationError?.toLowerCase().includes('token')
+                      ? 'Log Out & Reset Session'
+                      : 'Retry Generation'}
                   </button>
                 </div>
               </div>
@@ -1478,51 +1821,94 @@ function GenerateStudioContent() {
             const displayBefore = uploadedImage || sampleBeforeImg;
             const displayAfter = generatedResult || (uploadedImage ? null : sampleAfterImg);
 
-            return (
-              <div
-                ref={sliderContainerRef}
-                className="relative w-full h-[400px] rounded-2xl overflow-hidden bg-white border border-slate-200 select-none shadow-xs group"
-              >
-                {/* RIGHT SIDE: AI REDESIGN IMAGE OR CLEAN WHITE CANVAS BEFORE GENERATION */}
-                {displayAfter ? (
-                  <img
-                    src={displayAfter}
-                    alt="AI Redesign"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200&auto=format&fit=crop';
-                    }}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-slate-50/90 flex flex-col items-center justify-center p-6 text-center text-slate-500">
-                    <div className="w-12 h-12 rounded-2xl bg-purple-100/80 flex items-center justify-center mb-2.5 shadow-2xs border border-purple-200/60">
-                      <Sparkles className="w-6 h-6 text-purple-600 animate-pulse" />
-                    </div>
-                    <span className="text-xs font-black text-slate-900 font-heading tracking-wide uppercase">AI Transformation Area</span>
-                    <span className="text-[11px] text-slate-500 mt-1 font-medium max-w-xs">Configure options on the right & click Generate to transform your space</span>
-                  </div>
-                )}
 
-                {/* LEFT SIDE: ORIGINAL USER UPLOAD OR DEMO BEFORE */}
-                <div
-                  className="absolute inset-y-0 left-0 overflow-hidden z-10 border-r border-white/90 shadow-lg"
-                  style={{ width: `${sliderPosition}%` }}
-                >
-                  <img
-                    src={displayBefore}
-                    alt="Original Space"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200&auto=format&fit=crop';
-                    }}
-                    className="absolute top-0 left-0 h-full max-w-none object-cover"
-                    style={{
-                      width: containerWidth ? `${containerWidth}px` : '100%',
-                      height: '100%',
-                    }}
-                  />
+
+            return (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 text-xs font-bold">
+                  <span className="text-slate-500 dark:text-slate-400 font-heading">Studio Comparison View</span>
+                  {generatedResult && (
+                    <button
+                      type="button"
+                      onClick={() => triggerImageDownload(generatedResult, 'redesign_render.png')}
+                      title="Download HD Image"
+                      className="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer font-heading"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download Render</span>
+                    </button>
+                  )}
                 </div>
+
+                <div
+                  ref={sliderContainerRef}
+                  className={`relative w-full rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 select-none shadow-md group flex items-center justify-center transition-all duration-300 ${
+                    studioFitMode === 'cover'
+                      ? 'h-[460px] sm:h-[560px] md:h-[600px]'
+                      : 'min-h-[460px] sm:min-h-[520px] md:min-h-[560px] max-h-[75vh]'
+                  }`}
+                  style={
+                    studioFitMode === 'contain'
+                      ? {
+                          aspectRatio: studioAspectRatio ? `${studioAspectRatio}` : '4/3',
+                        }
+                      : undefined
+                  }
+                >
+                  {/* RIGHT SIDE: AI REDESIGN IMAGE OR ACTIVE LOADER OR CLEAN CANVAS */}
+                  {displayAfter ? (
+                    <img
+                      src={displayAfter}
+                      alt="AI Redesign"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200&auto=format&fit=crop';
+                      }}
+                      className="absolute inset-0 w-full h-full object-cover transition-all duration-200"
+                    />
+                  ) : isGenerating ? (
+                    <div className="absolute inset-0 bg-slate-950/90 text-white flex flex-col items-center justify-center p-6 text-center z-10 animate-in fade-in">
+                      <div className="relative mb-4">
+                        <div className="w-16 h-16 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin" />
+                        <Sparkles className="w-6 h-6 text-purple-400 absolute inset-0 m-auto animate-pulse" />
+                      </div>
+                      <span className="text-xs font-black font-heading text-purple-300 tracking-wide uppercase">Manus AI Active Redesign</span>
+                      <span className="text-xs text-slate-300 mt-1.5 font-medium max-w-sm">
+                        {getGenerationProgressStatus(generationElapsedSeconds)}
+                      </span>
+                      <span className="text-[11px] font-mono text-purple-400 mt-2.5 px-3 py-1 rounded-full bg-purple-950/80 border border-purple-800/80 shadow-md">
+                        ⏱️ {Math.floor(generationElapsedSeconds / 60)}m {generationElapsedSeconds % 60}s / 10m max window
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 bg-slate-50/90 dark:bg-slate-900/90 flex flex-col items-center justify-center p-6 text-center text-slate-500">
+                      <div className="w-12 h-12 rounded-2xl bg-purple-100/80 dark:bg-purple-950/80 flex items-center justify-center mb-2.5 shadow-2xs border border-purple-200/60 dark:border-purple-800/60">
+                        <Sparkles className="w-6 h-6 text-purple-600 dark:text-purple-400 animate-pulse" />
+                      </div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white font-heading tracking-wide uppercase">AI Transformation Area</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium max-w-xs">Configure options on the right & click Generate to transform your space</span>
+                    </div>
+                  )}
+
+                  {/* LEFT SIDE: ORIGINAL USER UPLOAD OR DEMO BEFORE */}
+                  <div
+                    className="absolute inset-y-0 left-0 overflow-hidden z-10 border-r border-white/90 shadow-lg"
+                    style={{ width: `${sliderPosition}%` }}
+                  >
+                    <img
+                      src={displayBefore}
+                      alt="Original Space"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200&auto=format&fit=crop';
+                      }}
+                      className="absolute top-0 left-0 h-full max-w-none transition-all duration-200 object-cover"
+                      style={{
+                        width: containerWidth ? `${containerWidth}px` : '100%',
+                        height: '100%',
+                      }}
+                    />
+                  </div>
 
                 {/* SLIDER INTERACTIVE HANDLE */}
                 <div
@@ -1547,9 +1933,9 @@ function GenerateStudioContent() {
                 <div className="absolute top-4 left-4 px-3 py-1 bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-extrabold rounded-lg pointer-events-none z-20">
                   {uploadedImage ? 'Before (Your Upload)' : 'Before (Sample)'}
                 </div>
-                <div className="absolute top-4 right-4 px-3 py-1 bg-purple-600 text-white font-extrabold text-[11px] rounded-lg shadow-md pointer-events-none flex items-center gap-1 z-20">
-                  <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />
-                  <span>
+                <div className="absolute top-4 right-4 px-3 py-1 bg-primary text-white font-extrabold text-[11px] rounded-lg shadow-md pointer-events-none flex items-center gap-1 z-10 max-w-[220px]">
+                  <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300 shrink-0" />
+                  <span className="truncate">
                     {generatedResult
                       ? `After (${selectedStyle} AI)`
                       : uploadedImage
@@ -1560,13 +1946,67 @@ function GenerateStudioContent() {
 
                 {isDemoSample && (
                   <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/85 backdrop-blur-md text-white/90 rounded-xl text-[11px] font-bold z-20 border border-white/10">
-                    <Info className="w-3.5 h-3.5 text-purple-400" />
+                    <Info className="w-3.5 h-3.5 text-blue-400" />
                     <span>Sample Preview for {activeToolConfig.name}</span>
                   </div>
                 )}
+                </div>
               </div>
             );
           })()}
+
+          {/* 4 PRESET SAMPLE PREVIEW CARDS GALLERY (POPULATES EMPTY LEFT COLUMN SPACE BEFORE GENERATION) */}
+          {!generatedResult && !isGenerating && (
+            <div className="p-4 rounded-[10px] bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white font-heading">
+                    {activeToolConfig.name} Sample Inspiration Presets
+                  </h3>
+                </div>
+                <span className="text-[11px] font-medium text-slate-400">Click any sample to test instantly</span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {SAMPLE_PREVIEW_PRESETS[activeSpace]?.map((preset, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      setUploadedImage(preset.image);
+                      setIsUserUploaded(true);
+                      setSelectedStyle(preset.style);
+                      setSelectedRoomType(preset.roomType);
+                      setGeneratedResult(null);
+                      toast.success(`Loaded "${preset.title}" sample photo! Customize parameters on the right & click Generate.`, 'Sample Preset Loaded');
+                    }}
+                    className="group relative rounded-[10px] overflow-hidden border border-slate-200/90 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 aspect-[4/3] cursor-pointer hover:border-purple-500 hover:ring-2 hover:ring-purple-500/20 shadow-2xs hover:shadow-md transition-all duration-200"
+                  >
+                    <img
+                      src={preset.image}
+                      alt={preset.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent p-2 flex flex-col justify-between">
+                      <div className="flex items-center justify-end">
+                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-white/20 text-white backdrop-blur-xs">
+                          {preset.style}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="text-[11px] font-black text-white leading-tight font-heading truncate">
+                          {preset.title}
+                        </h4>
+                        <p className="text-[9px] text-purple-300 font-bold mt-0.5 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                          <span>Use Sample</span> →
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* BRIGHT MODERN SAAS EXECUTION & ACTIVITY PANEL */}
           {(isGenerating || generatedResult || compiledPrompt || generationError || creditBlocked || isCreditChecking) && (
@@ -1630,26 +2070,26 @@ function GenerateStudioContent() {
                     {
                       id: 'direction',
                       num: 1,
-                      title: 'Prepare Visual Redesign Direction',
-                      subtitle: 'Visual redesign specification & style direction',
+                      title: 'Style & Direction',
+                      subtitle: 'Setting redesign parameters',
                     },
                     {
                       id: 'source',
                       num: 2,
-                      title: 'Locate Source Interior Image & Preserve Composition',
-                      subtitle: 'Source room analysis & architectural geometry preservation',
+                      title: 'Structure & Composition',
+                      subtitle: 'Preserving room geometry',
                     },
                     {
                       id: 'generate',
                       num: 3,
-                      title: 'Generate High-Precision Architectural Render',
-                      subtitle: 'High-resolution interior render synthesis',
+                      title: 'AI Architectural Render',
+                      subtitle: 'Synthesizing high-res redesign',
                     },
                     {
                       id: 'review',
                       num: 4,
-                      title: 'Verify Image Quality & Style',
-                      subtitle: 'Quality & style consistency check',
+                      title: 'Quality Check',
+                      subtitle: 'Verifying render consistency',
                     },
                   ];
 
@@ -1658,17 +2098,30 @@ function GenerateStudioContent() {
 
                     if (generatedResult) {
                       status = 'completed';
+                    } else if (isGenerating) {
+                      if (generationElapsedSeconds < 5) {
+                        if (idx === 0) status = 'running';
+                        else status = 'pending';
+                      } else if (generationElapsedSeconds < 15) {
+                        if (idx === 0) status = 'completed';
+                        else if (idx === 1) status = 'running';
+                        else status = 'pending';
+                      } else if (generationElapsedSeconds < 90) {
+                        if (idx < 2) status = 'completed';
+                        else if (idx === 2) status = 'running';
+                        else status = 'pending';
+                      } else {
+                        if (idx < 3) status = 'completed';
+                        else if (idx === 3) status = 'running';
+                        else status = 'pending';
+                      }
                     } else if (creditBlocked && idx === 2) {
                       status = 'credit_blocked';
                     } else if (creditBlocked && idx < 2) {
                       status = 'completed';
-                    } else if (generationError && idx === 2) {
-                      status = 'failed';
-                    } else if (generationError && idx < 2) {
-                      status = 'completed';
-                    } else if (isGenerating) {
-                      if (idx < 2) status = 'completed';
-                      else if (idx === 2) status = 'running';
+                    } else if (generationError) {
+                      if (idx === 2) status = 'failed';
+                      else if (idx < 2) status = 'completed';
                       else status = 'pending';
                     }
 
@@ -1928,7 +2381,7 @@ function GenerateStudioContent() {
         </div>
 
         {/* RIGHT COLUMN: Start Redesigning Your Space Form (WHITE THEME AS REQUESTED) */}
-        <div className="lg:col-span-6 space-y-5">
+        <div className="lg:col-span-5 space-y-5">
 
 
 
@@ -1943,23 +2396,24 @@ function GenerateStudioContent() {
 
           {/* STEP 1: UPLOAD YOUR PHOTO */}
           <div className="space-y-2">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-purple-600 font-heading">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-primary font-heading">
               Step 1: Upload Your Photo
             </h3>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3">
               {/* SQUARE DROPZONE / PREVIEW WITH CORNER (X) CLOSE BUTTON */}
               {uploadedImage ? (
-                <div className="relative rounded-2xl overflow-hidden border border-slate-200 group w-32 h-32 shrink-0 shadow-2xs">
+                <div className="relative rounded-[10px] overflow-hidden border border-slate-200 group w-32 h-32 sm:w-28 sm:h-28 shrink-0 shadow-2xs bg-slate-100 mx-auto sm:mx-0">
                   <img
                     src={uploadedImage}
                     alt="Uploaded Space Preview"
-                    onError={(e) => {
-                      const fallback = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800&auto=format&fit=crop';
-                      (e.target as HTMLImageElement).src = fallback;
-                      if (uploadedImage !== fallback) {
-                        setUploadedImage(fallback);
-                      }
+                    onError={() => {
+                      toast.error(
+                        'Could not load image from the provided URL. Please make sure it is a direct image link (.jpg, .png, .webp) or upload a photo from your device.',
+                        'Image Load Failed'
+                      );
+                      setUploadedImage(null);
+                      setIsUserUploaded(false);
                     }}
                     className="w-full h-full object-cover"
                   />
@@ -1987,18 +2441,19 @@ function GenerateStudioContent() {
                   </label>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-32 h-32 shrink-0 border-2 border-dashed border-purple-300/90 hover:border-purple-600 bg-purple-50/20 hover:bg-purple-50/60 rounded-2xl cursor-pointer transition-all group p-2 text-center">
-                  <Upload className="w-6 h-6 text-purple-600 group-hover:scale-110 transition-transform mb-1.5" />
-                  <span className="text-[11px] font-bold text-slate-800 leading-tight">
-                    Drop photo or browse
+                <label className="flex flex-col items-center justify-center w-32 h-32 sm:w-28 sm:h-28 shrink-0 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary hover:bg-primary/5 text-slate-600 hover:text-primary rounded-[10px] cursor-pointer transition-all group p-2 text-center mx-auto sm:mx-0">
+                  <Upload className="w-5 h-5 text-slate-400 group-hover:text-primary group-hover:scale-110 transition-all mb-1" />
+                  <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-200 font-heading">
+                    Drop photo
                   </span>
-                  <span className="text-[9px] text-slate-400 mt-1">PNG, JPG, WEBP</span>
+                  <span className="text-[10px] text-slate-400 font-medium">or browse</span>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">PNG, JPG, WEBP</span>
                   <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                 </label>
               )}
 
               {/* ALWAYS VISIBLE URL PASTE & FETCH INPUT */}
-              <div className="flex-1 space-y-1.5 w-full max-w-xs">
+              <div className="flex-1 space-y-1.5 w-full min-w-0">
                 <span className="text-xs font-bold text-slate-700 block font-heading">Or paste Image URL:</span>
                 <div className="flex items-center gap-1.5">
                   <input
@@ -2011,12 +2466,12 @@ function GenerateStudioContent() {
                         handleFetchUrlImage();
                       }
                     }}
-                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 focus:bg-white rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all shadow-2xs"
+                    className="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 focus:bg-white rounded-[10px] text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-2xs"
                   />
                   <button
                     type="button"
                     onClick={handleFetchUrlImage}
-                    className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer"
+                    className="px-3.5 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-[10px] transition-all shadow-xs shrink-0 cursor-pointer"
                   >
                     Fetch
                   </button>
@@ -2029,7 +2484,7 @@ function GenerateStudioContent() {
           {/* STEP 2: CUSTOMIZE FORM (DYNAMIC PER AI TOOL FROM DB & ADMIN PANEL) */}
           <div className="space-y-4 pt-2 border-t border-slate-100">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-purple-600 font-heading">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-primary font-heading">
                 Step 2: Customize
               </h3>
             </div>
@@ -2044,7 +2499,7 @@ function GenerateStudioContent() {
                   <button
                     type="button"
                     onClick={() => setIsCreateProjectModalOpen(true)}
-                    className="text-xs font-extrabold text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-extrabold text-primary hover:text-primary/80 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" /> Create New Project
                   </button>
@@ -2141,10 +2596,10 @@ function GenerateStudioContent() {
                               else if (widget.id === 'furniture-layout') setFurnitureHandling(opt);
                               else if (widget.id === 'room-size') setSelectedSize(opt);
                             }}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs transition-all border cursor-pointer ${
+                            className={`px-3.5 py-1.5 rounded-[10px] text-xs transition-all border cursor-pointer ${
                               curVal === opt
-                                ? 'bg-purple-50/70 border-purple-600 text-purple-800 font-bold shadow-2xs'
-                                : 'bg-white text-slate-700 border-slate-200 hover:border-purple-400 hover:bg-slate-50 font-semibold'
+                                ? 'bg-primary/15 border-primary text-primary font-bold shadow-2xs'
+                                : 'bg-white text-slate-700 border-slate-200 hover:border-primary/40 hover:bg-primary/5 font-semibold'
                             }`}
                           >
                             {opt}
@@ -2169,7 +2624,7 @@ function GenerateStudioContent() {
                             curArray.length >= 10
                               ? 'bg-rose-100 text-rose-700'
                               : curArray.length > 0
-                                ? 'bg-purple-100 text-purple-700'
+                                ? 'bg-primary/10 text-primary'
                                 : 'bg-slate-100 text-slate-500'
                           }`}>
                             {curArray.length} / 10 selected
@@ -2197,9 +2652,9 @@ function GenerateStudioContent() {
                             key={cat}
                             type="button"
                             onClick={() => setProductCategoryFilter(cat)}
-                            className={`py-1 px-2.5 text-[10px] font-bold rounded-lg capitalize whitespace-nowrap border transition-all cursor-pointer ${
+                            className={`py-1 px-2.5 text-[10px] font-bold rounded-[10px] capitalize whitespace-nowrap border transition-all cursor-pointer ${
                               productCategoryFilter === cat
-                                ? 'bg-purple-600 text-white border-purple-600 shadow-2xs'
+                                ? 'bg-primary text-white border-primary shadow-2xs'
                                 : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                             }`}
                           >
@@ -2209,7 +2664,7 @@ function GenerateStudioContent() {
                       </div>
 
                       {/* Products Grid Chips */}
-                      <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-slate-50/80 rounded-xl border border-slate-200/90">
+                      <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-slate-50/80 rounded-[10px] border border-slate-200/90">
                         {SELECTABLE_PRODUCT_ITEMS.filter((item) => productCategoryFilter === 'all' || item.type === productCategoryFilter).map((item) => {
                           const isSelected = curArray.includes(item.name);
                           const isDisabled = !isSelected && curArray.length >= 10;
@@ -2225,16 +2680,16 @@ function GenerateStudioContent() {
                                 setSelectedProducts(updated);
                                 setDynamicWidgetValues((prev) => ({ ...prev, [widgetId]: updated }));
                               }}
-                              className={`px-2.5 py-1 text-xs font-semibold rounded-lg border flex items-center gap-1 transition-all cursor-pointer ${
+                              className={`px-2.5 py-1 text-xs font-semibold rounded-[10px] border flex items-center gap-1 transition-all cursor-pointer ${
                                 isSelected
-                                  ? 'bg-purple-50/70 border-purple-600 text-purple-800 font-bold shadow-2xs'
+                                  ? 'bg-primary/10 border-primary text-primary font-bold shadow-2xs'
                                   : isDisabled
                                     ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50'
-                                    : 'bg-white border-slate-200 text-slate-700 hover:border-purple-300 hover:bg-purple-50/50'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:border-primary/40 hover:bg-primary/5'
                               }`}
                             >
                               <span>{item.name}</span>
-                              {isSelected && <span className="text-[10px] text-purple-700 font-black">✓</span>}
+                              {isSelected && <span className="text-[10px] text-primary font-black">✓</span>}
                             </button>
                           );
                         })}
@@ -2260,7 +2715,7 @@ function GenerateStudioContent() {
                           {isRequired && <span className="text-rose-500 font-extrabold">*</span>}
                         </label>
                         {curArray.length > 0 && (
-                          <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                             {curArray.length} selected
                           </span>
                         )}
@@ -2283,8 +2738,8 @@ function GenerateStudioContent() {
                               }}
                               className={`px-3.5 py-1.5 rounded-lg text-xs transition-all border cursor-pointer ${
                                 isSelected
-                                  ? 'bg-purple-50/70 border-purple-600 text-purple-800 font-bold shadow-2xs'
-                                  : 'bg-white text-slate-700 border-slate-200 hover:border-purple-400 hover:bg-slate-50 font-semibold'
+                                  ? 'bg-primary/10 border-primary text-primary font-bold shadow-2xs'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:border-primary/40 hover:bg-primary/5 font-semibold'
                               }`}
                             >
                               {opt}
@@ -2348,7 +2803,7 @@ function GenerateStudioContent() {
 
                 if (isHalfWidth(current) && next && isHalfWidth(next)) {
                   widgetRows.push(
-                    <div key={`row-${i}`} className="grid grid-cols-2 gap-3">
+                    <div key={`row-${i}`} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {renderWidgetSingle(current, i)}
                       {renderWidgetSingle(next, i + 1)}
                     </div>
@@ -2356,7 +2811,7 @@ function GenerateStudioContent() {
                   i += 2;
                 } else if (isHalfWidth(current)) {
                   widgetRows.push(
-                    <div key={`row-${i}`} className="grid grid-cols-2 gap-3">
+                    <div key={`row-${i}`} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {renderWidgetSingle(current, i)}
                       <div />
                     </div>
@@ -2377,15 +2832,15 @@ function GenerateStudioContent() {
 
             {/* MODEL 01: FLOOR PLAN GENERATOR DEDICATED INPUT CARD */}
             {(activeSpace === 'floor-plans' || ['floor-plan-generator', '3d-floor-plan', 'floor-plan-maker'].includes(selectedToolId) || ['floor-plan-generator', '3d-floor-plan', 'floor-plan-maker'].includes(toolSlug || '')) && (
-              <div className="p-4 rounded-2xl bg-purple-50/90 border border-purple-200/90 space-y-4 shadow-sm">
+              <div className="p-4 rounded-2xl bg-blue-50/90 border border-blue-200/90 space-y-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-purple-600" />
+                    <FileText className="w-4 h-4 text-blue-600" />
                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider font-heading">
                       Model 01: 2D/3D Floor Plan Generator Parameters
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-purple-600 text-white text-[9px] font-black uppercase">
+                  <span className="px-2 py-0.5 rounded bg-blue-600 text-white text-[9px] font-black uppercase">
                     {toolSlug === '3d-floor-plan' ? '3D Isometric' : '2D Blueprint'}
                   </span>
                 </div>
@@ -2400,10 +2855,11 @@ function GenerateStudioContent() {
                           key={num}
                           type="button"
                           onClick={() => setBedroomsCount(num)}
-                          className={`flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${bedroomsCount === num
-                              ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                              : 'bg-white text-slate-700 border-slate-200 hover:border-purple-300'
-                            }`}
+                          className={`flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+                            bedroomsCount === num
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+                          }`}
                         >
                           {num}
                         </button>
@@ -2420,10 +2876,11 @@ function GenerateStudioContent() {
                           key={num}
                           type="button"
                           onClick={() => setBathroomsCount(num)}
-                          className={`flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${bathroomsCount === num
-                              ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                              : 'bg-white text-slate-700 border-slate-200 hover:border-purple-300'
-                            }`}
+                          className={`flex-1 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+                            bathroomsCount === num
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+                          }`}
                         >
                           {num}
                         </button>
@@ -2680,7 +3137,7 @@ function GenerateStudioContent() {
             {(!activeDbTool || !activeDbTool.widgets || activeDbTool.widgets.length === 0) && activeSpace !== 'exteriors' && activeSpace !== 'gardens' && (
               <div className="space-y-4">
                 {/* Room Type & Design Style */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-800 font-heading">
                       Room Type
@@ -2705,7 +3162,7 @@ function GenerateStudioContent() {
                 </div>
 
                 {/* COLOR PALETTE & LIGHTING ATMOSPHERE */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-800 font-heading">
                       Color Palette
@@ -2741,10 +3198,11 @@ function GenerateStudioContent() {
                         key={opt.id}
                         type="button"
                         onClick={() => setFurnitureHandling(opt.id)}
-                        className={`py-2 px-2.5 text-xs font-semibold rounded-xl border text-center transition-all ${furnitureHandling === opt.id
-                            ? 'bg-purple-50 border-purple-600 text-purple-800 font-bold shadow-2xs'
+                        className={`py-2 px-2.5 text-xs font-semibold rounded-[10px] border text-center transition-all ${
+                          furnitureHandling === opt.id
+                            ? 'bg-blue-50 border-blue-600 text-blue-800 font-bold shadow-2xs'
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                          }`}
+                        }`}
                       >
                         {opt.label}
                       </button>
@@ -2763,10 +3221,11 @@ function GenerateStudioContent() {
                         key={b.slug}
                         type="button"
                         onClick={() => setSelectedBudget(b.slug)}
-                        className={`py-2 px-2 text-xs font-semibold rounded-xl border text-center transition-all ${selectedBudget === b.slug
-                            ? 'bg-purple-50 border-purple-600 text-purple-800 font-bold shadow-2xs'
+                        className={`py-2 px-2 text-xs font-semibold rounded-xl border text-center transition-all ${
+                          selectedBudget === b.slug
+                            ? 'bg-blue-50 border-blue-600 text-blue-800 font-bold shadow-2xs'
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                          }`}
+                        }`}
                       >
                         {b.name}
                       </button>
@@ -2779,12 +3238,13 @@ function GenerateStudioContent() {
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-800 font-heading flex items-center gap-1.5">
                       <span>Select Specific Products / Furniture</span>
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${selectedProducts.length >= 10
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                        selectedProducts.length >= 10
                           ? 'bg-rose-100 text-rose-700'
                           : selectedProducts.length > 0
-                            ? 'bg-purple-100 text-purple-700'
+                            ? 'bg-blue-100 text-blue-700'
                             : 'bg-slate-100 text-slate-500'
-                        }`}>
+                      }`}>
                         {selectedProducts.length} / 10 selected
                       </span>
                     </label>
@@ -2807,10 +3267,11 @@ function GenerateStudioContent() {
                         key={cat}
                         type="button"
                         onClick={() => setProductCategoryFilter(cat)}
-                        className={`py-1 px-2 text-[10px] font-bold rounded-lg capitalize whitespace-nowrap border transition-all ${productCategoryFilter === cat
+                        className={`py-1 px-2 text-[10px] font-bold rounded-lg capitalize whitespace-nowrap border transition-all ${
+                          productCategoryFilter === cat
                             ? 'bg-slate-900 text-white border-slate-900'
                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                          }`}
+                        }`}
                       >
                         {cat}
                       </button>
@@ -2828,12 +3289,13 @@ function GenerateStudioContent() {
                           type="button"
                           disabled={isDisabled}
                           onClick={() => toggleProductSelection(item.name)}
-                          className={`px-2.5 py-1 text-xs font-semibold rounded-lg border flex items-center gap-1 transition-all ${isSelected
-                              ? 'bg-purple-600 border-purple-600 text-white shadow-2xs'
+                          className={`px-2.5 py-1 text-xs font-semibold rounded-lg border flex items-center gap-1 transition-all ${
+                            isSelected
+                              ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
                               : isDisabled
                                 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50'
-                                : 'bg-white border-slate-200 text-slate-700 hover:border-purple-300 hover:bg-purple-50/50'
-                            }`}
+                                : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50/50'
+                          }`}
                         >
                           <span>{item.name}</span>
                           {isSelected && <span className="text-[10px]">✓</span>}
@@ -2860,10 +3322,11 @@ function GenerateStudioContent() {
                         key={size.id}
                         type="button"
                         onClick={() => setSelectedSize(size.id)}
-                        className={`px-3 py-2 text-xs font-semibold rounded-xl border text-center transition-all ${selectedSize === size.id
-                            ? 'bg-purple-50 border-purple-600 text-purple-800 font-bold shadow-2xs'
+                        className={`px-3 py-2 text-xs font-semibold rounded-[10px] border text-center transition-all ${
+                          selectedSize === size.id
+                            ? 'bg-blue-50 border-blue-600 text-blue-800 font-bold shadow-2xs'
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                          }`}
+                        }`}
                       >
                         {size.label}
                       </button>
@@ -2901,7 +3364,7 @@ function GenerateStudioContent() {
                       value={customRequirements}
                       onChange={(e) => setCustomRequirements(e.target.value)}
                       placeholder="Describe your specific needs, preferences, or constraints (e.g. Add warm wooden slat walls & cream sofa)..."
-                      className="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all resize-none shadow-2xs"
+                      className="w-full p-3.5 bg-white border border-slate-200 rounded-[10px] text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all resize-none shadow-2xs"
                     />
                   </motion.div>
                 )}
@@ -2909,26 +3372,62 @@ function GenerateStudioContent() {
             </div>
           </div>
 
-          {/* GENERATE ACTION BUTTON */}
-          <div className="space-y-2">
+          {/* GENERATE ACTION BUTTON & CREDIT CHECK WARNING */}
+          <div className="space-y-3 font-sans">
+            {userCurrentCredits < 4 && (
+              <div className="p-3.5 rounded-[10px] bg-primary/10 border border-primary/20 text-slate-900 dark:text-slate-100 text-xs font-semibold flex items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-primary shrink-0" />
+                  <div>
+                    <span className="font-extrabold block text-slate-900 dark:text-white">Insufficient Credits Available</span>
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+                      You have <strong className="text-primary">{userCurrentCredits} Credits</strong> available. Generation requires <strong>4 Credits</strong>.
+                    </span>
+                  </div>
+                </div>
+                <Link
+                  href="/billing"
+                  className="px-3.5 py-1.5 rounded-[10px] bg-primary hover:bg-primary/90 text-white font-extrabold text-[11px] shrink-0 transition-colors shadow-xs"
+                >
+                  Get Credits
+                </Link>
+              </div>
+            )}
+
             <button
               type="button"
               disabled={isGenerating || !uploadedImage}
-              onClick={handleGenerate}
-              className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:opacity-95 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25 disabled:opacity-50 transition-all cursor-pointer font-heading"
+              onClick={() => {
+                if (userCurrentCredits < 4) {
+                  toast.error(`You have ${userCurrentCredits} Credits. Generation requires 4 Credits. Please top up your balance.`, 'Insufficient Credits');
+                  router.push('/billing');
+                  return;
+                }
+                handleGenerate();
+              }}
+              className={`w-full py-3.5 px-6 rounded-[10px] font-extrabold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer font-sans ${
+                userCurrentCredits < 4
+                  ? 'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
+                  : 'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
+              } disabled:opacity-50`}
             >
               {isGenerating ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Processing AI Redesign (${Math.floor(generationElapsedSeconds / 60).toString().padStart(2, '0')}:${(generationElapsedSeconds % 60).toString().padStart(2, '0')})...</span>
                 </>
+              ) : userCurrentCredits < 4 ? (
+                <>
+                  <CreditTokenIcon size="xs" />
+                  <span>Get Credits to Generate (Requires 4 Credits)</span>
+                </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
+                  <Sparkles className="w-4 h-4 text-accent fill-accent" />
                   <span className="flex items-center gap-1.5">
                     <span>Generate AI Redesign (</span>
                     <CreditTokenIcon size="xs" />
-                    <span>4)</span>
+                    <span>4 Credits)</span>
                   </span>
                 </>
               )}
@@ -2978,40 +3477,65 @@ function GenerateStudioContent() {
             </div>
           </div>
 
+          {/* RENDER GALLERY HEADER CONTROLS */}
+          <div className="flex items-center justify-between gap-3 pt-1 pb-2">
+            <div className="text-xs font-extrabold text-slate-700 dark:text-slate-300 font-heading">
+              Render Output Variations ({(generatedImagesList.length > 0 ? generatedImagesList : [generatedResult]).length} Available)
+            </div>
+            <button
+              type="button"
+              onClick={() => setImageFitMode(imageFitMode === 'contain' ? 'cover' : 'contain')}
+              className="px-3.5 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 text-purple-700 dark:text-purple-300 text-xs font-extrabold border border-purple-200 dark:border-purple-800 transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+              <span>{imageFitMode === 'contain' ? '🔍 View Mode: Full Uncropped (Fit 100%)' : '📐 View Mode: Fill Grid'}</span>
+            </button>
+          </div>
+
           {/* RENDER GALLERY GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {(generatedImagesList.length > 0 ? generatedImagesList : [generatedResult]).map((imgUrl, idx) => (
               <div
                 key={idx}
-                className="group relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 shadow-sm hover:shadow-xl transition-all duration-300"
+                className="group relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-center items-center h-[380px]"
               >
                 <img
                   src={imgUrl}
                   alt={`AI Render Variation ${idx + 1}`}
-                  className="w-full h-[320px] object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                  onClick={() => setLightboxImageUrl(imgUrl)}
+                  className={`w-full h-full cursor-pointer transition-all duration-300 ${
+                    imageFitMode === 'contain' ? 'object-contain p-2.5' : 'object-cover group-hover:scale-[1.02]'
+                  }`}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex items-end justify-between">
-                  <div className="text-white text-xs space-y-0.5">
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex items-end justify-between pointer-events-none">
+                  <div className="text-white text-xs space-y-0.5 pointer-events-auto">
                     <div className="font-extrabold font-heading">AI Render Output #{idx + 1}</div>
-                    <div className="text-[10px] text-slate-300 font-mono">8K UHD • 7680 × 4320 • 16:9</div>
+                    <div className="text-[10px] text-slate-300 font-mono">8K UHD • Uncropped Full View</div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 pointer-events-auto">
+                    <button
+                      type="button"
+                      onClick={() => setLightboxImageUrl(imgUrl)}
+                      className="px-3 py-1.5 rounded-xl bg-white/25 hover:bg-white/40 backdrop-blur-md text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      <span>Full View</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => setGeneratedResult(imgUrl)}
-                      className="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white text-xs font-bold transition-all cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl bg-purple-600/90 hover:bg-purple-600 backdrop-blur-md text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
                     >
-                      View Split
+                      Split View
                     </button>
-                    <a
-                      href={imgUrl}
-                      download={`redesign_render_${idx + 1}.jpg`}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => triggerImageDownload(imgUrl, `redesign_render_${idx + 1}.png`)}
                       className="p-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-md cursor-pointer"
+                      title="Download Render"
                     >
                       <Download className="w-4 h-4" />
-                    </a>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -3118,7 +3642,7 @@ function GenerateStudioContent() {
               placeholder="Brief description of the room or project goals..."
               value={newProjectDescription}
               onChange={(e) => setNewProjectDescription(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
             />
           </div>
 
@@ -3133,7 +3657,7 @@ function GenerateStudioContent() {
             <button
               type="submit"
               disabled={isCreatingProject}
-              className="px-5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50 font-heading"
+              className="px-5 py-2.5 rounded-2xl bg-primary hover:bg-primary/90 text-white text-xs font-extrabold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50 font-heading"
             >
               {isCreatingProject ? (
                 <>
@@ -3150,6 +3674,46 @@ function GenerateStudioContent() {
           </div>
         </form>
       </Modal>
+
+      {/* FULLSCREEN UNCROPPED LIGHTBOX MODAL */}
+      <AnimatePresence>
+        {lightboxImageUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-8"
+            onClick={() => setLightboxImageUrl(null)}
+          >
+            <div className="relative max-w-6xl max-h-[92vh] w-full flex flex-col items-center justify-center">
+              <button
+                type="button"
+                onClick={() => setLightboxImageUrl(null)}
+                className="absolute top-3 right-3 z-20 p-2.5 rounded-full bg-white/15 hover:bg-white/30 text-white backdrop-blur-md transition-all cursor-pointer shadow-lg border border-white/20"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={lightboxImageUrl}
+                alt="Uncropped Full Resolution Render"
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="mt-4 flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                <span className="text-xs text-slate-300 font-mono">100% Uncropped View • 8K UHD Resolution</span>
+                <button
+                  type="button"
+                  onClick={() => triggerImageDownload(lightboxImageUrl, 'uncropped_ai_render.png')}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs transition-all flex items-center gap-2 shadow-lg cursor-pointer font-heading"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download High-Res Render</span>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

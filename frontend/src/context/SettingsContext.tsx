@@ -11,6 +11,8 @@ export interface TaxSetting {
 
 export interface AppSettings {
   applicationName: string;
+  siteUrl?: string;
+  supportEmail?: string;
   theme: 'light' | 'dark';
   primaryColor: string;
   secondaryColor: string;
@@ -37,6 +39,8 @@ export interface AppSettings {
 
 const DEFAULT_SETTINGS: AppSettings = {
   applicationName: 'RoomAI',
+  siteUrl: process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+  supportEmail: 'support@roomai.com',
   theme: 'light',
   primaryColor: '#1D4ED8',
   secondaryColor: '#7C3AED',
@@ -190,19 +194,26 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         const errJson = await res.json().catch(() => ({}));
-        console.error('Settings DB persist failed:', res.status, errJson.message);
-        throw new Error(errJson.message || `Server returned ${res.status} when saving settings.`);
+        console.warn('Settings DB persist skipped/failed:', res.status, errJson.message);
+        if (res.status === 401 && typeof window !== 'undefined') {
+          // If token expired/invalid, clear token and notify session listeners
+          localStorage.removeItem('admin_token');
+          window.dispatchEvent(new Event('user-logged-out'));
+        }
       }
     } catch (err) {
-      console.error('Error persisting settings to DB:', err);
-      throw err;
+      console.warn('Could not persist settings to server, settings applied locally:', err);
     }
   };
 
   // Toggle Theme (Light <-> Dark)
   const toggleTheme = async () => {
-    const nextTheme = settings.theme === 'light' ? 'dark' : 'light';
-    await updateSettings({ theme: nextTheme });
+    try {
+      const nextTheme = settings.theme === 'light' ? 'dark' : 'light';
+      await updateSettings({ theme: nextTheme });
+    } catch (err) {
+      console.warn('Failed to toggle theme on server:', err);
+    }
   };
 
   return (

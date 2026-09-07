@@ -23,16 +23,15 @@ export default function DesktopMenu() {
     pathname.startsWith('/upload') ||
     pathname.startsWith('/checkout') ||
     pathname.startsWith('/designs') ||
-    pathname.startsWith('/templates') ||
     pathname.startsWith('/shopping-list') ||
     pathname.startsWith('/profile');
 
   if (isDashboardRoute) {
     return (
       <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-medium">
-        <ProductsDropdown label="AI Tools" />
         <NavItem href="/dashboard" label="Dashboard" />
         <NavItem href="/projects" label="Projects" />
+        <ProductsDropdown label="AI Tools" />
         <NavItem href="/generate" label="Generate" />
         <NavItem href="/billing" label="Credits & Plan" />
         <NavItem href="/settings" label="Profile" />

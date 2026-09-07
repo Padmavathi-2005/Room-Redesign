@@ -14,6 +14,9 @@ export class Setting {
   @Prop({ default: 'RoomAI' })
   applicationName: string;
 
+  @Prop({ default: 'http://localhost:3000' })
+  siteUrl: string;
+
   @Prop({ type: String, enum: ThemeMode, default: ThemeMode.LIGHT })
   activeTheme: ThemeMode;
 

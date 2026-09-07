@@ -104,7 +104,7 @@ function AdminLayoutHeader({
       </div>
 
       <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
-        {/* Search Input (Hidden on Analytics and Settings pages where top search is not needed) */}
+        {/* Search Input */}
         {pathname !== '/admin/analytics' && pathname !== '/admin/settings' && (
           <div className="relative hidden md:block w-48 lg:w-72">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -290,12 +290,9 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FCFCFD] text-slate-900 flex relative overflow-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex relative overflow-hidden">
       {/* Blueprint Grid Pattern */}
-      <div className="fixed inset-0 blueprint-grid pointer-events-none z-0 opacity-30" />
-
-      {/* Sidebar background blurs */}
-      <div className="absolute top-0 left-0 w-80 h-full bg-indigo-500/5 blur-[100px] pointer-events-none" />
+      <div className="fixed inset-0 blueprint-grid pointer-events-none z-0 opacity-25" />
 
       {/* Mobile Drawer Overlay Backdrop */}
       {isMobileMenuOpen && (

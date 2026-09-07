@@ -63,6 +63,8 @@ function checkAuthError(res: Response) {
   if (res.status === 401 && typeof window !== 'undefined') {
     localStorage.removeItem('token');
     localStorage.removeItem('admin_token');
+    localStorage.removeItem('user');
+    window.dispatchEvent(new Event('user-logged-out'));
   }
 }
 
@@ -96,9 +98,13 @@ export const projectService = {
     }
   },
 
-  async getAllRooms(): Promise<RoomData[]> {
+  async getAllRooms(token?: string): Promise<RoomData[]> {
     try {
-      const res = await fetch(`${API_URL}/rooms`);
+      const headers: Record<string, string> = {};
+      const authToken = token || (typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('admin_token')) : null);
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+
+      const res = await fetch(`${API_URL}/rooms`, { headers });
       if (!res.ok) return [];
       return await res.json();
     } catch (err) {

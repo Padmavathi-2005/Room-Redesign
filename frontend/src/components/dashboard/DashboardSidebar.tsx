@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home,
@@ -37,6 +37,7 @@ export default function DashboardSidebar({
   isMobileOpen = false,
   onMobileClose,
 }: DashboardSidebarProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string; avatar?: string; credits: number }>({
@@ -97,9 +98,13 @@ export default function DashboardSidebar({
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      window.dispatchEvent(new Event('user-logged-out'));
+      window.dispatchEvent(new Event('auth-state-changed'));
     }
-    window.location.href = '/login';
+    router.replace('/login');
   };
 
   // Main Workspace Navigation Items

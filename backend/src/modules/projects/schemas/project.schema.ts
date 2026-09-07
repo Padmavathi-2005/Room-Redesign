@@ -40,10 +40,21 @@ export class Project {
   lighting?: string;
 
   @Prop({ required: false, default: '' })
-  manusChatId?: string; // Active Manus AI session thread ID
+  manusTaskId?: string; // Authoritative Manus AI Task ID for thread continuity
+
+  @Prop({ required: false, default: '' })
+  manusChatId?: string; // Legacy alias for backward compatibility
 
   @Prop({ type: Array, default: [] })
-  manusChatHistory?: string[]; // History of past Manus AI session IDs (never deleted)
+  manusTaskHistory?: Array<{
+    taskId: string;
+    type: 'PRIMARY' | 'REPLACEMENT';
+    createdAt: Date;
+    reason: string;
+  }>;
+
+  @Prop({ type: Array, default: [] })
+  manusChatHistory?: string[]; // Legacy array of past Manus session IDs
 
   @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'ProjectRoom' }], default: [] })
   rooms: MongooseSchema.Types.ObjectId[];

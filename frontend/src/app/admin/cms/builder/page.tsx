@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   FileText,
   Save,
@@ -22,6 +23,10 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Zap,
+  Upload,
+  Link as LinkIcon,
+  X,
+  ExternalLink,
 } from 'lucide-react';
 
 interface BlockItem {
@@ -44,6 +49,7 @@ export default function AdminCmsBuilderPage() {
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
+  const [ogImage, setOgImage] = useState('');
   const [status, setStatus] = useState<'draft' | 'published'>('published');
   const [isSystemPage, setIsSystemPage] = useState(false);
   const [editMode, setEditMode] = useState<'blocks' | 'html'>('blocks');
@@ -51,7 +57,96 @@ export default function AdminCmsBuilderPage() {
   // Content State
   const [blocks, setBlocks] = useState<BlockItem[]>([]);
   const [customHtml, setCustomHtml] = useState('');
-  const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
+
+  const handleImageFileUpload = (blockId: string, file: File) => {
+    if (!file) return;
+
+    // 1. Instant preview using FileReader
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Url = e.target?.result as string;
+      if (base64Url) {
+        setBlocks((prev) =>
+          prev.map((b) =>
+            b.id === blockId ? { ...b, content: { ...b.content, imageUrl: base64Url } } : b,
+          ),
+        );
+      }
+    };
+    reader.readAsDataURL(file);
+
+    // 2. Upload to server asynchronously if API is running
+    (async () => {
+      try {
+        const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch(`${apiUrl}/admin/tools/upload-image`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data?.url) {
+            const fullUrl = data.data.url.startsWith('http')
+              ? data.data.url
+              : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}${data.data.url}`;
+            setBlocks((prev) =>
+              prev.map((b) =>
+                b.id === blockId ? { ...b, content: { ...b.content, imageUrl: fullUrl } } : b,
+              ),
+            );
+          }
+        }
+      } catch (err) {
+        // Base64 fallback remains intact
+      }
+    })();
+  };
+
+  const handleOgFileUpload = (file: File) => {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Url = e.target?.result as string;
+      if (base64Url) {
+        setOgImage(base64Url);
+      }
+    };
+    reader.readAsDataURL(file);
+
+    (async () => {
+      try {
+        const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch(`${apiUrl}/admin/tools/upload-image`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data?.url) {
+            const fullUrl = data.data.url.startsWith('http')
+              ? data.data.url
+              : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}${data.data.url}`;
+            setOgImage(fullUrl);
+          }
+        }
+      } catch (err) {
+        // Base64 fallback remains intact
+      }
+    })();
+  };
 
   // Load Page Data if editing an existing page
   useEffect(() => {
@@ -86,7 +181,7 @@ export default function AdminCmsBuilderPage() {
     setError(null);
     try {
       const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
       const res = await fetch(`${apiUrl}/cms/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -96,6 +191,7 @@ export default function AdminCmsBuilderPage() {
         setTitle(p.title || '');
         setSlug(p.slug || '');
         setDescription(p.description || '');
+        setOgImage(p.ogImage || '');
         setStatus(p.status || 'published');
         setIsSystemPage(p.isSystemPage ?? false);
         setBlocks(p.blocks || []);
@@ -225,6 +321,7 @@ export default function AdminCmsBuilderPage() {
       title,
       slug: slug.toLowerCase().trim(),
       description,
+      ogImage,
       status,
       isSystemPage,
       blocks: editMode === 'blocks' ? blocks : [],
@@ -233,7 +330,7 @@ export default function AdminCmsBuilderPage() {
 
     try {
       const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
 
       const url = pageId ? `${apiUrl}/cms/${pageId}` : `${apiUrl}/cms`;
       const method = pageId ? 'PATCH' : 'POST';
@@ -288,25 +385,18 @@ export default function AdminCmsBuilderPage() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* Tab Switcher */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200">
-            <button
-              onClick={() => setActiveTab('editor')}
-              className={`px-3 py-1.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'editor' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
-              }`}
+          {/* Open Live Page Button */}
+          {slug && (
+            <Link
+              href={`/${slug}`}
+              target="_blank"
+              className="px-4 py-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 flex items-center gap-2 text-xs font-black transition-all cursor-pointer border border-indigo-100"
+              title="Open live page in new tab"
             >
-              Editor
-            </button>
-            <button
-              onClick={() => setActiveTab('preview')}
-              className={`px-3 py-1.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'preview' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              Live Preview
-            </button>
-          </div>
+              <ExternalLink className="w-4 h-4" />
+              <span>Open Page</span>
+            </Link>
+          )}
 
           <button
             onClick={handleSave}
@@ -351,7 +441,7 @@ export default function AdminCmsBuilderPage() {
           </div>
 
           <div className="space-y-1 text-xs">
-            <label className="font-bold text-slate-800 block">URL Slug (`/p/your-slug`)</label>
+            <label className="font-bold text-slate-800 block">URL Slug (`/{slug}`)</label>
             <input
               type="text"
               required
@@ -384,6 +474,65 @@ export default function AdminCmsBuilderPage() {
             onChange={(e) => setDescription(e.target.value)}
             className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-medium"
           />
+        </div>
+
+        {/* SEO OpenGraph Social Share Image */}
+        <div className="space-y-2 text-xs">
+          <label className="font-bold text-slate-800 flex items-center justify-between">
+            <span>SEO & OpenGraph Social Share Image (OG Image)</span>
+            <span className="text-[10px] text-slate-400 font-normal">Displayed on Twitter/X, Facebook, LinkedIn</span>
+          </label>
+
+          {ogImage ? (
+            <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 group max-h-36 flex items-center justify-center p-2">
+              <img src={ogImage} alt="SEO Preview" className="max-h-32 object-contain rounded-xl" />
+              <button
+                type="button"
+                onClick={() => setOgImage('')}
+                className="absolute top-2 right-2 p-1.5 bg-slate-900/80 hover:bg-rose-600 text-white rounded-full transition-colors cursor-pointer"
+                title="Remove SEO Image"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                <LinkIcon className="w-3 h-3 text-indigo-600" />
+                <span>Paste Web Image URL</span>
+              </span>
+              <input
+                type="text"
+                placeholder="https://images.unsplash.com/..."
+                value={ogImage}
+                onChange={(e) => setOgImage(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-mono text-xs"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                <Upload className="w-3 h-3 text-indigo-600" />
+                <span>Upload Image File</span>
+              </span>
+              <label className="flex items-center justify-center gap-2 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-2xl font-bold text-xs cursor-pointer transition-all">
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload Social Image...</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleOgFileUpload(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Mode Switcher: Blocks vs Custom HTML */}
@@ -426,9 +575,8 @@ export default function AdminCmsBuilderPage() {
         </div>
       </div>
 
-      {/* Main Workspace: Editor or Live Preview */}
-      {activeTab === 'editor' ? (
-        editMode === 'blocks' ? (
+      {/* Main Workspace */}
+      {editMode === 'blocks' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             {/* Left Col: Component Blocks Canvas */}
             <div className="lg:col-span-2 space-y-4">
@@ -568,20 +716,77 @@ export default function AdminCmsBuilderPage() {
                     )}
 
                     {block.type === 'image' && (
-                      <div className="space-y-3 text-xs">
-                        <div className="space-y-1">
-                          <label className="font-bold text-slate-700 block">Image URL</label>
-                          <input
-                            type="text"
-                            value={block.content.imageUrl || ''}
-                            onChange={(e) => updateBlockContent(block.id, { ...block.content, imageUrl: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-xs text-slate-900"
-                          />
+                      <div className="space-y-4 text-xs">
+                        <div className="space-y-2">
+                          <label className="font-bold text-slate-700 flex items-center justify-between">
+                            <span>Image Source (URL or File Upload)</span>
+                            <span className="text-[10px] text-slate-400 font-normal">Supports JPG, PNG, WEBP, GIF</span>
+                          </label>
+
+                          {/* Preview thumbnail if image exists */}
+                          {block.content.imageUrl ? (
+                            <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 group max-h-48 flex items-center justify-center p-2">
+                              <img
+                                src={block.content.imageUrl}
+                                alt="Block Preview"
+                                className="max-h-44 object-contain rounded-xl"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => updateBlockContent(block.id, { ...block.content, imageUrl: '' })}
+                                className="absolute top-2 right-2 p-1.5 bg-slate-900/80 hover:bg-rose-600 text-white rounded-full transition-colors cursor-pointer"
+                                title="Remove Image"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : null}
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {/* Option A: Direct Web Image URL */}
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                                <LinkIcon className="w-3 h-3 text-indigo-600" />
+                                <span>Paste Image Web URL</span>
+                              </span>
+                              <input
+                                type="text"
+                                placeholder="https://images.unsplash.com/..."
+                                value={block.content.imageUrl || ''}
+                                onChange={(e) => updateBlockContent(block.id, { ...block.content, imageUrl: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-xs text-slate-900 focus:bg-white focus:border-indigo-500"
+                              />
+                            </div>
+
+                            {/* Option B: Local File Upload */}
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                                <Upload className="w-3 h-3 text-indigo-600" />
+                                <span>Upload File From Computer</span>
+                              </span>
+                              <label className="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-2xl font-bold text-xs cursor-pointer transition-all">
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Choose Image File...</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                      handleImageFileUpload(block.id, e.target.files[0]);
+                                    }
+                                  }}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
+                          </div>
                         </div>
+
                         <div className="space-y-1">
                           <label className="font-bold text-slate-700 block">Caption</label>
                           <input
                             type="text"
+                            placeholder="e.g. Modern Living Room Render Showcase"
                             value={block.content.caption || ''}
                             onChange={(e) => updateBlockContent(block.id, { ...block.content, caption: e.target.value })}
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900"
@@ -712,61 +917,7 @@ export default function AdminCmsBuilderPage() {
             />
           </div>
         )
-      ) : (
-        /* Live Render Preview Pane */
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-2xs space-y-8 min-h-[500px]">
-          <div className="border-b border-slate-150 pb-4 flex items-center justify-between text-xs text-slate-400 font-bold">
-            <span>PUBLIC PAGE PREVIEW</span>
-            <span>/p/{slug || 'your-slug'}</span>
-          </div>
-
-          {editMode === 'html' ? (
-            <div dangerouslySetInnerHTML={{ __html: customHtml }} />
-          ) : (
-            <div className="space-y-12 max-w-4xl mx-auto">
-              {blocks.map((block) => {
-                if (block.type === 'hero') {
-                  return (
-                    <div key={block.id} className="text-center space-y-4 py-8 bg-indigo-50/50 rounded-2xl border border-indigo-100 p-8">
-                      {block.content.badge && (
-                        <span className="px-3 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">
-                          {block.content.badge}
-                        </span>
-                      )}
-                      <h1 className="text-3xl font-black text-slate-900">{block.content.title}</h1>
-                      <p className="text-sm text-slate-600 max-w-xl mx-auto font-medium">{block.content.subtitle}</p>
-                    </div>
-                  );
-                }
-
-                if (block.type === 'text') {
-                  return (
-                    <div key={block.id} className="space-y-3">
-                      {block.content.title && <h2 className="text-xl font-black text-slate-900">{block.content.title}</h2>}
-                      <div className="text-xs text-slate-700 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: block.content.body || '' }} />
-                    </div>
-                  );
-                }
-
-                if (block.type === 'image') {
-                  return (
-                    <div key={block.id} className="space-y-2 text-center">
-                      <img src={block.content.imageUrl} alt="CMS Showcase" className="w-full max-h-96 object-cover rounded-2xl border border-slate-200" />
-                      {block.content.caption && <p className="text-xs text-slate-400 font-semibold">{block.content.caption}</p>}
-                    </div>
-                  );
-                }
-
-                if (block.type === 'html') {
-                  return <div key={block.id} dangerouslySetInnerHTML={{ __html: block.content.rawHtml || '' }} />;
-                }
-
-                return null;
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      }
     </div>
   );
 }

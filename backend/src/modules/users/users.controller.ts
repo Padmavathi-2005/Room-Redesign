@@ -26,34 +26,56 @@ export class UsersController {
   ) {}
 
   @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  async getUser(@CurrentUser() currentUser: any, @Param('id') id: string) {
-    const isAdmin = currentUser && (currentUser.role === UserRole.ADMIN || currentUser.role === 'admin');
-    if (!isAdmin && currentUser._id.toString() !== id) {
-      throw new ForbiddenException('You are not authorized to view this user profile.');
-    }
-
-    const user = await this.usersService.findById(id);
+  @Get('me')
+  async getMyProfile(@CurrentUser() currentUser: any) {
+    const userId = currentUser._id ? currentUser._id.toString() : (currentUser.id?.toString() || currentUser.sub);
+    const user = await this.usersService.findById(userId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException('User not found');
     }
     return {
       success: true,
-      data: user,
+      data: { user },
+      user,
+      credits: user.credits ?? 0,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  async getUser(@CurrentUser() currentUser: any, @Param('id') id: string) {
+    const currentUserId = currentUser._id ? currentUser._id.toString() : (currentUser.id?.toString() || currentUser.sub);
+    const targetId = id === 'me' ? currentUserId : id;
+    const isAdmin = currentUser && (currentUser.role === UserRole.ADMIN || currentUser.role === 'admin');
+    if (!isAdmin && currentUserId !== targetId) {
+      throw new ForbiddenException('You are not authorized to view this user profile.');
+    }
+
+    const user = await this.usersService.findById(targetId);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${targetId} not found`);
+    }
+    return {
+      success: true,
+      data: { user },
+      user,
+      credits: user.credits ?? 0,
     };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/credits')
   async getUserCredits(@CurrentUser() currentUser: any, @Param('id') id: string) {
+    const currentUserId = currentUser._id ? currentUser._id.toString() : (currentUser.id?.toString() || currentUser.sub);
+    const targetId = id === 'me' ? currentUserId : id;
     const isAdmin = currentUser && (currentUser.role === UserRole.ADMIN || currentUser.role === 'admin');
-    if (!isAdmin && currentUser._id.toString() !== id) {
+    if (!isAdmin && currentUserId !== targetId) {
       throw new ForbiddenException('You are not authorized to view this user\'s credit balance.');
     }
 
-    const user = await this.usersService.findById(id);
+    const user = await this.usersService.findById(targetId);
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException(`User with ID ${targetId} not found`);
     }
     return {
       success: true,

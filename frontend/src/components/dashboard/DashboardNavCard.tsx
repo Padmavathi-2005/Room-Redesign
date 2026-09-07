@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home,
@@ -30,6 +30,7 @@ interface UserData {
 }
 
 export default function DashboardNavCard() {
+  const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<UserData>({
     name: 'User',
@@ -101,9 +102,13 @@ export default function DashboardNavCard() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      window.dispatchEvent(new Event('user-logged-out'));
+      window.dispatchEvent(new Event('auth-state-changed'));
     }
-    window.location.href = '/';
+    router.replace('/login');
   };
 
   // Nav Items matching Home Page Header Topics + Workspace Links

@@ -46,6 +46,15 @@ export class RoomsController {
   }
 
   /**
+   * GET /api/v1/rooms/:id/status
+   * Live status endpoint for non-blocking room redesign job status polling.
+   */
+  @Get(':id/status')
+  async getStatus(@Param('id') id: string) {
+    return this.roomsService.getRoomStatus(id);
+  }
+
+  /**
    * GET /api/v1/rooms/:id
    * Fetch single room design if owned by user (or if admin)
    */

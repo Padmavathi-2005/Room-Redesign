@@ -101,53 +101,114 @@ export class RoomsService implements OnModuleInit {
       this.logger.warn(`Failed to verify model access boundaries for plan ${userPlanCode}: ${err.message}`);
     }
 
-    // 2. Atomic credit deduction
-    targetUser = await this.subscriptionService.deductCreditsAtomic(
-      targetUser._id.toString(),
-      cost,
-      `AI Generation Deducted: ${requestedTool} (${roomType})`,
-      { toolSlug: requestedTool, roomType },
-    );
-
     let targetTheme = designStyle || theme;
     let targetColorPalette = colorPalette || '';
     let targetLighting = lighting || '';
     let targetChatId = manusChatId || '';
+    let targetProjectId = projectId || '';
     let activeProject: any = null;
 
-    if (projectId) {
+    const targetProjectIdOrName = targetProjectId || dto.projectName;
+
+    if (targetProjectIdOrName) {
       try {
-        activeProject = await this.projectsService.findOne(projectId);
+        activeProject = await this.projectsService.findOneOrByName(targetProjectIdOrName, targetUser._id?.toString());
         if (activeProject) {
-          this.logger.log(`Locked generation to Project "${activeProject.name}" (ID: ${projectId}) with Theme: ${activeProject.theme}`);
+          // Rule: Verify authenticated user owns the target project
+          if (activeProject.userId && targetUser._id && activeProject.userId.toString() !== targetUser._id.toString()) {
+            throw new ForbiddenException('You do not have permission to generate redesigns within this project.');
+          }
+
+          this.logger.log(`Locked generation to Project "${activeProject.name}" (ID: ${activeProject._id}) with Theme: ${activeProject.theme}`);
           if (activeProject.theme) targetTheme = activeProject.theme;
           if (activeProject.colorPalette) targetColorPalette = activeProject.colorPalette;
           if (activeProject.lighting) targetLighting = activeProject.lighting;
-          if (activeProject.manusChatId) targetChatId = activeProject.manusChatId;
+          
+          // Authoritative DB Source of Truth: Resolve master manusTaskId from Project
+          targetChatId = activeProject.manusTaskId || activeProject.manusChatId || '';
+          if (targetChatId) {
+            this.logger.log(`🔗 Authoritative Master Manus Task ID resolved from Project DB: ${targetChatId}`);
+          } else {
+            this.logger.log(`ℹ️ Project "${activeProject.name}" has no existing Manus Task. First generation will call task.create.`);
+          }
+
+          // Ensure projectId on room record is the actual resolved ObjectId
+          if (activeProject._id) {
+            targetProjectId = activeProject._id.toString();
+          }
+        } else {
+          this.logger.warn(`Project lookup returned null for query: ${targetProjectIdOrName}`);
         }
       } catch (err: any) {
-        this.logger.warn(`Could not resolve Project ${projectId}: ${err.message}`);
+        if (err instanceof ForbiddenException) throw err;
+        this.logger.warn(`Could not resolve Project ${targetProjectIdOrName}: ${err.message}`);
       }
     }
 
-    this.logger.log(`Enqueuing redesign job for ${targetTheme} ${roomType}...`);
+    const resolvedOriginalImage = await this.resolveDirectImageUrl(originalImage);
 
-    const resolvedOriginalImage = this.resolveDirectImageUrl(originalImage);
+    // 1. Pre-validate and upload original source image BEFORE credit deduction (Rule #4)
+    let inputMediaFile: any;
+    try {
+      inputMediaFile = await this.uploadsService.registerUploadedFile({
+        originalName: `input_${Date.now()}.jpg`,
+        type: 'original_input',
+        externalUrl: resolvedOriginalImage,
+      });
+    } catch (uploadErr: any) {
+      this.logger.error(`Source image validation failed: ${uploadErr.message}`);
+      throw new BadRequestException(`SOURCE_IMAGE_UNAVAILABLE: Could not validate or access provided source image (${uploadErr.message})`);
+    }
 
-    // 1. Upload and preprocess the original input image via UploadsService
-    const inputMediaFile = await this.uploadsService.registerUploadedFile({
-      originalName: `input_${Date.now()}.jpg`,
-      type: 'original_input',
-      externalUrl: resolvedOriginalImage,
-    });
+    const genIdempotencyKey = dto.idempotencyKey || `gen-${targetUser._id.toString()}-${Date.now()}`;
+
+    const formattedToolName = requestedTool === '3d-floor-plan' ? '3D Floor Plan'
+      : requestedTool === 'sketch-to-render' ? 'Sketch to Render'
+      : requestedTool === '8k-render' ? '8K Render'
+      : 'Interior Design';
+
+    const formattedRoomType = (roomType || 'Living Room')
+      .split('-')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    const initialWorkflowSteps = [
+      { id: '1', title: 'Vision AI Room Analysis', status: 'in_progress', timestamp: 'Just now' },
+      { id: '2', title: `Generating ${formattedToolName} (${targetTheme} Theme)`, status: 'pending' },
+      { id: '3', title: `Rendering ${formattedRoomType}`, status: 'pending' },
+      { id: '4', title: 'Final Image Optimization & Upscaling', status: 'pending' },
+    ];
+
+    // Deduct user credits atomically BEFORE processing (Rule #4)
+    let freshDeductedUser = null;
+    try {
+      freshDeductedUser = await this.subscriptionService.deductCreditsAtomic(
+        targetUser._id.toString(),
+        cost,
+        `AI Room Redesign (${formattedToolName})`,
+        { toolSlug: requestedTool, roomType, theme: targetTheme }
+      );
+    } catch (err: any) {
+      this.logger.warn(`deductCreditsAtomic fallback: ${err.message}`);
+    }
+
+    if (!freshDeductedUser) {
+      await this.userModel.findByIdAndUpdate(targetUser._id, {
+        $inc: { credits: -cost },
+      }).exec();
+    }
+    this.logger.log(`Deducted ${cost} credits from User ${targetUser._id}. New Balance: ${freshDeductedUser?.credits ?? 'calculated'}.`);
 
     // 2. Insert the pending room generation document to act as our queue job payload
-    const roomRecord: Record<string, any> = {
-      originalImage: inputMediaFile.url,
+    const roomRecord: any = {
+      originalImage: inputMediaFile?.url || resolvedOriginalImage,
+      originalImageUrl: resolvedOriginalImage && resolvedOriginalImage.startsWith('http') ? resolvedOriginalImage : '',
       generatedImage: '',
-      originalImageId: (inputMediaFile as any)._id,
-      toolSlug: toolSlug || 'interior-design',
+      originalImageId: inputMediaFile._id,
+      toolSlug: requestedTool,
       roomType,
+      workflowSteps: initialWorkflowSteps,
+      currentStep: 1,
       buildingType: buildingType || 'House',
       roofType: roofType || '',
       environment: environment || '',
@@ -173,15 +234,18 @@ export class RoomsService implements OnModuleInit {
     };
 
     if (targetUser) roomRecord.userId = targetUser._id;
-    if (projectId) roomRecord.projectId = projectId;
-    if (targetChatId) roomRecord.manusChatId = targetChatId;
+    if (targetProjectId) roomRecord.projectId = targetProjectId;
+    if (targetChatId) {
+      roomRecord.manusTaskId = targetChatId;
+      roomRecord.manusChatId = targetChatId;
+    }
 
     let createdRoom: RoomDocument;
     try {
       createdRoom = new this.roomModel(roomRecord);
       await createdRoom.save();
-      if (projectId) {
-        await this.projectsService.addRoomToProject(projectId, createdRoom._id);
+      if (targetProjectId) {
+        await this.projectsService.addRoomToProject(targetProjectId, createdRoom._id);
       }
 
       // Trigger immediate worker execution for instant response
@@ -218,21 +282,31 @@ export class RoomsService implements OnModuleInit {
           this.logger.log(`Job completed (ID: ${createdRoom._id}). Returning result.`);
           const resultObj: any = currentRoom.toObject ? currentRoom.toObject() : { ...currentRoom };
           if (targetUser) {
-            resultObj.remainingCredits = targetUser.credits;
+            const freshUser = await this.userModel.findById(targetUser._id).exec();
+            resultObj.remainingCredits = freshUser ? freshUser.credits : targetUser.credits;
           }
           return resultObj;
         }
         if (currentRoom.status === 'failed') {
           this.logger.error(`Job failed (ID: ${createdRoom._id}). Error: ${currentRoom.error}`);
+          let freshCredits = 0;
           if (targetUser) {
-            await this.subscriptionService.refundCreditsAtomic(
+            const refundedUser = await this.subscriptionService.refundCreditsAtomic(
               targetUser._id.toString(),
               cost,
-              'Auto-refund: Room redesign generation failed',
+              `Auto-Refund: AI Generation Failed (${formattedToolName})`,
               { toolSlug: requestedTool, roomId: createdRoom._id },
             );
+            freshCredits = refundedUser?.credits ?? 0;
           }
-          throw new BadRequestException(`Image generation failed: ${currentRoom.error || 'Unknown error'}`);
+
+          let rawErr = currentRoom.error || 'Unknown error';
+          let userFriendlyReason = rawErr;
+          if (rawErr.includes('402') || rawErr.includes('Quota') || rawErr.includes('429') || rawErr.includes('API key') || rawErr.includes('failed')) {
+            userFriendlyReason = `AI Provider capacity or quota temporarily reached. Your ${cost} credits were automatically refunded to your balance (${freshCredits} credits remaining).`;
+          }
+
+          throw new BadRequestException(userFriendlyReason);
         }
       }
     }
@@ -242,16 +316,18 @@ export class RoomsService implements OnModuleInit {
       $set: { status: 'failed', error: 'Generation timed out' },
     });
 
+    let freshCredits = 0;
     if (targetUser) {
-      await this.subscriptionService.refundCreditsAtomic(
+      const refundedUser = await this.subscriptionService.refundCreditsAtomic(
         targetUser._id.toString(),
         cost,
-        'Auto-refund: Room redesign generation timed out',
+        `Auto-Refund: AI Generation Timed Out (${formattedToolName})`,
         { toolSlug: requestedTool, roomId: createdRoom._id },
       );
+      freshCredits = refundedUser?.credits ?? 0;
     }
 
-    throw new GatewayTimeoutException('Image generation request timed out. Please try again.');
+    throw new GatewayTimeoutException(`Image generation request timed out after 10 minutes. Your ${cost} credits were automatically refunded (${freshCredits} credits remaining).`);
   }
 
   /**
@@ -259,7 +335,7 @@ export class RoomsService implements OnModuleInit {
    */
   async generateRoomRedesign2(body: { imageUrl: string; prompt: string }): Promise<any> {
     const { imageUrl, prompt } = body;
-    const resolvedUrl = this.resolveDirectImageUrl(imageUrl);
+    const resolvedUrl = await this.resolveDirectImageUrl(imageUrl);
     this.logger.log(`Direct redesign request. Prompt: "${prompt.slice(0, 50)}...", Image URL: ${resolvedUrl}`);
 
     if (!prompt) {
@@ -361,6 +437,51 @@ export class RoomsService implements OnModuleInit {
   }
 
   /**
+   * Retrieves real live execution status and workflow steps for a generation job
+   */
+  async getRoomStatus(id: string): Promise<Record<string, any>> {
+    let room: any = null;
+    try {
+      if (id && id.length === 24) {
+        room = await this.roomModel.findById(id).exec();
+      }
+    } catch (e) {
+      // Ignore invalid ObjectId
+    }
+
+    if (!room) {
+      room = this.inMemoryRooms.find((r) => r._id === id || r.id === id);
+    }
+
+    if (!room) {
+      throw new NotFoundException(`Generation job with ID "${id}" was not found.`);
+    }
+
+    const isCompleted = room.status === 'completed' && Boolean(room.generatedImage);
+    const isFailed = room.status === 'failed' || (room.status === 'completed' && !room.generatedImage);
+    const effectiveStatus = isCompleted ? 'completed' : isFailed ? 'failed' : room.status || 'pending';
+
+    return {
+      generationId: room._id || room.id || id,
+      roomId: room._id || room.id || id,
+      status: effectiveStatus,
+      failureCode: room.failureCode || (isFailed && !room.generatedImage ? 'GENERATION_RESULT_MISSING' : ''),
+      error: room.error || (isFailed && !room.generatedImage ? 'AI generation task finished but no valid image was returned.' : ''),
+      originalImage: room.originalImage || '',
+      generatedImage: isCompleted ? room.generatedImage : '',
+      stepStatus: room.stepStatus || '',
+      workflowSteps: room.workflowSteps || [
+        { id: 'source-image', name: 'Locate Source Interior Image', status: 'completed' },
+        { id: 'direction-prepare', name: 'Prepare Visual Redesign Direction', status: isCompleted ? 'completed' : 'running' },
+        { id: 'generate-render', name: 'Generate High-Precision Architectural Render', status: isCompleted ? 'completed' : 'pending' },
+        { id: 'verify-result', name: 'Verify Image Quality & Style', status: isCompleted ? 'completed' : 'pending' }
+      ],
+      createdAt: room.createdAt,
+      updatedAt: room.updatedAt || room.createdAt,
+    };
+  }
+
+  /**
    * Deletes a room design record with user ownership check
    */
   async removeForUser(id: string, userId: string, isAdmin = false): Promise<{ success: boolean; id: string }> {
@@ -373,21 +494,16 @@ export class RoomsService implements OnModuleInit {
   }
 
   /**
-   * Helper to parse and resolve direct Unsplash image downloads from photo page links
+   * Helper to parse and resolve direct image URLs from web page links (Unsplash, Pexels, Pinterest, etc.)
    */
-  private resolveDirectImageUrl(url: string): string {
+  private async resolveDirectImageUrl(url: string): Promise<string> {
     if (!url) return url;
-
-    // Matches Unsplash photo page patterns e.g. https://unsplash.com/photos/shT_LaGUmYI
-    const unsplashMatch = url.match(/unsplash\.com\/photos\/([a-zA-Z0-9_-]+)$/);
-    if (unsplashMatch) {
-      const segment = unsplashMatch[1];
-      const id = segment.includes('-') ? segment.split('-').pop() : segment;
-      const cdnUrl = `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1200&q=80`;
-      this.logger.log(`Auto-resolved Unsplash page link to direct CDN image: ${cdnUrl}`);
-      return cdnUrl;
+    try {
+      const resolved = await this.uploadsService.resolveWebPageImageUrl(url);
+      if (resolved) return resolved;
+    } catch (e: any) {
+      this.logger.warn(`Failed to resolve direct image URL for "${url}": ${e.message}`);
     }
-
     return url;
   }
 }

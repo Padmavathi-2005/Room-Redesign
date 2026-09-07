@@ -40,6 +40,9 @@ export class CmsPage {
   @Prop({ default: '' })
   description: string;
 
+  @Prop({ default: '' })
+  ogImage?: string;
+
   @Prop({ type: String, enum: PageStatus, default: PageStatus.PUBLISHED })
   status: PageStatus;
 
@@ -54,6 +57,9 @@ export class CmsPage {
 
   @Prop({ default: 0 })
   views: number;
+
+  @Prop({ type: [String], default: [] })
+  viewedIps: string[];
 
   @Prop({ default: 'System Administrator' })
   author: string;

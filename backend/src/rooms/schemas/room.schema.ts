@@ -9,6 +9,9 @@ export class RoomGeneration {
   originalImage: string; // File path or URL
 
   @Prop({ required: false, default: '' })
+  originalImageUrl?: string; // Public remote image URL (e.g. Unsplash CDN URL)
+
+  @Prop({ required: false, default: '' })
   generatedImage: string; // Generated file path or URL
 
   @Prop({ type: Array, default: [] })
@@ -90,7 +93,10 @@ export class RoomGeneration {
   projectId?: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: false, default: '' })
-  manusChatId?: string;
+  manusTaskId?: string; // Persistent Manus AI Task ID
+
+  @Prop({ required: false, default: '' })
+  manusChatId?: string; // Legacy alias for backward compatibility
 
   @Prop({ required: true, default: 4 })
   creditsUsed: number;
@@ -104,12 +110,25 @@ export class RoomGeneration {
   @Prop({ required: false, default: '' })
   stepStatus?: string;
 
+  @Prop({ required: false, default: '' })
+  failureCode?: string;
+
+  @Prop({ required: false, default: false })
+  isRefunded?: boolean;
+
+  @Prop({ required: false, default: '' })
+  generationId?: string;
+
   @Prop({ type: Array, default: [] })
   workflowSteps?: Array<{
     id: string;
     title: string;
-    description: string;
-    status: 'pending' | 'running' | 'completed' | 'error';
+    description?: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    startedAt?: string;
+    completedAt?: string;
+    error?: string;
+    metadata?: Record<string, any>;
   }>;
 }
 

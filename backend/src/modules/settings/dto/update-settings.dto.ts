@@ -17,6 +17,10 @@ export class UpdateSettingsDto {
   applicationName?: string;
 
   @IsOptional()
+  @IsString()
+  siteUrl?: string;
+
+  @IsOptional()
   @IsEnum(ThemeMode)
   activeTheme?: ThemeMode;
 

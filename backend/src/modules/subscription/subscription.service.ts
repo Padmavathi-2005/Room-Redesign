@@ -198,7 +198,7 @@ export class SubscriptionService implements OnModuleInit {
 
   /**
    * Atomically deduct credits from user balance using Earliest-Expiry-First (FEFO) order,
-   * cleaning up expired credit lots with EXPIRY ledger entries.
+   * cleaning up expired credit lots with EXPIRY ledger entries, and using Optimistic Concurrency Locking.
    */
   async deductCreditsAtomic(
     userId: string,
@@ -212,89 +212,164 @@ export class SubscriptionService implements OnModuleInit {
       return user;
     }
 
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) throw new NotFoundException('User not found');
+    const idempotencyKey = metadata.idempotencyKey || metadata.generationId || metadata.roomId || metadata.requestId;
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    // 1. Deduction Idempotency Check: Prevent charging twice for retried requests
+    if (idempotencyKey) {
+      const existingDeduction = await this.creditLedgerModel.findOne({
+        userId,
+        referenceId: idempotencyKey,
+        type: { $in: [CreditTransactionType.GENERATION_DEDUCTION, CreditTransactionType.DEDUCTION] },
+      }).exec();
 
-    // 1. Process expired lots & write EXPIRY ledger entries
-    if (user.creditLots && user.creditLots.length > 0) {
-      let updatedAny = false;
-      for (const lot of user.creditLots) {
-        if (lot.expiryDate && lot.expiryDate < todayStr && (lot.remainingCredits || 0) > 0) {
-          const expiredAmt = lot.remainingCredits;
-          lot.remainingCredits = 0;
-          updatedAny = true;
+      if (existingDeduction) {
+        console.log(`ℹ️ Generation deduction [${idempotencyKey}] already processed. Returning user state idempotently.`);
+        const user = await this.userModel.findById(userId).exec();
+        if (!user) throw new NotFoundException('User not found');
+        return user;
+      }
+    }
 
-          const currentBal = (user.credits || 0) - expiredAmt;
-          await this.creditLedgerModel.create({
-            userId: user._id,
-            amount: -expiredAmt,
-            balanceAfter: Math.max(0, currentBal),
-            type: CreditTransactionType.EXPIRY,
-            description: `Credit Lot Expired: ${lot.source} (-${expiredAmt} Credits)`,
-            metadata: { lotId: lot.lotId, expiryDate: lot.expiryDate },
-          });
+    const maxRetries = 3;
+    const now = new Date();
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const user = await this.userModel.findById(userId).exec();
+      if (!user) throw new NotFoundException('User not found');
+
+      const initialBalance = user.credits ?? 0;
+
+      // 1b. Initialize creditLots if user has balance but no lots
+      if (!user.creditLots || user.creditLots.length === 0) {
+        if (initialBalance > 0) {
+          user.creditLots = [{
+            lotId: `lot_legacy_${user._id}_${Date.now()}`,
+            source: 'initial_balance',
+            amount: initialBalance,
+            remainingCredits: initialBalance,
+            createdAt: new Date(),
+          }];
+          if (typeof (user as any).markModified === 'function') {
+            user.markModified('creditLots');
+          }
+        } else {
+          user.creditLots = [];
         }
       }
-      if (updatedAny && typeof (user as any).markModified === 'function') {
-        user.markModified('creditLots');
+      let lotExpiredSum = 0;
+      if (user.creditLots && user.creditLots.length > 0) {
+        for (const lot of user.creditLots) {
+          const lotExpiry = lot.expiryDate ? new Date(lot.expiryDate) : null;
+          if (lotExpiry && lotExpiry < now && (lot.remainingCredits || 0) > 0) {
+            const expiredAmt = lot.remainingCredits;
+            lot.remainingCredits = 0;
+            lotExpiredSum += expiredAmt;
+
+            const txnId = `txn-exp-${lot.lotId || Date.now()}-${Date.now()}`;
+            await this.creditLedgerModel.create({
+              transactionId: txnId,
+              userId: user._id,
+              amount: -expiredAmt,
+              balanceAfter: Math.max(0, initialBalance - expiredAmt),
+              type: CreditTransactionType.EXPIRY,
+              description: `Credit Lot Expired: ${lot.source} (-${expiredAmt} Credits)`,
+              lotId: lot.lotId,
+              referenceId: lot.lotId,
+              referenceType: 'lot_expiry',
+              metadata: { lotId: lot.lotId, expiryDate: lot.expiryDate },
+            }).catch(() => {});
+          }
+        }
       }
-    }
 
-    // Recalculate available active unexpired credits
-    const activeUnexpiredLots = (user.creditLots || []).filter(
-      (lot) => !lot.expiryDate || lot.expiryDate >= todayStr,
-    );
-    const availableCredits = activeUnexpiredLots.reduce((sum, l) => sum + (l.remainingCredits || 0), 0);
+      // Filter active unexpired lots
+      let activeUnexpiredLots = (user.creditLots || []).filter((lot) => {
+        if (!lot.expiryDate) return true;
+        const lotExp = new Date(lot.expiryDate);
+        return lotExp >= now;
+      });
 
-    if (availableCredits < cost) {
-      user.credits = availableCredits;
-      await user.save();
-      throw new BadRequestException(
-        `Insufficient AI credits. Required: ${cost}, available unexpired: ${availableCredits}. Please upgrade your plan or purchase a credit booster.`,
-      );
-    }
+      let availableCredits = activeUnexpiredLots.reduce((sum, l) => sum + (l.remainingCredits || 0), 0);
 
-    // 2. Earliest-Expiry-First (FEFO) Sort: Sort active lots by expiryDate ASCENDING
-    activeUnexpiredLots.sort((a, b) => {
-      if (!a.expiryDate) return 1;
-      if (!b.expiryDate) return -1;
-      return a.expiryDate.localeCompare(b.expiryDate);
-    });
-
-    // 3. Deduct cost from earliest expiring lots
-    let costRemaining = cost;
-    for (const lot of activeUnexpiredLots) {
-      if (costRemaining > 0 && lot.remainingCredits > 0) {
-        const deductAmt = Math.min(lot.remainingCredits, costRemaining);
-        lot.remainingCredits -= deductAmt;
-        costRemaining -= deductAmt;
+      // Sync user.credits with actual available unexpired credits to prevent expired credit retention
+      if (user.credits !== availableCredits) {
+        user.credits = availableCredits;
       }
+
+      if (availableCredits < cost) {
+        // Enforce true active sum to prevent negative or phantom balance
+        user.credits = availableCredits;
+        await user.save();
+        throw new BadRequestException(
+          `Insufficient AI credits. Required: ${cost}, available unexpired: ${availableCredits}. Please upgrade your plan or purchase a credit booster.`,
+        );
+      }
+
+      // 3. FEFO Ordering: Sort active unexpired lots by expiryDate ASCENDING
+      activeUnexpiredLots.sort((a, b) => {
+        if (!a.expiryDate) return 1;
+        if (!b.expiryDate) return -1;
+        return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
+      });
+
+      // 4. Deduct cost from earliest expiring lots
+      let costRemaining = cost;
+      let primaryLotId = '';
+      for (const lot of activeUnexpiredLots) {
+        if (costRemaining > 0 && lot.remainingCredits > 0) {
+          if (!primaryLotId) primaryLotId = lot.lotId;
+          const deductAmt = Math.min(lot.remainingCredits, costRemaining);
+          lot.remainingCredits -= deductAmt;
+          costRemaining -= deductAmt;
+        }
+      }
+
+      const newBalance = activeUnexpiredLots.reduce((sum, l) => sum + l.remainingCredits, 0);
+
+      // 5. Atomic Update with Optimistic Concurrency Filter
+      const updatedUser = await this.userModel.findOneAndUpdate(
+        {
+          _id: userId,
+          credits: initialBalance, // Conditional version check: Ensure no concurrent write happened
+        },
+        {
+          $set: {
+            credits: newBalance,
+            creditLots: user.creditLots,
+          },
+        },
+        { new: true },
+      ).exec();
+
+      if (!updatedUser) {
+        console.warn(`⚠️ Optimistic concurrency conflict during credit deduction for user ${userId}. Retrying attempt ${attempt + 1}/${maxRetries}...`);
+        await new Promise((r) => setTimeout(r, 50 * (attempt + 1)));
+        continue; // Retry loop
+      }
+
+      // 6. Write GENERATION_DEDUCTION Ledger Entry
+      const txnId = `txn-deduct-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      await this.creditLedgerModel.create({
+        transactionId: txnId,
+        userId: updatedUser._id,
+        amount: -cost,
+        balanceAfter: newBalance,
+        type: CreditTransactionType.GENERATION_DEDUCTION,
+        description,
+        lotId: primaryLotId,
+        referenceId: idempotencyKey || metadata.roomId || metadata.toolSlug,
+        referenceType: 'room_generation',
+        metadata: { ...metadata, idempotencyKey },
+      });
+
+      return updatedUser;
     }
 
-    // 4. Update user.credits to exact sum of active remaining credits
-    user.credits = activeUnexpiredLots.reduce((sum, l) => sum + l.remainingCredits, 0);
-    if (typeof (user as any).markModified === 'function') {
-      user.markModified('creditLots');
-    }
-    await user.save();
-
-    // 5. Create DEDUCTION ledger entry
-    await this.creditLedgerModel.create({
-      userId: user._id,
-      amount: -cost,
-      balanceAfter: user.credits,
-      type: CreditTransactionType.DEDUCTION,
-      description,
-      metadata,
-    });
-
-    return user;
+    throw new BadRequestException('High concurrent generation traffic. Please retry your generation in a moment.');
   }
 
   /**
-   * Atomically refund credits to user balance (e.g. after generation failure) restoring to active lot
+   * Idempotent Credit Refund (e.g. after generation failure) preserving original lot entitlement
    */
   async refundCreditsAtomic(
     userId: string,
@@ -308,30 +383,89 @@ export class SubscriptionService implements OnModuleInit {
       return user;
     }
 
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) throw new NotFoundException('User not found');
+    const referenceId = metadata.roomId || metadata.referenceId || metadata.generationId;
 
-    user.credits = (user.credits || 0) + cost;
+    // 1. Idempotency Check: Prevent duplicate refunds for the same generation
+    if (referenceId) {
+      const existingRefund = await this.creditLedgerModel.findOne({
+        userId,
+        referenceId,
+        type: { $in: [CreditTransactionType.GENERATION_REFUND, CreditTransactionType.REFUND] },
+      }).exec();
 
-    if (user.creditLots && user.creditLots.length > 0) {
-      user.creditLots[0].remainingCredits = (user.creditLots[0].remainingCredits || 0) + cost;
-      if (typeof (user as any).markModified === 'function') {
-        user.markModified('creditLots');
+      if (existingRefund) {
+        console.warn(`ℹ️ Generation refund [${referenceId}] already executed. Skipping idempotently.`);
+        const user = await this.userModel.findById(userId).exec();
+        if (!user) throw new NotFoundException('User not found');
+        return user;
       }
     }
 
-    await user.save();
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) throw new NotFoundException('User not found');
 
+    const now = new Date();
+    let targetLot: any = null;
+
+    // 2. Original Lot Preservation: Restore credits to original lot if unexpired
+    if (metadata.lotId && user.creditLots && user.creditLots.length > 0) {
+      targetLot = user.creditLots.find((l) => l.lotId === metadata.lotId);
+      if (targetLot && targetLot.expiryDate && new Date(targetLot.expiryDate) < now) {
+        targetLot = null; // Lot expired, cannot restore to expired lot
+      }
+    }
+
+    if (!targetLot && user.creditLots && user.creditLots.length > 0) {
+      targetLot = user.creditLots.find((l) => !l.expiryDate || new Date(l.expiryDate) >= now);
+    }
+
+    if (targetLot) {
+      targetLot.remainingCredits = (targetLot.remainingCredits || 0) + cost;
+    } else {
+      const healExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const restoredAmt = (user.credits || 0) + cost;
+      const refundLot = {
+        lotId: `lot-refund-${Date.now()}`,
+        source: 'Generation Refund Restored Entitlement',
+        initialCredits: restoredAmt,
+        remainingCredits: restoredAmt,
+        startDate: now,
+        expiryDate: healExpiry,
+      };
+      if (!user.creditLots) user.creditLots = [];
+      user.creditLots.unshift(refundLot);
+      targetLot = refundLot;
+    }
+
+    const activeLots = (user.creditLots || []).filter((l) => !l.expiryDate || new Date(l.expiryDate) >= now);
+    const newBalance = activeLots.reduce((sum, l) => sum + (l.remainingCredits || 0), 0);
+
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          credits: newBalance,
+          creditLots: user.creditLots,
+        },
+      },
+      { new: true },
+    ).exec();
+
+    const txnId = `txn-refund-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     await this.creditLedgerModel.create({
+      transactionId: txnId,
       userId: user._id,
       amount: cost,
-      balanceAfter: user.credits,
-      type: CreditTransactionType.REFUND,
+      balanceAfter: newBalance,
+      type: CreditTransactionType.GENERATION_REFUND,
       description,
+      lotId: targetLot?.lotId,
+      referenceId: referenceId || targetLot?.lotId,
+      referenceType: 'room_generation_refund',
       metadata,
     });
 
-    return user;
+    return updatedUser || user;
   }
 
   /**
@@ -343,7 +477,7 @@ export class SubscriptionService implements OnModuleInit {
     delta?: number,
     description: string = 'Manual Admin Credit Adjustment',
     metadata: Record<string, any> = {},
-  ): Promise<UserDocument> {
+  ): Promise<any> {
     const user = await this.userModel.findById(targetUserId).exec();
     if (!user) {
       throw new NotFoundException(`User with ID ${targetUserId} not found`);
@@ -359,19 +493,105 @@ export class SubscriptionService implements OnModuleInit {
     }
 
     const changeAmount = targetBalance - currentBalance;
-    user.credits = targetBalance;
+    const now = new Date();
+
+    if (changeAmount > 0) {
+      const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const adminLotId = `lot-admin-${Date.now()}`;
+      const adminLot = {
+        lotId: adminLotId,
+        source: description || 'Admin Credit Adjustment',
+        initialCredits: changeAmount,
+        remainingCredits: changeAmount,
+        startDate: now,
+        expiryDate,
+      };
+      if (!user.creditLots) user.creditLots = [];
+      user.creditLots.unshift(adminLot);
+    } else if (changeAmount < 0) {
+      // FEFO deduction for negative admin adjustment
+      let removeRemaining = Math.abs(changeAmount);
+      if (user.creditLots && user.creditLots.length > 0) {
+        for (const lot of user.creditLots) {
+          if (removeRemaining > 0 && (lot.remainingCredits || 0) > 0) {
+            const deduct = Math.min(lot.remainingCredits, removeRemaining);
+            lot.remainingCredits -= deduct;
+            removeRemaining -= deduct;
+          }
+        }
+      }
+    }
+
+    const activeLots = (user.creditLots || []).filter((l) => !l.expiryDate || new Date(l.expiryDate) >= now);
+    const finalBalance = activeLots.reduce((sum, l) => sum + (l.remainingCredits || 0), 0);
+    user.credits = finalBalance;
+
+    if (typeof (user as any).markModified === 'function') {
+      user.markModified('creditLots');
+    }
+
     await user.save();
 
+    const txnId = `txn-admin-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     await this.creditLedgerModel.create({
+      transactionId: txnId,
       userId: user._id,
       amount: changeAmount,
-      balanceAfter: targetBalance,
-      type: CreditTransactionType.ADJUSTMENT,
+      balanceAfter: finalBalance,
+      type: CreditTransactionType.ADMIN_ADJUSTMENT,
       description,
-      metadata: { ...metadata, previousBalance: currentBalance },
+      referenceId: txnId,
+      referenceType: 'admin_adjustment',
+      metadata: { ...metadata, previousBalance: currentBalance, targetBalance },
     });
 
     return user;
+  }
+
+  /**
+   * CreditReconciliationService: Audits CreditLedger, creditLots, and user.credits.
+   * Repairs mismatches safely with explicit CORRECTION entries without resurrecting expired credits.
+   */
+  async reconcileUserCredits(userId: string): Promise<{ success: boolean; repaired: boolean; message: string; balance: number }> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) throw new NotFoundException('User not found');
+
+    const now = new Date();
+    const activeLots = (user.creditLots || []).filter((l) => !l.expiryDate || new Date(l.expiryDate) >= now);
+    const lotSum = activeLots.reduce((sum, l) => sum + (l.remainingCredits || 0), 0);
+
+    if (user.credits !== lotSum) {
+      const diff = lotSum - user.credits;
+      user.credits = lotSum;
+      await user.save();
+
+      const txnId = `txn-reconcile-${Date.now()}`;
+      await this.creditLedgerModel.create({
+        transactionId: txnId,
+        userId: user._id,
+        amount: diff,
+        balanceAfter: lotSum,
+        type: CreditTransactionType.CORRECTION,
+        description: `Audit Reconciliation Correction (${diff > 0 ? '+' : ''}${diff} CR)`,
+        referenceId: txnId,
+        referenceType: 'system_reconciliation',
+        metadata: { lotSum, previousCredits: user.credits - diff },
+      });
+
+      return {
+        success: true,
+        repaired: true,
+        message: `Reconciled user ${userId} balance to active unexpired lot sum: ${lotSum}`,
+        balance: lotSum,
+      };
+    }
+
+    return {
+      success: true,
+      repaired: false,
+      message: `User balance ${user.credits} is perfectly synchronized with active credit lots.`,
+      balance: user.credits,
+    };
   }
 
   /**
@@ -411,12 +631,12 @@ export class SubscriptionService implements OnModuleInit {
 
     if (!isSamePeriod) {
       const newLot = {
-        lotId: `lot-${Date.now()}`,
+        lotId: `lot-sub-${Date.now()}`,
         source: `${subscriptionTier} (${billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1)})`,
         initialCredits: creditsToGrant,
         remainingCredits: creditsToGrant,
-        startDate: periodStart.toISOString().split('T')[0],
-        expiryDate: periodEnd.toISOString().split('T')[0],
+        startDate: periodStart,
+        expiryDate: periodEnd,
       };
 
       // Atomic update — avoids Mongoose VersionError race with concurrent webhook + return-sync
@@ -442,12 +662,17 @@ export class SubscriptionService implements OnModuleInit {
       ).exec();
 
       const idempotencyKey = `${stripeSubscriptionId}:${periodEnd.getTime()}`;
+      const txnId = `txn-sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       await this.creditLedgerModel.create({
+        transactionId: txnId,
         userId: existingUser._id,
         amount: creditsToGrant,
         balanceAfter: creditsToGrant,
-        type: CreditTransactionType.GRANT,
+        type: CreditTransactionType.SUBSCRIPTION_GRANT,
         description: `Subscription Provisioned: ${subscriptionTier}`,
+        lotId: newLot.lotId,
+        referenceId: stripeSubscriptionId || stripeSessionId,
+        referenceType: 'stripe_subscription',
         metadata: { stripeCustomerId, stripeSubscriptionId, planCode: code, billingCycle, idempotencyKey, periodEnd: periodEnd.toISOString() },
       });
 
@@ -486,7 +711,7 @@ export class SubscriptionService implements OnModuleInit {
     }
 
     // Return fresh user doc
-    return this.userModel.findById(userId).exec();
+    return (await this.userModel.findById(userId).exec())!;
   }
 
   /**
@@ -501,10 +726,10 @@ export class SubscriptionService implements OnModuleInit {
   ): Promise<UserDocument> {
     // Idempotency check FIRST — before loading user doc
     const existingInvoice = await this.invoiceModel.findOne({ stripeSessionId }).exec();
-    const existingLedger = await this.creditLedgerModel.findOne({ 'metadata.stripeSessionId': stripeSessionId }).exec();
+    const existingLedger = await this.creditLedgerModel.findOne({ referenceId: stripeSessionId }).exec();
     if (existingInvoice || existingLedger) {
       console.log(`ℹ️ Credit pack payment [${stripeSessionId}] already provisioned. Skipping idempotently.`);
-      return this.userModel.findById(userId).exec();
+      return (await this.userModel.findById(userId).exec())!;
     }
 
     const existingUser = await this.userModel.findById(userId).exec();
@@ -531,16 +756,14 @@ export class SubscriptionService implements OnModuleInit {
 
     const today = new Date();
     const expiry = new Date(today.getTime() + pack.validityDays * 24 * 60 * 60 * 1000);
-    const startDateStr = today.toISOString().split('T')[0];
-    const expiryDateStr = expiry.toISOString().split('T')[0];
 
     const newLot = {
       lotId: `lot-pack-${Date.now()}`,
       source: `BOOSTER: ${pack.name.toUpperCase()} (+${pack.credits} CR)`,
       initialCredits: pack.credits,
       remainingCredits: pack.credits,
-      startDate: startDateStr,
-      expiryDate: expiryDateStr,
+      startDate: today,
+      expiryDate: expiry,
       stripeSessionId,
       packId: pack._id.toString(),
     };
@@ -563,13 +786,16 @@ export class SubscriptionService implements OnModuleInit {
       userId: existingUser._id,
       amount: pack.credits,
       balanceAfter: newBalance,
-      type: CreditTransactionType.GRANT,
+      type: CreditTransactionType.BOOSTER_GRANT,
       description: `Credit Booster Purchased: ${pack.name} (+${pack.credits} Credits)`,
+      lotId: newLot.lotId,
+      referenceId: stripeSessionId,
+      referenceType: 'stripe_credit_pack',
       metadata: {
         stripeSessionId,
         packCode: pack.code,
         validityDays: pack.validityDays,
-        expiryDate: expiryDateStr,
+        expiryDate: expiry.toISOString(),
       },
     });
 
@@ -714,18 +940,113 @@ export class SubscriptionService implements OnModuleInit {
       ? Math.max(0, Math.ceil((new Date(user.subscriptionPeriodEnd).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
       : 0;
 
+    let activeCreditsSum = 0;
+    if (user.creditLots && user.creditLots.length > 0) {
+      for (const lot of user.creditLots) {
+        const lotExp = lot.expiryDate ? new Date(lot.expiryDate) : null;
+        if (lotExp && lotExp < now) {
+          lot.remainingCredits = 0;
+        } else {
+          activeCreditsSum += (lot.remainingCredits || 0);
+        }
+      }
+      if (user.credits !== activeCreditsSum) {
+        user.credits = activeCreditsSum;
+        if (typeof (user as any).markModified === 'function') {
+          user.markModified('creditLots');
+        }
+        await user.save().catch(() => {});
+      }
+    } else {
+      activeCreditsSum = user.credits || 0;
+    }
+
+    const autoRenew = user.autoRenew !== false && !user.cancelAtPeriodEnd;
+    const cancelAtPeriodEnd = Boolean(user.cancelAtPeriodEnd);
+
     return {
       plan: isExpired && user.plan !== SubscriptionPlan.FREE ? SubscriptionPlan.FREE : user.plan,
       subscriptionTier: user.subscriptionTier || 'Free Plan',
-      credits: user.credits || 0,
+      credits: activeCreditsSum,
       subscriptionStatus: user.subscriptionStatus || 'active',
       subscriptionPeriodStart: user.subscriptionPeriodStart,
       subscriptionPeriodEnd: user.subscriptionPeriodEnd,
       daysRemaining,
+      autoRenew,
+      cancelAtPeriodEnd,
       stripeCustomerId: user.stripeCustomerId,
       stripeSubscriptionId: user.stripeSubscriptionId,
       creditLots: user.creditLots || [],
     };
+  }
+
+  /**
+   * Cancel auto-renewal (Pause subscription renewal / stop auto-pay)
+   * Keeps current plan & remaining credits active until the period end date.
+   */
+  async cancelAutoRenewal(userId: string) {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    if (user.stripeSubscriptionId) {
+      try {
+        const settings = await this.settingModel.findOne().exec();
+        const stripeSecretKey = settings?.stripeSecretKey || process.env.STRIPE_SECRET_KEY;
+        if (stripeSecretKey) {
+          const stripe = new Stripe(stripeSecretKey, { apiVersion: '2025-02-24.acacia' as any });
+          await stripe.subscriptions.update(user.stripeSubscriptionId, {
+            cancel_at_period_end: true,
+          });
+        }
+      } catch (err: any) {
+        console.warn(`Stripe cancel_at_period_end update warning: ${err.message}`);
+      }
+    }
+
+    user.autoRenew = false;
+    user.cancelAtPeriodEnd = true;
+    if (typeof (user as any).markModified === 'function') {
+      (user as any).markModified('autoRenew');
+      (user as any).markModified('cancelAtPeriodEnd');
+    }
+    await user.save();
+    return this.getSubscriptionStatus(userId);
+  }
+
+  /**
+   * Resume auto-renewal
+   */
+  async resumeAutoRenewal(userId: string) {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    if (user.stripeSubscriptionId) {
+      try {
+        const settings = await this.settingModel.findOne().exec();
+        const stripeSecretKey = settings?.stripeSecretKey || process.env.STRIPE_SECRET_KEY;
+        if (stripeSecretKey) {
+          const stripe = new Stripe(stripeSecretKey, { apiVersion: '2025-02-24.acacia' as any });
+          await stripe.subscriptions.update(user.stripeSubscriptionId, {
+            cancel_at_period_end: false,
+          });
+        }
+      } catch (err: any) {
+        console.warn(`Stripe resume auto-renewal update warning: ${err.message}`);
+      }
+    }
+
+    user.autoRenew = true;
+    user.cancelAtPeriodEnd = false;
+    if (typeof (user as any).markModified === 'function') {
+      (user as any).markModified('autoRenew');
+      (user as any).markModified('cancelAtPeriodEnd');
+    }
+    await user.save();
+    return this.getSubscriptionStatus(userId);
   }
 
   /**

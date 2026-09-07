@@ -22,6 +22,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useToast } from '@/context/ToastContext';
 import {
   marketplaceService,
   PublishedProjectData,
@@ -30,6 +31,7 @@ import { ProjectCard } from '@/components/marketplace/ProjectCard';
 import CommonPagination from '@/components/ui/CommonPagination';
 
 import { projectService } from '@/services/project.service';
+import { triggerImageDownload } from '@/utils/download';
 
 // Curated initial published designs fallback (empty so hardcoded sample images never show up)
 const INITIAL_CURATED_DESIGNS: PublishedProjectData[] = [];
@@ -45,11 +47,24 @@ const CATEGORY_FILTERS = [
   'Commercial',
 ];
 
+const formatRenderUrl = (url?: string | null): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+  const backendOrigin = apiBase.replace(/\/api\/v1\/?$/, '');
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `${backendOrigin}${cleanPath}`;
+};
+
 export default function DesignsPage() {
   const { settings } = useSettings();
+  const { toast } = useToast();
 
   // Published Showcase state
   const [publishedDesigns, setPublishedDesigns] = useState<PublishedProjectData[]>([]);
+  const [wishlistedIds, setWishlistedIds] = useState<string[]>([]);
   const [isLoadingShowcase, setIsLoadingShowcase] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [showcaseSearch, setShowcaseSearch] = useState<string>('');
@@ -63,7 +78,22 @@ export default function DesignsPage() {
   }, []);
   const [selectedDetailDesign, setSelectedDetailDesign] = useState<PublishedProjectData | null>(null);
   const [detailBeforeSlider, setDetailBeforeSlider] = useState<number>(50);
+  const [detailFitMode, setDetailFitMode] = useState<'contain' | 'cover'>('contain');
+  const [detailAspectRatio, setDetailAspectRatio] = useState<number | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!selectedDetailDesign) return;
+    const targetSrc = selectedDetailDesign.sampleImageUrl || selectedDetailDesign.beforeImageUrl;
+    if (!targetSrc) return;
+    const img = new Image();
+    img.src = targetSrc;
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight && img.naturalHeight > 0) {
+        setDetailAspectRatio(img.naturalWidth / img.naturalHeight);
+      }
+    };
+  }, [selectedDetailDesign]);
 
   // Review Form state inside detail modal
   const [reviewRating, setReviewRating] = useState<number>(5);
@@ -71,23 +101,35 @@ export default function DesignsPage() {
   const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
   const [reviewMessage, setReviewMessage] = useState<string>('');
 
+  // Load wishlisted IDs from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('user_wishlist_ids') || '[]');
+      setWishlistedIds(stored);
+    } catch (e) {}
+  }, []);
+
   // Load user's REAL generated designs showcase
   const loadPublishedShowcase = async () => {
     setIsLoadingShowcase(true);
     try {
-      // 1. Load locally generated designs from localStorage
       let localDesigns: PublishedProjectData[] = [];
       try {
         const stored = localStorage.getItem('user_generated_designs');
         if (stored) {
-          localDesigns = JSON.parse(stored);
+          const parsed = JSON.parse(stored);
+          localDesigns = (parsed || []).map((item: any) => ({
+            ...item,
+            sampleImageUrl: formatRenderUrl(item.sampleImageUrl),
+            beforeImageUrl: formatRenderUrl(item.beforeImageUrl),
+          }));
         }
       } catch (e) {}
 
-      // 2. Load backend user rooms
       let backendRooms: any[] = [];
       try {
-        backendRooms = await projectService.getAllRooms();
+        const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('admin_token') || '') : '';
+        backendRooms = await projectService.getAllRooms(token);
       } catch (e) {}
 
       const formattedRooms: PublishedProjectData[] = (backendRooms || []).map((r: any) => ({
@@ -96,18 +138,16 @@ export default function DesignsPage() {
         description: r.customInstructions || r.prompt || `AI architectural render output`,
         price: 0,
         toolSlug: r.toolSlug || 'interior-design',
-        totalImageCount: 1,
+        totalImageCount: (r.generatedImages && r.generatedImages.length) ? r.generatedImages.length : 1,
         roomType: r.roomType || 'Living Room',
         style: r.theme || 'Modern',
-        sampleImageUrl: r.generatedImage || (r.coverImage && !r.coverImage.includes('unsplash') ? r.coverImage : null),
-        beforeImageUrl: r.originalImage,
+        sampleImageUrl: formatRenderUrl(r.generatedImage || (r.generatedImages && r.generatedImages[0]) || (r.coverImage && !r.coverImage.includes('unsplash') ? r.coverImage : null)),
+        beforeImageUrl: formatRenderUrl(r.originalImage),
         createdAt: r.createdAt || new Date().toISOString(),
       }));
 
-      // Combine local & backend designs
       const combined = [...localDesigns, ...formattedRooms];
 
-      // Filter out any sample/demo placeholder images and filter by category
       const filtered = combined.filter((item) => {
         if (!item.sampleImageUrl) return false;
         const img = item.sampleImageUrl.toLowerCase();
@@ -118,7 +158,6 @@ export default function DesignsPage() {
         return item.roomType?.toLowerCase() === selectedCategory.toLowerCase() || item.style?.toLowerCase() === selectedCategory.toLowerCase();
       });
 
-      // Deduplicate items by sampleImageUrl
       const uniqueDesigns = filtered.filter((item, index, self) =>
         index === self.findIndex((t) => t.sampleImageUrl === item.sampleImageUrl)
       );
@@ -141,7 +180,6 @@ export default function DesignsPage() {
     setCurrentPage(1);
   }, [selectedCategory]);
 
-  // Delete a design card permanently
   const handleDeleteDesign = async (id: string) => {
     try {
       const stored = localStorage.getItem('user_generated_designs');
@@ -160,7 +198,6 @@ export default function DesignsPage() {
     setPublishedDesigns((prev) => prev.filter((d) => d._id !== id));
   };
 
-  // Clear all designs completely
   const handleClearAllDesigns = async () => {
     try {
       localStorage.removeItem('user_generated_designs');
@@ -172,13 +209,12 @@ export default function DesignsPage() {
     setPublishedDesigns([]);
   };
 
-  // Reset page when search or sort changes
   useEffect(() => {
     setCurrentPage(1);
   }, [showcaseSearch, sortBy]);
 
   // Wishlist toggle handler
-  const handleWishlistToggle = async (id: string) => {
+  const handleWishlistToggle = async (id: string, title?: string) => {
     const userStr = localStorage.getItem('user');
     let userId = 'user-guest';
     if (userStr) {
@@ -187,7 +223,16 @@ export default function DesignsPage() {
         userId = u._id || u.id || userId;
       } catch {}
     }
-    await marketplaceService.toggleWishlist(id, userId);
+
+    const { wishlisted } = await marketplaceService.toggleWishlist(id, userId);
+
+    if (wishlisted) {
+      setWishlistedIds((prev) => [...prev.filter((i) => i !== id), id]);
+      toast.success(title ? `"${title}" saved to your wishlist!` : 'Design saved to your wishlist!');
+    } else {
+      setWishlistedIds((prev) => prev.filter((i) => i !== id));
+      toast.info('Removed from wishlist');
+    }
   };
 
   // Open Design Detail Modal
@@ -367,10 +412,10 @@ export default function DesignsPage() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
+              className={`px-4 py-2 rounded-[10px] text-xs font-bold whitespace-nowrap transition-all ${
                 selectedCategory === cat
-                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md'
-                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 border border-slate-200/80 dark:border-slate-800'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25 font-extrabold border border-blue-400/30'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800'
               }`}
             >
               {cat}
@@ -382,12 +427,12 @@ export default function DesignsPage() {
         {isLoadingShowcase ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-12">
             {[1, 2].map((i) => (
-              <div key={i} className="h-64 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+              <div key={i} className="h-64 rounded-[10px] bg-slate-100 dark:bg-slate-800 animate-pulse" />
             ))}
           </div>
         ) : filteredShowcase.length === 0 ? (
-          <div className="p-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 space-y-4 shadow-sm">
-            <div className="p-3 w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 mx-auto flex items-center justify-center">
+          <div className="p-12 text-center rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 space-y-4 shadow-sm">
+            <div className="p-3 w-12 h-12 rounded-[10px] bg-purple-50 dark:bg-purple-950/60 text-purple-600 mx-auto flex items-center justify-center">
               <Sparkles className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-extrabold text-slate-900 dark:text-white font-heading">
@@ -398,65 +443,80 @@ export default function DesignsPage() {
             </p>
             <Link
               href="/generate"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-md font-heading"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-[10px] text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-md font-heading"
             >
               <Sparkles className="w-4 h-4" /> Start Generating Designs
             </Link>
           </div>
         ) : (
-          /* UNSPLASH / PINTEREST STYLE MASONRY CARDS GRID (2 PER ROW WITH ROUNDED-LG BORDER RADIUS) */
+          /* UNSPLASH / PINTEREST STYLE MASONRY CARDS GRID (2 PER ROW WITH ROUNDED-[10px] BORDER RADIUS) */
           <div className="space-y-6">
             <div className="columns-1 md:columns-2 gap-6 space-y-6">
               {paginatedShowcase.map((proj) => (
                 <div
                   key={proj._id}
                   onClick={() => handleOpenDetailModal(proj)}
-                  className="break-inside-avoid relative rounded-lg overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-2xl transition-all duration-300 group cursor-pointer"
+                  className="break-inside-avoid relative rounded-[10px] overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-2xl transition-all duration-300 group cursor-pointer"
                 >
                   {/* NATURAL ASPECT RATIO IMAGE (WITH SMOOTH SKELETON LOADING BACKGROUND!) */}
-                  <div className="relative w-full min-h-[220px] overflow-hidden bg-slate-200 dark:bg-slate-800/80 rounded-lg">
+                  <div className="relative w-full min-h-[220px] overflow-hidden bg-slate-200 dark:bg-slate-800/80 rounded-[10px]">
                     <img
                       src={proj.sampleImageUrl}
                       alt={proj.title}
                       loading="lazy"
-                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg relative z-10"
+                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500 rounded-[10px] relative z-10"
                     />
 
                     {/* TOP FLOATING OVERLAY: Room Type Badge */}
                     <div className="absolute top-3 left-3 z-10">
-                      <span className="px-3 py-1 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider border border-white/20 shadow-md">
+                      <span className="px-3 py-1 rounded-full bg-gradient-to-r from-blue-600/90 to-indigo-600/90 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider border border-white/30 shadow-md">
                         {proj.roomType}
                       </span>
                     </div>
 
-                    {/* TOP RIGHT QUICK ACTIONS: Download & Delete */}
+                    {/* TOP RIGHT QUICK ACTIONS: Wishlist, Download & Delete */}
                     <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleWishlistToggle(proj._id, proj.title);
+                        }}
+                        className={`p-2 rounded-full backdrop-blur-md transition-all shadow-md cursor-pointer border ${
+                          wishlistedIds.includes(proj._id)
+                            ? 'bg-rose-500 text-white border-rose-400 opacity-100'
+                            : 'bg-blue-950/80 text-white hover:bg-rose-500 border-white/20'
+                        }`}
+                        title={wishlistedIds.includes(proj._id) ? 'Remove from Wishlist' : 'Save to Wishlist'}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${wishlistedIds.includes(proj._id) ? 'fill-white' : ''}`} />
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteDesign(proj._id);
                         }}
-                        className="p-2 rounded-full bg-slate-950/80 backdrop-blur-md text-white hover:bg-rose-600 transition-colors shadow-md cursor-pointer"
+                        className="p-2 rounded-full bg-blue-950/80 backdrop-blur-md text-white hover:bg-rose-600 transition-colors shadow-md cursor-pointer border border-white/20"
                         title="Delete Design"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <a
-                        href={proj.sampleImageUrl}
-                        download={`${proj.title}.jpg`}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="p-2 rounded-full bg-slate-950/80 backdrop-blur-md text-white hover:bg-purple-600 transition-colors shadow-md"
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          triggerImageDownload(proj.sampleImageUrl, `${proj.title || 'redesign'}.png`);
+                        }}
+                        className="p-2 rounded-full bg-blue-950/80 backdrop-blur-md text-white hover:bg-purple-600 transition-colors shadow-md cursor-pointer border border-white/20"
                         title="Download HD Render"
                       >
                         <Download className="w-3.5 h-3.5" />
-                      </a>
+                      </button>
                     </div>
 
                     {/* BOTTOM HOVER GRADIENT OVERLAY WITH TITLE & STYLE */}
-                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent text-white space-y-1.5 opacity-90 group-hover:opacity-100 transition-opacity rounded-b-lg">
+                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent text-white space-y-1.5 opacity-90 group-hover:opacity-100 transition-opacity rounded-b-[10px]">
                       <h4 className="font-extrabold text-sm font-heading line-clamp-1 leading-snug text-white">
                         {proj.title}
                       </h4>
@@ -498,7 +558,7 @@ export default function DesignsPage() {
               exit={{ scale: 0.96, opacity: 0, y: 10 }}
               transition={{ type: 'spring', stiffness: 350, damping: 30 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-4xl max-h-[88vh] overflow-y-auto rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6 scrollbar-none no-scrollbar my-auto"
+              className="relative w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6 scrollbar-none no-scrollbar my-auto"
             >
               {/* Close Button */}
               <button
@@ -548,60 +608,111 @@ export default function DesignsPage() {
               </div>
 
               {/* Before/After Interactive Comparison Slider */}
-              <div className="relative aspect-[16/9] w-full rounded-lg overflow-hidden bg-slate-950 border border-slate-800 select-none shadow-md">
-                <img
-                  src={selectedDetailDesign.sampleImageUrl}
-                  alt="After Redesign"
-                  className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                />
-
-                {selectedDetailDesign.beforeImageUrl && selectedDetailDesign.beforeImageUrl !== selectedDetailDesign.sampleImageUrl ? (
-                  <div
-                    className="absolute inset-0 overflow-hidden rounded-lg z-10"
-                    style={{ clipPath: `polygon(0 0, ${detailBeforeSlider}% 0, ${detailBeforeSlider}% 100%, 0 100%)` }}
-                  >
-                    <img
-                      src={selectedDetailDesign.beforeImageUrl}
-                      alt="Before Photo"
-                      className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                    />
-                    <span className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-md bg-purple-950/85 backdrop-blur-md text-xs font-extrabold text-purple-200 border border-purple-400/40 uppercase tracking-wider font-heading shadow-md">
-                      Before Photo
-                    </span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 text-xs font-bold">
+                  <span className="text-slate-500 dark:text-slate-400 font-heading">Interactive Before/After Comparison</span>
+                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => setDetailFitMode('contain')}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer font-heading ${
+                        detailFitMode === 'contain'
+                          ? 'bg-purple-600 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Uncropped (Auto Height)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDetailFitMode('cover')}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer font-heading ${
+                        detailFitMode === 'cover'
+                          ? 'bg-purple-600 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Fill Area (Fixed Height)
+                    </button>
                   </div>
-                ) : (
-                  <span className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-md bg-purple-950/85 backdrop-blur-md text-xs font-extrabold text-purple-200 border border-purple-400/40 uppercase tracking-wider font-heading shadow-md">
-                    Original Source Render
-                  </span>
-                )}
+                </div>
 
-                <span className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-md bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold text-xs shadow-md border border-purple-400/30 uppercase tracking-wider font-heading">
-                  After Redesign
-                </span>
-
-                {/* Slider Handle */}
-                {selectedDetailDesign.beforeImageUrl && (
-                  <div
-                    className="absolute top-0 bottom-0 z-30 w-1 bg-white cursor-ew-resize flex items-center justify-center shadow-2xl"
-                    style={{ left: `${detailBeforeSlider}%` }}
-                  >
-                    <div className="w-7 h-7 rounded-full bg-white text-slate-900 flex items-center justify-center font-bold text-xs shadow-lg border border-slate-200">
-                      ↔
-                    </div>
-                  </div>
-                )}
-
-                {/* Slider Range Input */}
-                {selectedDetailDesign.beforeImageUrl && (
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={detailBeforeSlider}
-                    onChange={(e) => setDetailBeforeSlider(Number(e.target.value))}
-                    className="absolute inset-0 z-40 w-full h-full opacity-0 cursor-ew-resize"
+                <div
+                  className={`relative w-full rounded-[10px] overflow-hidden bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 select-none shadow-xl flex items-center justify-center transition-all duration-300 ${
+                    detailFitMode === 'cover'
+                      ? 'h-[480px] sm:h-[580px] md:h-[620px]'
+                      : 'min-h-[350px] max-h-[70vh]'
+                  }`}
+                  style={
+                    detailFitMode === 'contain'
+                      ? {
+                          aspectRatio: detailAspectRatio ? `${detailAspectRatio}` : '4/3',
+                        }
+                      : undefined
+                  }
+                >
+                  <img
+                    src={selectedDetailDesign.sampleImageUrl}
+                    alt="After Redesign"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200&auto=format&fit=crop';
+                    }}
+                    className="absolute inset-0 w-full h-full rounded-[10px] transition-all duration-200 object-cover"
                   />
-                )}
+
+                  {selectedDetailDesign.beforeImageUrl && selectedDetailDesign.beforeImageUrl !== selectedDetailDesign.sampleImageUrl ? (
+                    <div
+                      className="absolute inset-0 overflow-hidden rounded-[10px] z-10"
+                      style={{ clipPath: `polygon(0 0, ${detailBeforeSlider}% 0, ${detailBeforeSlider}% 100%, 0 100%)` }}
+                    >
+                      <img
+                        src={selectedDetailDesign.beforeImageUrl}
+                        alt="Before Photo"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200&auto=format&fit=crop';
+                        }}
+                        className="absolute inset-0 w-full h-full rounded-[10px] transition-all duration-200 object-cover"
+                      />
+                      <span className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-lg bg-purple-950/85 backdrop-blur-md text-xs font-extrabold text-purple-200 border border-purple-400/40 uppercase tracking-wider font-heading shadow-md">
+                        Before Photo
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-lg bg-purple-950/85 backdrop-blur-md text-xs font-extrabold text-purple-200 border border-purple-400/40 uppercase tracking-wider font-heading shadow-md">
+                      Original Source Render
+                    </span>
+                  )}
+
+                  <span className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold text-xs shadow-md border border-purple-400/30 uppercase tracking-wider font-heading">
+                    After Redesign
+                  </span>
+
+                  {/* Slider Handle */}
+                  {selectedDetailDesign.beforeImageUrl && (
+                    <div
+                      className="absolute top-0 bottom-0 z-30 w-1 bg-white cursor-ew-resize flex items-center justify-center shadow-2xl"
+                      style={{ left: `${detailBeforeSlider}%` }}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-white text-slate-900 flex items-center justify-center font-bold text-xs shadow-lg border border-slate-200">
+                        ↔
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Slider Range Input */}
+                  {selectedDetailDesign.beforeImageUrl && (
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={detailBeforeSlider}
+                      onChange={(e) => setDetailBeforeSlider(Number(e.target.value))}
+                      className="absolute inset-0 z-40 w-full h-full opacity-0 cursor-ew-resize"
+                    />
+                  )}
+                </div>
               </div>
 
               {/* Action Bar */}
@@ -616,16 +727,14 @@ export default function DesignsPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <a
-                    href={selectedDetailDesign.sampleImageUrl}
-                    download={`${selectedDetailDesign.title}.jpg`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all font-heading"
+                  <button
+                    type="button"
+                    onClick={() => triggerImageDownload(selectedDetailDesign.sampleImageUrl, `${selectedDetailDesign.title || 'redesign'}.png`)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all font-heading cursor-pointer"
                   >
                     <Download className="w-4 h-4 text-purple-600" />
                     <span>Download</span>
-                  </a>
+                  </button>
                   <Link
                     href={`/generate?roomType=${encodeURIComponent(selectedDetailDesign.roomType || '')}&style=${encodeURIComponent(selectedDetailDesign.style || '')}&presetImage=${encodeURIComponent(selectedDetailDesign.beforeImageUrl || selectedDetailDesign.sampleImageUrl || '')}&desc=${encodeURIComponent(selectedDetailDesign.description || '')}`}
                     target="_blank"

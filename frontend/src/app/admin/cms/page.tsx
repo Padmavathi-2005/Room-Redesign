@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAdminSearch } from '@/context/AdminSearchContext';
 import {
   FileText,
   Plus,
@@ -37,9 +38,9 @@ interface CmsPageItem {
 export default function AdminCmsListPage() {
   const router = useRouter();
 
+  const { searchQuery } = useAdminSearch();
   const [pages, setPages] = useState<CmsPageItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export default function AdminCmsListPage() {
     setLoading(true);
     setError(null);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
       const res = await fetch(`${apiUrl}/cms?includeDrafts=true`);
       const data = await res.json();
       if (res.ok && data.success) {
@@ -79,7 +80,7 @@ export default function AdminCmsListPage() {
 
     try {
       const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
       const res = await fetch(`${apiUrl}/cms/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
@@ -98,7 +99,7 @@ export default function AdminCmsListPage() {
 
   const copyPageUrl = (slug: string) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const fullUrl = `${origin}/p/${slug}`;
+    const fullUrl = `${origin}/${slug}`;
     navigator.clipboard.writeText(fullUrl);
     setCopiedSlug(slug);
     setTimeout(() => setCopiedSlug(null), 2500);
@@ -118,64 +119,6 @@ export default function AdminCmsListPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 font-bold">
-            <FileText className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">CMS & Custom Pages Manager</h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Create, design, and manage custom HTML or component-based landing pages.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => router.push('/admin/cms/builder')}
-            className="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-2 text-xs font-black shadow-sm transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Custom Page</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Quick Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-4">
-          <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-black">
-            <FileText className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Custom Pages</p>
-            <p className="text-xl font-black text-slate-900">{pages.length}</p>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-4">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black">
-            <Globe className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Published Live</p>
-            <p className="text-xl font-black text-slate-900">{publishedCount}</p>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-4">
-          <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center font-black">
-            <Eye className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Page Views</p>
-            <p className="text-xl font-black text-slate-900">{totalViews}</p>
-          </div>
-        </div>
-      </div>
-
       {/* Notifications */}
       {success && (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-3">
@@ -190,23 +133,12 @@ export default function AdminCmsListPage() {
         </div>
       )}
 
-      {/* Controls Bar: Search & Status Filters */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search pages by title or slug..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:bg-white focus:border-indigo-500"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+      {/* Controls Bar: Status Filters & Create Button */}
+      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2 overflow-x-auto">
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
+            className={`px-3.5 py-2 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
               statusFilter === 'all'
                 ? 'bg-slate-900 text-white'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -216,7 +148,7 @@ export default function AdminCmsListPage() {
           </button>
           <button
             onClick={() => setStatusFilter('published')}
-            className={`px-3 py-1.5 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
+            className={`px-3.5 py-2 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
               statusFilter === 'published'
                 ? 'bg-emerald-600 text-white'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -226,7 +158,7 @@ export default function AdminCmsListPage() {
           </button>
           <button
             onClick={() => setStatusFilter('draft')}
-            className={`px-3 py-1.5 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
+            className={`px-3.5 py-2 rounded-2xl text-xs font-bold cursor-pointer transition-all ${
               statusFilter === 'draft'
                 ? 'bg-amber-600 text-white'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -235,6 +167,14 @@ export default function AdminCmsListPage() {
             Drafts ({pages.length - publishedCount})
           </button>
         </div>
+
+        <button
+          onClick={() => router.push('/admin/cms/builder')}
+          className="px-5 py-2.5 rounded-[10px] bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-2 text-xs font-black shadow-sm transition-all cursor-pointer whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Create Custom Page</span>
+        </button>
       </div>
 
       {/* CMS Pages Table */}
@@ -274,7 +214,7 @@ export default function AdminCmsListPage() {
                         <div>
                           <p className="font-extrabold text-slate-900 text-xs leading-tight">{page.title}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="font-mono text-[11px] text-slate-400">/p/{page.slug}</span>
+                            <span className="font-mono text-[11px] text-slate-400">/{page.slug}</span>
                             <button
                               onClick={() => copyPageUrl(page.slug)}
                               className="text-slate-400 hover:text-indigo-600 transition-colors"
@@ -338,7 +278,7 @@ export default function AdminCmsListPage() {
 
                         {/* View Public Page */}
                         <Link
-                          href={`/p/${page.slug}`}
+                          href={`/${page.slug}`}
                           target="_blank"
                           className="p-1.5 rounded-2xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                           title="Open Public Link"

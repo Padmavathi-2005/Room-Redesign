@@ -66,7 +66,7 @@ export default function FullPageCheckout() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const planParam = (searchParams.get('plan') || 'starter').toLowerCase();
+  const planParam = (searchParams?.get('plan') || 'starter').toLowerCase();
   const plan: PlanDetail = PLANS_BY_CODE[planParam] || PLANS_BY_CODE.starter;
 
   const [isAnnual, setIsAnnual] = useState(false);
@@ -154,9 +154,10 @@ export default function FullPageCheckout() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-10 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Back Link */}
+        {/* Back Link */}
         <Link
           href="/billing"
-          className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors font-heading"
+          className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary transition-colors font-heading"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Billing & Plans
         </Link>
@@ -164,7 +165,7 @@ export default function FullPageCheckout() {
         {/* Page Title */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div>
-            <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-extrabold uppercase tracking-wider border border-purple-200 dark:border-purple-800">
+            <span className="px-3 py-1 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light text-[10px] font-extrabold uppercase tracking-wider border border-primary/20">
               Stripe PCI-Compliant Checkout
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading mt-2">
@@ -200,7 +201,7 @@ export default function FullPageCheckout() {
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
                   Order Summary
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-extrabold font-mono">
+                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 dark:bg-primary/20 text-primary text-[10px] font-extrabold font-mono">
                   {plan.credits} Credits / Month
                 </span>
               </div>
@@ -225,7 +226,7 @@ export default function FullPageCheckout() {
                     onClick={() => setIsAnnual(false)}
                     className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                       !isAnnual
-                        ? 'bg-purple-600 text-white shadow-xs'
+                        ? 'bg-primary text-white shadow-xs'
                         : 'bg-transparent text-slate-400 hover:text-slate-600'
                     }`}
                   >
@@ -236,7 +237,7 @@ export default function FullPageCheckout() {
                     onClick={() => setIsAnnual(true)}
                     className={`px-3 py-1 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                       isAnnual
-                        ? 'bg-purple-600 text-white shadow-xs'
+                        ? 'bg-primary text-white shadow-xs'
                         : 'bg-transparent text-slate-400 hover:text-slate-600'
                     }`}
                   >
@@ -256,7 +257,7 @@ export default function FullPageCheckout() {
                 </div>
                 <div className="flex justify-between text-xs font-medium text-slate-600 dark:text-slate-400">
                   <span>Included AI Credits</span>
-                  <span className="font-bold text-purple-600 font-mono">+{plan.credits} Credits / month</span>
+                  <span className="font-bold text-primary font-mono">+{plan.credits} Credits / month</span>
                 </div>
                 <div className="border-t border-slate-100 dark:border-slate-800 pt-3 flex justify-between items-baseline">
                   <span className="text-sm font-black text-slate-900 dark:text-white font-heading">
@@ -299,7 +300,7 @@ export default function FullPageCheckout() {
                 <h3 className="text-lg font-black text-slate-900 dark:text-white font-heading">
                   Stripe Hosted Checkout
                 </h3>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-xs font-bold border border-purple-200 dark:border-purple-800">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
                   <CreditCard className="w-3.5 h-3.5" />
                   Stripe Verified
                 </span>
@@ -307,7 +308,7 @@ export default function FullPageCheckout() {
 
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
                 <div className="flex items-start gap-3">
-                  <Lock className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
+                  <Lock className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                   <div className="text-xs space-y-1">
                     <p className="font-extrabold text-slate-900 dark:text-white font-heading">
                       PCI-DSS Compliant Payment Security
@@ -323,7 +324,7 @@ export default function FullPageCheckout() {
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:opacity-95 text-white text-sm font-extrabold shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer font-heading disabled:opacity-50"
+                  className="w-full py-4 px-6 rounded-2xl bg-primary hover:bg-primary-hover text-white text-sm font-extrabold shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transition-all cursor-pointer font-heading disabled:opacity-50"
                 >
                   {isProcessing ? (
                     <>

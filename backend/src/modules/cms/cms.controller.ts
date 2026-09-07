@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { CmsService } from './cms.service';
@@ -37,11 +38,12 @@ export class CmsController {
 
   /**
    * GET /api/v1/cms/slug/:slug
-   * Public page renderer fetcher by slug (Increments view count)
+   * Public page renderer fetcher by slug (Increments view count for unique IP addresses)
    */
   @Get('slug/:slug')
-  async findBySlug(@Param('slug') slug: string) {
-    const page = await this.cmsService.findBySlug(slug, true);
+  async findBySlug(@Param('slug') slug: string, @Req() req: any) {
+    const rawIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || '127.0.0.1';
+    const page = await this.cmsService.findBySlug(slug, true, rawIp);
     return {
       success: true,
       data: page,

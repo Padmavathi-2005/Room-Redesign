@@ -34,7 +34,7 @@ export default function RecentActivityWidget({ rooms = [] }: RecentActivityWidge
           </h3>
           <Link
             href="/designs"
-            className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
           >
             View All
           </Link>
@@ -43,7 +43,7 @@ export default function RecentActivityWidget({ rooms = [] }: RecentActivityWidge
         <div className="space-y-3 pt-3">
           {activities.length === 0 ? (
             <div className="py-8 px-4 text-center space-y-3">
-              <div className="w-10 h-10 mx-auto rounded-2xl bg-purple-50 dark:bg-purple-950/60 flex items-center justify-center text-purple-600 dark:text-purple-400">
+              <div className="w-10 h-10 mx-auto rounded-2xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
                 <Clock className="w-5 h-5" />
               </div>
               <div className="space-y-1">
@@ -52,7 +52,7 @@ export default function RecentActivityWidget({ rooms = [] }: RecentActivityWidge
               </div>
               <Link
                 href="/generate"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 text-white text-[11px] font-extrabold hover:bg-purple-700 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 text-white text-[11px] font-extrabold hover:bg-blue-700 transition-colors"
               >
                 <Wand2 className="w-3 h-3" />
                 <span>Start Redesign</span>
@@ -61,7 +61,7 @@ export default function RecentActivityWidget({ rooms = [] }: RecentActivityWidge
           ) : (
             activities.map((act) => {
               const Icon = Sparkles;
-              const iconBg = 'bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400';
+              const iconBg = 'bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400';
 
               return (
                 <div key={act.id} className="flex items-center justify-between gap-3 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">

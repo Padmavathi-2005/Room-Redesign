@@ -119,6 +119,14 @@ export class CreateRoomDto {
 
   @IsString()
   @IsOptional()
+  projectName?: string;
+
+  @IsString()
+  @IsOptional()
+  manusTaskId?: string;
+
+  @IsString()
+  @IsOptional()
   manusChatId?: string;
 
   @IsString()
@@ -127,4 +135,8 @@ export class CreateRoomDto {
 
   @IsOptional()
   creditsCost?: number;
+
+  @IsString()
+  @IsOptional()
+  idempotencyKey?: string;
 }

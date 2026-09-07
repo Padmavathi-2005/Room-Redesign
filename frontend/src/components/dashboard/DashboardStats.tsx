@@ -24,8 +24,8 @@ export default function DashboardStats({
       subtitle: 'Rendered AI Spaces',
       href: '/designs',
       icon: ImageIcon,
-      gradient: 'from-purple-500/10 via-purple-500/5 to-transparent',
-      badgeBg: 'bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+      gradient: 'from-blue-500/10 via-blue-500/5 to-transparent',
+      badgeBg: 'bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
     },
     {
       title: 'Active Projects',
@@ -64,15 +64,15 @@ export default function DashboardStats({
           <Link
             key={stat.title}
             href={stat.href}
-            className="group relative p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between"
+            className="group relative p-5 rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between"
           >
             <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${stat.gradient} rounded-bl-full pointer-events-none transition-opacity group-hover:opacity-100`} />
 
             <div className="flex items-center justify-between z-10">
-              <div className={`p-3 rounded-2xl border ${stat.badgeBg} shadow-2xs`}>
+              <div className={`p-3 rounded-[10px] border ${stat.badgeBg} shadow-2xs`}>
                 <Icon className="w-5 h-5" />
               </div>
-              <span className="p-1.5 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:bg-purple-50 dark:group-hover:bg-purple-950/50 transition-all">
+              <span className="p-1.5 rounded-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/50 transition-all">
                 <ArrowUpRight className="w-4 h-4" />
               </span>
             </div>

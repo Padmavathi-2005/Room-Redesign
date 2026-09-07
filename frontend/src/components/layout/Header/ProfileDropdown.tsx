@@ -134,7 +134,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
           {/* Bottom Row: Credit Icon + Numeric Value */}
           <div className="flex items-center gap-1 pt-0.5 leading-tight">
             <CreditTokenIcon size="xs" />
-            <span className="text-[11px] font-black text-amber-600 dark:text-amber-400 tracking-tight">{credits}</span>
+            <span className="text-[11px] font-black text-primary tracking-tight">{credits}</span>
           </div>
         </div>
       </button>
@@ -152,8 +152,12 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
             {/* Premium Top User Card Box */}
             <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-purple-50/40 dark:from-blue-950/70 dark:via-indigo-950/40 dark:to-slate-900 border border-blue-100 dark:border-blue-900/60 rounded-xl p-3 space-y-2.5">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-extrabold shadow-sm">
-                  {initials}
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-extrabold shadow-sm overflow-hidden shrink-0">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={capitalizedName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{initials}</span>
+                  )}
                 </div>
                 <div className="flex flex-col min-w-0">
                   <p className="font-extrabold text-slate-900 dark:text-white text-sm font-heading truncate capitalize">

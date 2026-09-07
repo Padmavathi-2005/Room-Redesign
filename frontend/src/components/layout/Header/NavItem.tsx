@@ -12,6 +12,26 @@ interface NavItemProps {
   requireAuth?: boolean;
 }
 
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/designs',
+  '/generate',
+  '/projects',
+  '/history',
+  '/billing',
+  '/settings',
+  '/profile',
+  '/upload',
+  '/checkout',
+  '/shopping-list',
+  '/wishlist',
+];
+
+const isProtectedRoute = (path: string) => {
+  const cleanPath = path.split('?')[0].split('#')[0];
+  return PROTECTED_ROUTES.some((route) => cleanPath === route || cleanPath.startsWith(`${route}/`));
+};
+
 export default function NavItem({ href, label, onClick, requireAuth = false }: NavItemProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -20,7 +40,7 @@ export default function NavItem({ href, label, onClick, requireAuth = false }: N
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) onClick();
 
-    if (requireAuth) {
+    if (requireAuth || isProtectedRoute(href)) {
       if (typeof window !== 'undefined') {
         const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
         if (!token) {

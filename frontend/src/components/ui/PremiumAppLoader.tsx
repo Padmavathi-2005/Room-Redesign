@@ -1,67 +1,62 @@
 'use client';
 
 import React from 'react';
-import { Home, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface PremiumAppLoaderProps {
-  /** Size variant for loader: 'sm' (inline button/card), 'md' (section), 'lg' (full screen page loader) */
+  /** Size variant for loader: 'sm' (32px), 'md' (48px), 'lg' (64px) */
   size?: 'sm' | 'md' | 'lg';
-  /** Optional loading label text */
+  /** Optional label */
   label?: string;
-  /** Full screen viewport overlay vs container layout */
+  /** Full screen viewport overlay vs inline container layout */
   fullScreen?: boolean;
+  /** Custom additional CSS classes */
+  className?: string;
 }
 
 export default function PremiumAppLoader({
   size = 'md',
-  label = 'Loading RoomAI...',
+  label,
   fullScreen = false,
+  className = '',
 }: PremiumAppLoaderProps) {
-  const content = (
-    <div
-      role="status"
-      aria-label="Loading application..."
-      className="flex flex-col items-center justify-center space-y-5 select-none"
-    >
-      <span className="sr-only">Loading...</span>
+  const sizeMap = {
+    sm: { box: 'w-8 h-8', icon: 'w-4 h-4', border: 'border-2' },
+    md: { box: 'w-12 h-12', icon: 'w-5 h-5', border: 'border-2' },
+    lg: { box: 'w-16 h-16', icon: 'w-7 h-7', border: 'border-3' },
+  };
 
-      {/* Floating Glassmorphic Brand Loader Card */}
-      <div className="relative p-6 sm:p-8 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800/90 shadow-xl backdrop-blur-2xl flex flex-col items-center space-y-4">
-        {/* Soft Glowing Aura Background */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-purple-600/10 via-indigo-600/10 to-purple-600/10 blur-xl pointer-events-none" />
+  const currentSize = sizeMap[size] || sizeMap.md;
 
-        {/* Central RoomAI Brand Icon Box */}
-        <div className="relative">
-          {/* Outer Pulsing Glow Ring */}
-          <div className="absolute -inset-2 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 opacity-30 blur-md animate-brand-pulse" />
-
-          {/* Logo Box */}
-          <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-600 text-white shadow-lg shadow-purple-600/30 border border-white/40 overflow-hidden">
-            <Home className="w-6 h-6 stroke-[2.2] text-white" />
-            <Sparkles className="absolute top-1.5 right-1.5 w-3 h-3 text-purple-200 animate-pulse" />
-          </div>
-        </div>
-
-        {/* Subtle Progress Bar */}
-        <div className="w-28 h-1 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative">
-          <div className="absolute inset-y-0 w-1/2 rounded-full bg-gradient-to-r from-purple-600 via-indigo-500 to-purple-600 animate-laser-scan" />
-        </div>
-
-        {/* Clean Label */}
-        <p className="text-xs font-extrabold tracking-tight text-slate-700 dark:text-slate-300 font-heading">
-          {label}
-        </p>
+  const loaderGraphic = (
+    <div className={`flex flex-col items-center justify-center gap-3 select-none ${className}`}>
+      <div className={`relative ${currentSize.box} flex items-center justify-center`}>
+        {/* Sleek ring */}
+        <div className={`absolute inset-0 rounded-full border-slate-200 dark:border-slate-800 ${currentSize.border}`} />
+        <div className={`absolute inset-0 rounded-full border-t-purple-600 border-r-transparent border-b-transparent border-l-transparent animate-spin ${currentSize.border}`} />
+        {/* Center icon */}
+        <Sparkles className={`${currentSize.icon} text-purple-600 dark:text-purple-400 animate-pulse`} />
       </div>
+
+      {label && (
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wide">
+          {label}
+        </span>
+      )}
     </div>
   );
 
   if (fullScreen) {
     return (
-      <div className="min-h-screen w-full bg-[#FAFBFD] dark:bg-[#0B0F17] flex items-center justify-center p-4 transition-colors duration-300">
-        {content}
+      <div className="fixed inset-0 z-[99999] bg-[#F3F5FF] dark:bg-[#0B0F17] flex items-center justify-center p-4 animate-in fade-in duration-200">
+        {loaderGraphic}
       </div>
     );
   }
 
-  return <div className="flex items-center justify-center p-4 w-full h-full">{content}</div>;
+  return (
+    <div className="flex items-center justify-center p-4 w-full h-full bg-transparent">
+      {loaderGraphic}
+    </div>
+  );
 }

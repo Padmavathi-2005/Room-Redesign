@@ -12,6 +12,8 @@ import * as path from 'path';
 
 import { NotificationsService } from '../notifications/notifications.service';
 
+import { SubscriptionService } from '../subscription/subscription.service';
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -21,6 +23,7 @@ export class AdminService {
     @InjectModel(RoomGeneration.name) private readonly roomModel: Model<RoomDocument>,
     @InjectModel(ProductTool.name) private readonly productToolModel: Model<ProductToolDocument>,
     private readonly notificationsService: NotificationsService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   /**
@@ -56,7 +59,6 @@ export class AdminService {
       .lean()
       .exec();
 
-
     const userStats = await Promise.all(
       users.map(async (u) => {
         const uId = u._id;
@@ -80,16 +82,25 @@ export class AdminService {
    * Update user details (role, credits, subscription tier)
    */
   async updateUser(userId: string, updateData: { role?: UserRole; credits?: number; subscriptionTier?: string }) {
-    const user = await this.userModel.findById(userId);
+    let user = await this.userModel.findById(userId);
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
     if (updateData.role) user.role = updateData.role;
-    if (updateData.credits !== undefined) user.credits = updateData.credits;
     if (updateData.subscriptionTier) (user as any).subscriptionTier = updateData.subscriptionTier;
 
     await user.save();
+
+    let updatedUser = user;
+    if (updateData.credits !== undefined) {
+      updatedUser = await this.subscriptionService.adminAdjustCredits(
+        userId,
+        updateData.credits,
+        undefined,
+        'Admin Profile Update Credit Adjustment',
+      );
+    }
 
     // Trigger real-time WebSocket notification to user without refresh
     try {
@@ -103,20 +114,19 @@ export class AdminService {
       });
     } catch (e) {}
 
-    return user;
+    return updatedUser;
   }
 
   /**
    * Top up / Add credits to user account
    */
   async addCreditsToUser(userId: string, amount: number) {
-    const user = await this.userModel.findById(userId);
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
-    user.credits = Math.max(0, (user.credits ?? 0) + amount);
-    await user.save();
+    const user = await this.subscriptionService.adminAdjustCredits(
+      userId,
+      undefined,
+      amount,
+      `Admin Credit Top-Up (+${amount} CR)`,
+    );
 
     // Trigger real-time WebSocket notification to user without refresh
     try {

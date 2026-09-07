@@ -71,6 +71,12 @@ export class User {
   @Prop({ default: 'active' })
   subscriptionStatus: string;
 
+  @Prop({ default: true })
+  autoRenew?: boolean;
+
+  @Prop({ default: false })
+  cancelAtPeriodEnd?: boolean;
+
   @Prop({ default: null })
   lastRefilledPeriodEnd?: Date;
 

@@ -25,8 +25,12 @@ export class LocalDiskAdapter implements IStorageAdapter {
     await fs.promises.writeFile(fullPath, buffer);
     this.logger.log(`File saved locally: ${fullPath}`);
 
-    // Return the relative URL served statically by NestJS (under /uploads/)
     const normalizedRelativePath = relativePath.replace(/\\/g, '/');
+    const domainHost = (process.env.PUBLIC_SERVER_URL || process.env.APP_URL || process.env.DOMAIN_URL || process.env.BACKEND_URL || '').trim();
+    if (domainHost) {
+      const cleanDomain = domainHost.replace(/\/$/, '');
+      return `${cleanDomain}/uploads/${normalizedRelativePath}`;
+    }
     return `/uploads/${normalizedRelativePath}`;
   }
 

@@ -16,7 +16,7 @@ export default function QuickRedesignStudio() {
   ];
 
   return (
-    <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+    <div className="p-5 rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
       <div>
         <h3 className="font-heading text-sm font-extrabold text-slate-900 dark:text-white">
           Start a New Redesign
@@ -30,12 +30,12 @@ export default function QuickRedesignStudio() {
         {/* Upload Room Photo Box */}
         <Link
           href="/generate"
-          className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-purple-300 dark:border-purple-900 hover:border-purple-600 bg-purple-50/40 dark:bg-purple-950/20 rounded-2xl transition-all group text-center cursor-pointer"
+          className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-blue-300 dark:border-blue-900 hover:border-blue-600 bg-blue-50/40 dark:bg-blue-950/20 rounded-[10px] transition-all group text-center cursor-pointer"
         >
-          <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 text-purple-600 shadow-sm group-hover:scale-110 transition-transform mb-2">
+          <div className="p-3 rounded-[10px] bg-white dark:bg-slate-800 text-blue-600 shadow-sm group-hover:scale-110 transition-transform mb-2">
             <Upload className="w-5 h-5" />
           </div>
-          <p className="text-xs font-extrabold text-purple-700 dark:text-purple-300">Upload Room Photo</p>
+          <p className="text-xs font-extrabold text-blue-700 dark:text-blue-300">Upload Room Photo</p>
           <p className="text-[10px] text-slate-400 font-medium mt-1">JPG, PNG up to 10MB</p>
         </Link>
 
@@ -47,7 +47,7 @@ export default function QuickRedesignStudio() {
             </span>
             <Link
               href="/generate"
-              className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
             >
               View All
             </Link>
@@ -59,9 +59,9 @@ export default function QuickRedesignStudio() {
                 key={st.name}
                 type="button"
                 onClick={() => setSelectedStyle(st.name)}
-                className={`relative group rounded-2xl overflow-hidden aspect-4/5 border transition-all cursor-pointer ${
+                className={`relative group rounded-[10px] overflow-hidden aspect-4/5 border transition-all cursor-pointer ${
                   selectedStyle === st.name
-                    ? 'border-purple-600 ring-2 ring-purple-500/30 scale-[1.03]'
+                    ? 'border-blue-600 ring-2 ring-blue-500/30 scale-[1.03]'
                     : 'border-slate-200/80 dark:border-slate-800 opacity-80 hover:opacity-100'
                 }`}
               >

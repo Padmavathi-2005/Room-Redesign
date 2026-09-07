@@ -33,6 +33,10 @@ export class CreateCmsPageDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  ogImage?: string;
+
+  @IsOptional()
   @IsEnum(PageStatus)
   status?: PageStatus;
 

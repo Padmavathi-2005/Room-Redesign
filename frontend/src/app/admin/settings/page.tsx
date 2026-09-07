@@ -24,6 +24,10 @@ import {
   Plus,
   Trash2,
   Percent,
+  Upload,
+  Image,
+  Globe,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useToast } from '@/context/ToastContext';
@@ -44,6 +48,9 @@ export default function AdminSettingsPage() {
 
   // 1. Branding & Visual System State
   const [appName, setAppName] = useState('RoomAI');
+  const [siteUrl, setSiteUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoError, setLogoError] = useState<string | null>(null);
   const [activeTheme, setActiveTheme] = useState<'light' | 'dark'>('light');
   const [primaryColor, setPrimaryColor] = useState('#2563eb');
   const [secondaryColor, setSecondaryColor] = useState('#4f46e5');
@@ -161,7 +168,7 @@ export default function AdminSettingsPage() {
     if (!token) return;
     setLoadingPacks(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
       const res = await fetch(`${apiUrl}/subscription/admin/credit-packs`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -222,7 +229,7 @@ export default function AdminSettingsPage() {
   const handleSavePackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
 
     try {
       const url = editingPackId
@@ -254,7 +261,7 @@ export default function AdminSettingsPage() {
 
   const handleDeletePackClick = async (id: string, name: string) => {
     if (!token || !window.confirm(`Are you sure you want to delete "${name}"?`)) return;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
     try {
       const res = await fetch(`${apiUrl}/subscription/admin/credit-packs/${id}`, {
         method: 'DELETE',
@@ -278,7 +285,7 @@ export default function AdminSettingsPage() {
 
   const verifyAdminRole = async (authToken: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
       const res = await fetch(`${apiUrl}/auth/profile`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
@@ -320,7 +327,10 @@ export default function AdminSettingsPage() {
   // Populate form fields once Mongoose settings are loaded
   useEffect(() => {
     if (!isThemeLoading && settings) {
+      const s = settings as any;
       setAppName(settings.applicationName || 'RoomAI');
+      setSiteUrl(s.siteUrl || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'));
+      setLogoUrl(settings.logo || '');
       setActiveTheme(settings.activeTheme || 'light');
       setPrimaryColor(settings.primaryColor || '#2563eb');
       setSecondaryColor(settings.secondaryColor || '#4f46e5');
@@ -331,7 +341,6 @@ export default function AdminSettingsPage() {
       setGlassOpacity(settings.glassOpacity ?? 0.7);
       setBlurStrength(settings.blurStrength ?? 20);
 
-      const s = settings as any;
       setEnableGoogleLogin(s.enableGoogleLogin ?? false);
       setGoogleClientId(s.googleClientId || '');
       setGoogleClientSecret(s.googleClientSecret || '');
@@ -384,6 +393,37 @@ export default function AdminSettingsPage() {
     }
   }, [isThemeLoading, settings]);
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLogoError(null);
+    const MAX_SIZE = 2 * 1024 * 1024; // 2 MB Limit
+
+    if (file.size > MAX_SIZE) {
+      const msg = `Logo file size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds the 2 MB limit.`;
+      setLogoError(msg);
+      toast.error(msg, 'File Too Large');
+      return;
+    }
+
+    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) {
+      const msg = 'Invalid image format. Allowed: PNG, SVG, WEBP, or JPEG.';
+      setLogoError(msg);
+      toast.error(msg, 'Invalid Format');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result) {
+        setLogoUrl(reader.result.toString());
+        toast.success('Site logo file selected (Max 2MB validated). Click Save to apply.', 'Logo Loaded');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
@@ -395,6 +435,8 @@ export default function AdminSettingsPage() {
     try {
       await updateSettings({
         applicationName: appName,
+        siteUrl,
+        logo: logoUrl,
         activeTheme,
         primaryColor,
         secondaryColor,
@@ -593,21 +635,101 @@ export default function AdminSettingsPage() {
                       required
                       value={appName}
                       onChange={(e) => setAppName(e.target.value)}
+                      placeholder="RoomAI - AI Interior Architectural Platform"
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-medium"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-slate-800 font-bold block">Default Theme Mode</label>
-                    <select
-                      value={activeTheme}
-                      onChange={(e) => setActiveTheme(e.target.value as any)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-medium"
-                    >
-                      <option value="light">Light Theme</option>
-                      <option value="dark">Dark Theme</option>
-                    </select>
+                    <label className="text-slate-800 font-bold flex items-center justify-between">
+                      <span>Site Base URL</span>
+                      <span className="text-[10px] text-indigo-600 font-mono bg-indigo-50 px-2 py-0.5 rounded-full">Dynamic ENV</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={siteUrl}
+                      onChange={(e) => setSiteUrl(e.target.value)}
+                      placeholder={process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-mono text-xs"
+                    />
+                    <p className="text-[10px] text-slate-400 font-medium">Fallback: process.env.NEXT_PUBLIC_APP_URL || location.origin</p>
                   </div>
+                </div>
+
+                {/* Site Logo Upload Box with Size Limit Validation */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Image className="w-4 h-4 text-indigo-600" />
+                      <span className="font-bold text-slate-900 text-xs">Site Logo & Branding Icon</span>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-200/70 text-slate-700 font-mono text-[10px] font-bold">
+                      Max Size: 2 MB
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                    {/* Preview Box */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 p-2 flex items-center justify-center shadow-2xs shrink-0 overflow-hidden">
+                        {logoUrl ? (
+                          <img src={logoUrl} alt="Site Logo" className="max-w-full max-h-full object-contain" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-lg">
+                            R
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 block">Current Logo</span>
+                        <span className="text-[10px] text-slate-400 block font-mono">PNG, SVG, WEBP</span>
+                      </div>
+                    </div>
+
+                    {/* File Upload Zone */}
+                    <div className="sm:col-span-2 space-y-2">
+                      <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-dashed border-indigo-300 hover:border-indigo-500 hover:bg-indigo-50/50 text-indigo-600 font-bold text-xs cursor-pointer transition-all">
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Logo File (Max 2 MB)</span>
+                        <input
+                          type="file"
+                          accept="image/png,image/svg+xml,image/webp,image/jpeg"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400">
+                        <span>Recommended dimensions: 512×512 px</span>
+                        {logoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setLogoUrl('')}
+                            className="text-rose-500 hover:text-rose-700 font-bold cursor-pointer"
+                          >
+                            Clear Logo
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {logoError && (
+                    <p className="text-xs font-bold text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                      {logoError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-slate-800 font-bold block">Default Theme Mode</label>
+                  <select
+                    value={activeTheme}
+                    onChange={(e) => setActiveTheme(e.target.value as any)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl font-medium"
+                  >
+                    <option value="light">Light Theme</option>
+                    <option value="dark">Dark Theme</option>
+                  </select>
                 </div>
 
                 {/* Color Pickers */}

@@ -11,6 +11,8 @@ import { SAMPLE_FALLBACK_IMAGES } from '../modules/provider-manager/providers/fa
 import * as path from 'path';
 import axios from 'axios';
 
+import { SubscriptionService } from '../modules/subscription/subscription.service';
+
 @Injectable()
 export class QueueWorkerService implements OnApplicationBootstrap {
   private readonly logger = new Logger(QueueWorkerService.name);
@@ -24,12 +26,15 @@ export class QueueWorkerService implements OnApplicationBootstrap {
     private readonly providerManagerService: ProviderManagerService,
     private readonly storageService: StorageService,
     private readonly projectsService: ProjectsService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   onApplicationBootstrap() {
     this.logger.log('🚀 Queue Worker Service started.');
     // Start background processing loop
     setInterval(() => this.processQueue(), 3000);
+    // Periodically run orphan recovery scan every 5 minutes
+    setInterval(() => this.recoverOrphanPendingRooms(), 5 * 60 * 1000);
   }
 
   private async processQueue() {
@@ -55,6 +60,45 @@ export class QueueWorkerService implements OnApplicationBootstrap {
     }
   }
 
+  /**
+   * Scans for orphan processing/pending room jobs older than 10 minutes and performs reconciliation recovery
+   */
+  async recoverOrphanPendingRooms() {
+    try {
+      const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000);
+      const orphanRooms = await this.roomModel.find({
+        status: { $in: ['pending', 'processing'] },
+        createdAt: { $lt: tenMinsAgo },
+      }).exec();
+
+      if (orphanRooms.length > 0) {
+        this.logger.warn(`Found ${orphanRooms.length} orphaned room generation jobs older than 10 minutes. Executing reconciliation recovery...`);
+        for (const orphan of orphanRooms) {
+          orphan.status = 'failed';
+          orphan.failureCode = 'TIMEOUT';
+          orphan.error = 'Generation request timed out or backend process restarted before completion.';
+
+          if (orphan.userId && orphan.creditsUsed && orphan.creditsUsed > 0 && !orphan.isRefunded) {
+            try {
+              await this.subscriptionService.refundCreditsAtomic(
+                orphan.userId.toString(),
+                orphan.creditsUsed,
+                'Auto-refund: Stale generation reconciliation timeout',
+                { roomId: orphan._id.toString(), toolSlug: orphan.toolSlug },
+              );
+              orphan.isRefunded = true;
+            } catch (rErr: any) {
+              this.logger.error(`Failed to execute orphan recovery refund for room ${orphan._id}: ${rErr.message}`);
+            }
+          }
+          await orphan.save().catch(() => {});
+        }
+      }
+    } catch (err: any) {
+      this.logger.error(`Orphan recovery scan encountered error: ${err.message}`);
+    }
+  }
+
   async triggerJobDirectly(room: RoomDocument) {
     this.logger.log(`Triggering immediate processing for room job ID: ${room._id}`);
     const updated = await this.roomModel.findByIdAndUpdate(
@@ -75,19 +119,48 @@ export class QueueWorkerService implements OnApplicationBootstrap {
     console.log('========================================================================\n');
 
     try {
-      // 1. Resolve relative path and load image buffer from storage adapter
-      console.log(`📦 [IMAGE RETRIEVAL] Resolving and retrieving original image from storage...`);
-      const relativePath = room.originalImage.replace(/^\/?uploads\//, '');
+      // 1. Resolve image buffer from HTTP URL, Base64 data URL, or local storage adapter
+      console.log(`📦 [IMAGE RETRIEVAL] Resolving original image buffer for job ${room._id}...`);
       let originalImageBuffer: Buffer;
       let mimeType = 'image/jpeg';
-      try {
-        originalImageBuffer = await this.storageService.retrieve(relativePath);
-        const ext = path.extname(room.originalImage).toLowerCase();
-        if (ext === '.png') mimeType = 'image/png';
-        else if (ext === '.webp') mimeType = 'image/webp';
-      } catch (err: any) {
-        this.logger.error(`Failed to retrieve original image from storage: ${err.message}`);
-        throw err;
+
+      const imgUrl = room.originalImage || '';
+      if (imgUrl.startsWith('data:image/')) {
+        const parts = imgUrl.split(';');
+        const mime = parts[0].replace('data:', '');
+        if (mime) mimeType = mime;
+        const base64Data = imgUrl.split(',')[1] || imgUrl;
+        originalImageBuffer = Buffer.from(base64Data, 'base64');
+      } else if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+        try {
+          const resp = await axios.get(imgUrl, {
+            responseType: 'arraybuffer',
+            timeout: 15000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'image/*,*/*',
+            },
+          });
+          originalImageBuffer = Buffer.from(resp.data);
+          const contentType = String(resp.headers['content-type'] || '');
+          if (contentType.startsWith('image/')) {
+            mimeType = contentType.split(';')[0];
+          }
+        } catch (httpErr: any) {
+          this.logger.error(`Failed to download remote original image from ${imgUrl}: ${httpErr.message}`);
+          throw new Error(`SOURCE_IMAGE_FETCH_FAILED: Could not download image from provided URL (${httpErr.message})`);
+        }
+      } else {
+        const relativePath = imgUrl.replace(/^\/?uploads\//, '');
+        try {
+          originalImageBuffer = await this.storageService.retrieve(relativePath);
+          const ext = path.extname(imgUrl).toLowerCase();
+          if (ext === '.png') mimeType = 'image/png';
+          else if (ext === '.webp') mimeType = 'image/webp';
+        } catch (err: any) {
+          this.logger.error(`Failed to retrieve original image from local storage: ${err.message}`);
+          throw err;
+        }
       }
       console.log(`   - Preprocessed image loaded: Size: ${(originalImageBuffer.length / 1024).toFixed(1)} KB | Format: ${mimeType}`);
 
@@ -97,9 +170,9 @@ export class QueueWorkerService implements OnApplicationBootstrap {
       this.logger.log(`Step 1: Building structural prompt and analyzing original room image...`);
       console.log(`🔍 [VISION AI] Calling OpenAI GPT-4o Vision to analyze the uploaded room structure...`);
       
-      // Fetch project details (designTheme and existing manusChatId) if room belongs to a project
+      // Fetch project details (designTheme and existing manusTaskId) if room belongs to a project
       let projectDesignTheme: Record<string, any> | undefined = undefined;
-      let effectiveChatId: string | undefined = room.manusChatId || undefined;
+      let effectiveTaskId: string | undefined = room.manusTaskId || room.manusChatId || undefined;
 
       if (room.projectId) {
         try {
@@ -109,9 +182,10 @@ export class QueueWorkerService implements OnApplicationBootstrap {
               projectDesignTheme = activeProj.designTheme;
               this.logger.log(`Injected structured Project DesignTheme into prompt payload for Project "${activeProj.name}"`);
             }
-            if (!effectiveChatId && (activeProj as any).manusChatId) {
-              effectiveChatId = (activeProj as any).manusChatId;
-              this.logger.log(`Reusing existing Manus task thread chatId "${effectiveChatId}" for Project "${activeProj.name}"`);
+            const projectTaskId = activeProj.manusTaskId || activeProj.manusChatId;
+            if (projectTaskId) {
+              effectiveTaskId = projectTaskId;
+              this.logger.log(`🔗 Reusing Authoritative Master Manus Task ID "${effectiveTaskId}" for Project "${activeProj.name}"`);
             }
           }
         } catch (projErr: any) {
@@ -149,30 +223,37 @@ export class QueueWorkerService implements OnApplicationBootstrap {
       console.log(finalPrompt);
       console.log(`============================================================================\n`);
 
-      // 3. Dispatch image generation request to ProviderManager
-      this.logger.log(`Step 2: Dispatching job payload to provider manager...`);
-      
-      const rawKey = process.env.MANUS_API_KEYS || process.env.MANUS_API_KEY || '';
-      const isManusConfigured = !!(rawKey && rawKey.trim().replace(/^["']|["']$/g, '') !== '');
-      
-      console.log(`📡 [ROUTING INFO] Active API Tokens in .env:`);
-      console.log(`   - Manus API Key Configured: ${isManusConfigured ? 'YES (Active)' : 'NO'}`);
+      // Fetch existing project image URLs for result correlation
+      let existingProjectImages: string[] = [];
+      if (room.projectId) {
+        try {
+          existingProjectImages = await this.projectsService.getAllProjectImageUrls(String(room.projectId));
+        } catch (e) {
+          // Ignore
+        }
+      }
+
+      this.logger.log(`[GENERATION] generationId=${room._id} projectId=${room.projectId || 'N/A'} manusTaskId=${effectiveTaskId || 'NEW'} operation=${effectiveTaskId ? 'SEND_MESSAGE' : 'CREATE_TASK'} status=RUNNING`);
 
       const generationResult = await this.providerManagerService.generateImage({
         prompt: finalPrompt,
         negativePrompt: negativePrompt,
         imageBuffer: originalImageBuffer,
         imageMimeType: mimeType,
-        imageUrl: room.originalImage, // Passed to check absolute URLs for cloud fetchers
-        chatId: effectiveChatId,
+        imageUrl: room.originalImageUrl || room.originalImage,
+        originalImageUrl: room.originalImageUrl || (room.originalImage && room.originalImage.startsWith('http') ? room.originalImage : ''),
+        manusTaskId: effectiveTaskId,
+        chatId: effectiveTaskId,
         projectId: room.projectId ? String(room.projectId) : undefined,
+        generationId: String(room._id),
+        existingImageUrls: existingProjectImages,
         onProgress: (progressData: { statusText: string; steps: any[] }) => {
           room.stepStatus = progressData.statusText;
           if (progressData.steps && progressData.steps.length > 0) {
             room.workflowSteps = progressData.steps;
           }
           room.save().catch(() => {});
-          this.logger.log(`[LIVE PROGRESS UPDATE] ${progressData.statusText}`);
+          this.logger.log(`[LIVE PROGRESS UPDATE] [GEN-${room._id}] ${progressData.statusText}`);
         },
       });
 
@@ -186,55 +267,91 @@ export class QueueWorkerService implements OnApplicationBootstrap {
 
       // 4. Download generated image for permanent storage
       this.logger.log(`Step 3: Downloading generated image from temporary URL for permanent storage...`);
-      console.log(`📥 [PERMANENT STORAGE] Downloading image from provider: ${generationResult.imageUrl.slice(0, 100)}...`);
-      
-      let generatedBuffer: Buffer;
-      let generatedMimeType = 'image/png';
-      const outputUrl = generationResult.imageUrl;
+      const rawImageUrls = Array.isArray(generationResult.generatedImages) && generationResult.generatedImages.length > 0
+        ? generationResult.generatedImages
+        : [generationResult.imageUrl];
 
-      if (outputUrl.startsWith('/uploads/') || outputUrl.startsWith('uploads/')) {
-        const cleanPath = outputUrl.replace(/^\/?uploads\//, '');
-        try {
-          generatedBuffer = await this.storageService.retrieve(cleanPath);
-          this.logger.log(`✅ Loaded generated render buffer directly from local disk: ${cleanPath}`);
-        } catch (sErr: any) {
-          this.logger.warn(`Could not retrieve ${cleanPath} from disk (${sErr.message}). Using fallback render buffer.`);
-          generatedBuffer = await this.storageService.retrieve('generated/floor_plan_generator_after.png').catch(() => originalImageBuffer);
-        }
-      } else {
-        try {
-          const downloadResponse = await axios.get(outputUrl, { responseType: 'arraybuffer', timeout: 10000 });
-          generatedBuffer = Buffer.from(downloadResponse.data);
-          if (downloadResponse.headers['content-type']) {
-            generatedMimeType = String(downloadResponse.headers['content-type']);
+      this.logger.log(`📥 [PERMANENT STORAGE] Processing ${rawImageUrls.length} generated render image(s) from provider...`);
+
+      const storedImageUrls: string[] = [];
+      let primaryMediaFileId: any = null;
+
+      for (let imgIdx = 0; imgIdx < rawImageUrls.length; imgIdx++) {
+        const outputUrl = rawImageUrls[imgIdx];
+        let generatedBuffer: Buffer | null = null;
+        let generatedMimeType = 'image/png';
+
+        if (outputUrl.startsWith('/uploads/') || outputUrl.startsWith('uploads/')) {
+          const cleanPath = outputUrl.replace(/^\/?uploads\//, '');
+          try {
+            generatedBuffer = await this.storageService.retrieve(cleanPath);
+            storedImageUrls.push(outputUrl);
+            continue;
+          } catch (sErr: any) {
+            this.logger.error(`Could not retrieve generated render from disk (${cleanPath}): ${sErr.message}`);
           }
-        } catch (dlErr: any) {
-          this.logger.error(`Could not download generated image from Manus AI URL (${outputUrl}): ${dlErr.message}`);
-          throw new Error(`Failed to download generated image from Manus AI: ${dlErr.message}`);
+        }
+
+        let lastDlErr: any;
+        for (let dlAttempt = 1; dlAttempt <= 3; dlAttempt++) {
+          try {
+            const downloadResponse = await axios.get(outputUrl, { responseType: 'arraybuffer', timeout: 45000 });
+            generatedBuffer = Buffer.from(downloadResponse.data);
+            if (downloadResponse.headers['content-type']) {
+              generatedMimeType = String(downloadResponse.headers['content-type']);
+            }
+            lastDlErr = null;
+            break;
+          } catch (dlErr: any) {
+            lastDlErr = dlErr;
+            this.logger.warn(`Attempt ${dlAttempt}/3 failed to download generated image (${outputUrl.slice(0, 80)}): ${dlErr.message}`);
+            if (dlAttempt < 3) await new Promise((r) => setTimeout(r, 2000));
+          }
+        }
+
+        if (generatedBuffer && generatedBuffer.length > 0) {
+          const outputMediaFile = await this.uploadsService.registerUploadedFile({
+            originalName: `render_${imgIdx + 1}_${Date.now()}.jpg`,
+            type: 'ai_generated',
+            buffer: generatedBuffer,
+            mimeType: generatedMimeType,
+            size: generatedBuffer.length,
+          });
+
+          if (outputMediaFile && outputMediaFile.url) {
+            storedImageUrls.push(outputMediaFile.url);
+            if (!primaryMediaFileId) primaryMediaFileId = (outputMediaFile as any)._id;
+          }
         }
       }
 
-      // 5. Register generated output image permanently
-      const outputMediaFile = await this.uploadsService.registerUploadedFile({
-        originalName: `output_${Date.now()}.jpg`,
-        type: 'ai_generated',
-        buffer: generatedBuffer,
-        mimeType: generatedMimeType,
-        size: generatedBuffer.length,
-      });
+      if (storedImageUrls.length === 0) {
+        throw new Error('GENERATION_RESULT_MISSING: Could not download or persist any generated render images.');
+      }
 
-      // 6. Complete database update & update project manusChatId if available
-      room.generatedImage = outputMediaFile.url;
-      room.generatedImageId = (outputMediaFile as any)._id;
+      // 6. Complete database update & update project master manusTaskId atomically
+      const primaryRenderUrl = storedImageUrls[storedImageUrls.length - 1];
+      room.generatedImage = primaryRenderUrl;
+      room.generatedImages = storedImageUrls;
+      if (primaryMediaFileId) room.generatedImageId = primaryMediaFileId;
       room.prompt = finalPrompt;
       room.negativePrompt = negativePrompt;
-      if (generationResult.chatId) {
-        room.manusChatId = generationResult.chatId;
+
+      const returnedTaskId = generationResult.manusTaskId || generationResult.chatId;
+      if (returnedTaskId) {
+        room.manusTaskId = returnedTaskId;
+        room.manusChatId = returnedTaskId;
+
         if (room.projectId) {
           try {
-            await this.projectsService.updateChatId(String(room.projectId), generationResult.chatId);
+            await this.projectsService.setMasterTaskIdAtomic(
+              String(room.projectId),
+              returnedTaskId,
+              'PRIMARY',
+              generationResult.isNewTask ? 'initial_project_task' : 'continued_project_task'
+            );
           } catch (projErr: any) {
-            this.logger.warn(`Could not update Project manusChatId: ${projErr.message}`);
+            this.logger.warn(`Could not update Project master task ID: ${projErr.message}`);
           }
         }
       }
@@ -255,18 +372,41 @@ export class QueueWorkerService implements OnApplicationBootstrap {
       this.logger.error(`❌ Generation job failed for room ID: ${room._id}. Error: ${errMsg}`);
       room.status = 'failed';
       room.error = errMsg;
+      room.failureCode = errMsg.includes('SOURCE_IMAGE_UNAVAILABLE')
+        ? 'SOURCE_IMAGE_UNAVAILABLE'
+        : errMsg.includes('GENERATION_RESULT_MISSING')
+          ? 'GENERATION_RESULT_MISSING'
+          : 'GENERATION_FAILED';
+
       if (room.workflowSteps && room.workflowSteps.length > 0) {
         const runningIdx = room.workflowSteps.findIndex((s: any) => s.status === 'running');
         const targetIdx = runningIdx >= 0 ? runningIdx : 0;
         room.workflowSteps = room.workflowSteps.map((s: any, i: number) => ({
           ...s,
-          status: i === targetIdx ? 'error' : s.status === 'completed' ? 'completed' : 'pending',
+          status: i === targetIdx ? 'failed' : s.status === 'completed' ? 'completed' : 'pending',
         }));
       }
-      await room.save();
+
+      // Rule #15: Atomic credit refund on failure
+      if (room.userId && room.creditsUsed > 0 && !room.isRefunded) {
+        try {
+          await this.subscriptionService.refundCreditsAtomic(
+            room.userId.toString(),
+            room.creditsUsed,
+            `Auto-refund: Generation failed (${errMsg})`,
+            { roomId: room._id.toString() },
+          );
+          room.isRefunded = true;
+        } catch (refundErr: any) {
+          this.logger.warn(`Could not issue atomic credit refund for room ${room._id}: ${refundErr.message}`);
+        }
+      }
+
+      await room.save().catch(() => {});
 
       console.log('\n========================================================================');
       console.log(`❌ [PIPELINE FAILED] Room Redesign aborted (ID: ${room._id})`);
+      console.log(`   - Failure Code: ${room.failureCode}`);
       console.log(`   - Error: ${errMsg}`);
       console.log('========================================================================\n');
     }

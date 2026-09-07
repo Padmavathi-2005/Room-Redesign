@@ -8,6 +8,8 @@ import { Project, ProjectSchema } from '../projects/schemas/project.schema';
 import { RoomGeneration, RoomSchema } from '../../rooms/schemas/room.schema';
 import { ProductTool, ProductToolSchema } from '../uploads/schemas/product-tool.schema';
 
+import { SubscriptionModule } from '../subscription/subscription.module';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -17,6 +19,7 @@ import { ProductTool, ProductToolSchema } from '../uploads/schemas/product-tool.
       { name: RoomGeneration.name, schema: RoomSchema },
       { name: ProductTool.name, schema: ProductToolSchema },
     ]),
+    SubscriptionModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

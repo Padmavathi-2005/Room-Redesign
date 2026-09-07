@@ -41,6 +41,38 @@ export class SubscriptionController {
   }
 
   /**
+   * POST /api/v1/subscription/cancel-auto-renew
+   * Pause automatic renewal (cancel at period end)
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('cancel-auto-renew')
+  @HttpCode(HttpStatus.OK)
+  async cancelAutoRenew(@CurrentUser('_id') userId: string) {
+    const status = await this.subscriptionService.cancelAutoRenewal(userId.toString());
+    return {
+      success: true,
+      message: 'Auto-renewal paused. Your current plan and remaining credits will remain active until the end of your billing cycle.',
+      data: status,
+    };
+  }
+
+  /**
+   * POST /api/v1/subscription/resume-auto-renew
+   * Reactivate automatic renewal
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('resume-auto-renew')
+  @HttpCode(HttpStatus.OK)
+  async resumeAutoRenew(@CurrentUser('_id') userId: string) {
+    const status = await this.subscriptionService.resumeAutoRenewal(userId.toString());
+    return {
+      success: true,
+      message: 'Auto-renewal reactivated successfully. Your subscription will renew automatically.',
+      data: status,
+    };
+  }
+
+  /**
    * POST /api/v1/subscription/create-checkout-session
    * Generate official Stripe Hosted Checkout Session URL
    */

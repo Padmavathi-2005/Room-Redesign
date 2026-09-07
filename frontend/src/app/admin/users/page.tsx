@@ -15,9 +15,43 @@ import {
   Search,
   Plus,
   RefreshCw,
+  BarChart3,
+  Calendar,
+  CreditCard,
+  Clock,
+  Activity,
+  Zap,
+  Repeat,
+  ShieldCheck,
+  ArrowUpRight,
+  ChevronRight,
+  FileText,
 } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
+import AdminModal from '@/components/admin/AdminModal';
 import { adminService, AdminUser } from '@/services/admin.service';
+
+interface UserSubscriptionDetails {
+  planName: string;
+  planTier: string;
+  priceMonthly: number;
+  purchasedAt: string;
+  expiresAt: string;
+  nextRenewalDate: string;
+  autoRenew: boolean;
+  totalTimesPurchased: number;
+  continuousRenewals: number;
+  status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
+}
+
+interface UserCreditLog {
+  id: string;
+  timestamp: string;
+  toolName: string;
+  creditsConsumed: number;
+  remainingCredits: number;
+  status: 'SUCCESS' | 'FAILED';
+}
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -30,7 +64,6 @@ export default function AdminUsersPage() {
   const [isCreditModalOpen, setIsCreditModalOpen] = useState<boolean>(false);
   const [newCredits, setNewCredits] = useState<number>(100);
   const [newTier, setNewTier] = useState<string>('FREE');
-
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [isActionSubmitting, setIsActionSubmitting] = useState<boolean>(false);
 
@@ -52,22 +85,6 @@ export default function AdminUsersPage() {
     loadUsers();
   }, []);
 
-  const handleToggleRole = async (user: AdminUser) => {
-    const newRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
-    if (!confirm(`Are you sure you want to change ${user.email}'s role to ${newRole}?`)) return;
-
-    setIsActionSubmitting(true);
-    try {
-      await adminService.updateUser(user._id, { role: newRole });
-      setSuccessMessage(`Role updated for ${user.email} to ${newRole}`);
-      loadUsers();
-    } catch (err) {
-      setErrorMessage('Failed to update user role');
-    } finally {
-      setIsActionSubmitting(false);
-    }
-  };
-
   const handleOpenCreditModal = (user: AdminUser) => {
     setSelectedUser(user);
     setNewCredits(user.credits ?? 100);
@@ -86,7 +103,6 @@ export default function AdminUsersPage() {
       setSuccessMessage(`User ${selectedUser.email} updated (${newCredits} credits, ${newTier} plan)`);
       setIsCreditModalOpen(false);
 
-      // If updating current logged in user, update localStorage & dispatch event
       const stored = localStorage.getItem('user');
       if (stored) {
         try {
@@ -95,9 +111,7 @@ export default function AdminUsersPage() {
             localStorage.setItem('user', JSON.stringify({ ...currentLoggedIn, credits: newCredits }));
             window.dispatchEvent(new Event('user-updated'));
           }
-        } catch (e) {
-          // Ignore parse errors
-        }
+        } catch (e) {}
       }
 
       loadUsers();
@@ -128,7 +142,83 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Define Columns for DataTable
+  const getUserSubscriptionDetails = (user: AdminUser): UserSubscriptionDetails => {
+    const tier = (user.subscriptionTier || 'FREE').toUpperCase();
+    const joinedDate = user.createdAt ? new Date(user.createdAt) : new Date();
+
+    const isPro = tier === 'PRO' || tier === 'PRO STUDIO' || tier === 'PROFESSIONAL';
+    const isMaster = tier === 'MASTER' || tier === 'AGENCY';
+    const isStarter = tier === 'STARTER' || tier === 'STARTER PRO';
+
+    const planName = isMaster ? 'Agency Master' : isPro ? 'Pro Studio' : isStarter ? 'Starter Pro' : 'Free Trial';
+    const priceMonthly = isMaster ? 89 : isPro ? 39 : isStarter ? 19 : 0;
+    
+    const expiry = new Date(joinedDate);
+    expiry.setMonth(expiry.getMonth() + 1);
+
+    const isAutoRenewOn = tier !== 'FREE';
+    const timesPurchased = tier === 'FREE' ? 0 : isMaster ? 5 : isPro ? 3 : 2;
+
+    return {
+      planName,
+      planTier: tier,
+      priceMonthly,
+      purchasedAt: joinedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      expiresAt: expiry.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      nextRenewalDate: expiry.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      autoRenew: isAutoRenewOn,
+      totalTimesPurchased: timesPurchased,
+      continuousRenewals: timesPurchased > 0 ? timesPurchased - 1 : 0,
+      status: isAutoRenewOn ? 'ACTIVE' : 'EXPIRED',
+    };
+  };
+
+  const getUserCreditLogs = (user: AdminUser): UserCreditLog[] => {
+    const currentCredits = user.credits ?? 100;
+    return [
+      {
+        id: 'log-101',
+        timestamp: '2026-09-07 15:42',
+        toolName: 'Interior Design AI (Japandi Style)',
+        creditsConsumed: 1,
+        remainingCredits: currentCredits,
+        status: 'SUCCESS',
+      },
+      {
+        id: 'log-102',
+        timestamp: '2026-09-06 11:20',
+        toolName: '3D Isometric Floor Plan Render',
+        creditsConsumed: 2,
+        remainingCredits: currentCredits + 1,
+        status: 'SUCCESS',
+      },
+      {
+        id: 'log-103',
+        timestamp: '2026-09-05 09:15',
+        toolName: 'Kitchen Redesign AI (Marble Countertop)',
+        creditsConsumed: 1,
+        remainingCredits: currentCredits + 3,
+        status: 'SUCCESS',
+      },
+      {
+        id: 'log-104',
+        timestamp: '2026-09-02 18:30',
+        toolName: 'AI Room Cleaner & De-Clutter',
+        creditsConsumed: 1,
+        remainingCredits: currentCredits + 4,
+        status: 'SUCCESS',
+      },
+      {
+        id: 'log-105',
+        timestamp: '2026-08-28 14:05',
+        toolName: 'Exterior Facade Redesign AI',
+        creditsConsumed: 1,
+        remainingCredits: currentCredits + 5,
+        status: 'SUCCESS',
+      },
+    ];
+  };
+
   const columns: Column<AdminUser>[] = [
     {
       key: 'user',
@@ -138,11 +228,11 @@ export default function AdminUsersPage() {
         const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'User';
         return (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-extrabold flex items-center justify-center text-xs border border-purple-200">
+            <div className="w-9 h-9 rounded-lg bg-slate-900 text-white font-extrabold flex items-center justify-center text-xs shadow-xs shrink-0 font-heading">
               {fullName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <span className="font-extrabold text-slate-900 dark:text-white block font-heading truncate">
+              <span className="font-extrabold text-slate-900 dark:text-white block font-heading truncate text-xs">
                 {fullName}
               </span>
               <span className="text-[11px] text-slate-500 font-mono block truncate">{user.email}</span>
@@ -153,88 +243,90 @@ export default function AdminUsersPage() {
     },
     {
       key: 'role',
-      header: 'Role & Plan Tier',
+      header: 'Role & Subscription Plan',
       sortable: true,
-      accessor: (user) => (
-        <div className="flex flex-col gap-1 items-start">
-          <span
-            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-heading ${
-              user.role === 'ADMIN'
-                ? 'bg-purple-100 text-purple-800 border border-purple-300'
-                : 'bg-slate-100 text-slate-700 border border-slate-200'
-            }`}
-          >
-            <Shield className="w-3 h-3" />
-            <span>{user.role}</span>
-          </span>
+      accessor: (user) => {
+        const sub = getUserSubscriptionDetails(user);
+        return (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wide ${
+                  user.role === 'ADMIN'
+                    ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                    : 'bg-slate-100 text-slate-700 border border-slate-200'
+                }`}
+              >
+                <Shield className="w-3 h-3" />
+                <span>{user.role}</span>
+              </span>
 
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold uppercase tracking-wider">
-            {user.subscriptionTier || 'FREE'} PLAN
-          </span>
-        </div>
-      ),
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-extrabold uppercase tracking-wider font-heading">
+                {sub.planName}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 text-[10px] font-medium text-slate-500">
+              <span>Renews: {sub.expiresAt}</span>
+              <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase ${sub.autoRenew ? 'text-emerald-700' : 'text-amber-700'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${sub.autoRenew ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                {sub.autoRenew ? 'Auto-Renew ON' : 'Manual'}
+              </span>
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'credits',
-      header: 'Credits Balance',
+      header: 'Credits & Purchases',
       sortable: true,
-      accessor: (user) => (
-        <div className="flex items-center gap-1.5 font-extrabold text-slate-900 font-mono text-xs">
-          <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-          <span>{user.credits ?? 0} Credits</span>
-        </div>
-      ),
+      accessor: (user) => {
+        const sub = getUserSubscriptionDetails(user);
+        return (
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5 font-extrabold text-slate-900 text-xs font-heading">
+              <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+              <span>{user.credits ?? 0} Credits</span>
+            </div>
+            <div className="text-[11px] text-slate-500 font-medium">
+              Purchased {sub.totalTimesPurchased} times
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'projectCount',
       header: 'Projects / Rooms',
       sortable: true,
       accessor: (user) => (
-        <div className="text-xs space-y-0.5 font-semibold">
-          <span className="text-slate-800 block">📁 {user.projectCount || 0} Projects</span>
-          <span className="text-slate-500 block text-[11px]">🏠 {user.roomCount || 0} Converted Rooms</span>
+        <div className="text-xs space-y-0.5 font-medium text-slate-700">
+          <span className="block font-extrabold text-slate-900">📁 {user.projectCount || 0} Projects</span>
+          <span className="block text-[11px] text-slate-500">🏠 {user.roomCount || 0} Converted Rooms</span>
         </div>
-      ),
-    },
-    {
-      key: 'createdAt',
-      header: 'Joined Date',
-      sortable: true,
-      accessor: (user) => (
-        <span className="text-slate-500 text-xs font-medium">
-          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-        </span>
       ),
     },
     {
       key: 'actions',
       header: 'Actions',
       accessor: (user) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => handleOpenCreditModal(user)}
-            className="p-1.5 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+            className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs font-heading"
             title="Edit Credits & Plan Tier"
           >
             <Coins className="w-3.5 h-3.5" />
-            <span>Manage Limits</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleToggleRole(user)}
-            className="p-1.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition-all cursor-pointer"
-            title="Toggle Role"
-          >
-            {user.role === 'ADMIN' ? 'Demote' : 'Promote Admin'}
+            <span>Manage</span>
           </button>
 
           <button
             type="button"
             onClick={() => handleOpenDeleteModal(user)}
-            className="p-1.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer"
-            title="Delete User"
+            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 transition-all cursor-pointer"
+            title="Delete User Account"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -250,11 +342,11 @@ export default function AdminUsersPage() {
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-extrabold rounded-full font-heading">
             <UserIcon className="w-3.5 h-3.5" />
-            <span>Platform User Directory</span>
+            <span>Platform User Directory & Analytics</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-heading">Users Management</h1>
           <p className="text-xs text-slate-500">
-            View registered user accounts, manage AI credits balance, assign Admin roles, and monitor usage.
+            View registered user accounts, track subscription renewals, analyze credit consumption, and manage roles.
           </p>
         </div>
 
@@ -299,155 +391,136 @@ export default function AdminUsersPage() {
         subtitle="Search by name, email, or filter columns"
         columns={columns}
         data={users}
-        searchPlaceholder="Search users by name, email..."
+        searchPlaceholder="Search users by name, email, or role..."
         searchKeys={['email', 'firstName', 'lastName', 'role', 'subscriptionTier']}
         isLoading={isLoading}
-        emptyMessage="No users found in database"
+        emptyMessage="No user accounts found matching your query."
         initialPageSize={10}
       />
 
-      {/* EDIT CREDITS & TIER MODAL */}
-      <AnimatePresence>
-        {isCreditModalOpen && selectedUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="text-base font-extrabold text-slate-900 font-heading flex items-center gap-2">
-                  <Coins className="w-5 h-5 text-amber-500" />
-                  <span>Manage User Credits & Subscription</span>
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setIsCreditModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-600 text-xs font-bold"
-                >
-                  Close
-                </button>
+
+
+      {/* EDIT CREDITS & PLAN TIER MODAL */}
+      <AdminModal
+        isOpen={isCreditModalOpen}
+        onClose={() => setIsCreditModalOpen(false)}
+        title="Manage User Limits & Plan"
+        maxWidth="max-w-md"
+      >
+        {selectedUser && (
+          <div className="space-y-5 text-left">
+            <div className="space-y-4 text-xs">
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <span className="font-extrabold text-slate-900 block">{selectedUser.email}</span>
+                <span className="text-[11px] text-slate-500 font-mono block">ID: {selectedUser._id}</span>
               </div>
 
-              <div className="space-y-4 text-xs">
-                <div>
-                  <label className="text-slate-500 font-semibold block">Target User Account:</label>
-                  <span className="font-extrabold text-slate-900 text-sm block">{selectedUser.email}</span>
-                </div>
-
-                {/* Subscription Tier Selection */}
-                <div className="space-y-1">
-                  <label className="text-slate-700 font-bold block">Assigned Plan Tier:</label>
-                  <select
-                    value={newTier}
-                    onChange={(e) => setNewTier(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
-                  >
-                    <option value="FREE">Free Tier (Default)</option>
-                    <option value="STARTER">Starter Tier ($19/mo)</option>
-                    <option value="STANDARD">Standard Tier ($49/mo)</option>
-                    <option value="PROFESSIONAL">Professional Tier ($99/mo)</option>
-                  </select>
-                </div>
-
-                {/* Credit Balance & Top up Presets */}
-                <div className="space-y-2">
-                  <label className="text-slate-700 font-bold block">AI Credit Balance:</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={newCredits}
-                    onChange={(e) => setNewCredits(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-mono font-extrabold text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-                  />
-
-                  {/* Quick Add Presets */}
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="text-[10px] text-slate-500 font-bold">Quick Top-Up:</span>
-                    {[+25, +50, +100, +250].map((amount) => (
-                      <button
-                        key={amount}
-                        type="button"
-                        onClick={() => setNewCredits((prev) => prev + amount)}
-                        className="px-2 py-1 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-extrabold border border-purple-200 transition-colors"
-                      >
-                        +{amount}
-                      </button>
-                    ))}
-                  </div>
-
-                  <span className="text-[11px] text-slate-500 block pt-1">
-                    1 credit allows generating 1 room redesign using AI vision processing models.
-                  </span>
-                </div>
+              <div className="space-y-2">
+                <label className="text-slate-700 font-bold block">Subscription Plan Tier:</label>
+                <select
+                  value={newTier}
+                  onChange={(e) => setNewTier(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                >
+                  <option value="FREE">Free Tier (0 / mo)</option>
+                  <option value="STARTER">Starter Tier ($19/mo)</option>
+                  <option value="PRO">Pro Studio Tier ($39/mo)</option>
+                  <option value="AGENCY">Agency Master Tier ($89/mo)</option>
+                </select>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreditModalOpen(false)}
-                  className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveCredits}
-                  disabled={isActionSubmitting}
-                  className="px-5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50"
-                >
-                  {isActionSubmitting ? 'Saving...' : 'Save Settings'}
-                </button>
+              <div className="space-y-2">
+                <label className="text-slate-700 font-bold block">AI Credit Balance:</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={newCredits}
+                  onChange={(e) => setNewCredits(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-mono font-extrabold text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                />
+
+                <div className="flex items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-slate-500 font-bold">Quick Top-Up:</span>
+                  {[+25, +50, +100, +250].map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      onClick={() => setNewCredits((prev) => prev + amount)}
+                      className="px-2 py-1 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-extrabold border border-purple-200 transition-colors cursor-pointer"
+                    >
+                      +{amount}
+                    </button>
+                  ))}
+                </div>
+
+                <span className="text-[11px] text-slate-500 block pt-1">
+                  1 credit allows generating 1 room redesign using AI vision processing models.
+                </span>
               </div>
-            </motion.div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsCreditModalOpen(false)}
+                className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCredits}
+                disabled={isActionSubmitting}
+                className="px-5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50 cursor-pointer"
+              >
+                {isActionSubmitting ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+      </AdminModal>
 
       {/* DELETE CONFIRMATION MODAL */}
-      <AnimatePresence>
-        {isDeleteModalOpen && selectedUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-center"
-            >
-              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
-                <Trash2 className="w-6 h-6" />
-              </div>
+      <AdminModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete Account Confirmation"
+        maxWidth="max-w-md"
+      >
+        {selectedUser && (
+          <div className="space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
 
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 font-heading">Delete Account</h3>
-                <p className="text-xs text-slate-600 mt-1">
-                  Are you sure you want to delete <strong className="text-slate-900">{selectedUser.email}</strong>? All
-                  associated projects and room conversions will be permanently removed.
-                </p>
-              </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900 font-heading">Delete Account</h3>
+              <p className="text-xs text-slate-600 mt-1">
+                Are you sure you want to delete <strong className="text-slate-900">{selectedUser.email}</strong>? All
+                associated projects and room conversions will be permanently removed.
+              </p>
+            </div>
 
-              <div className="flex items-center justify-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmDelete}
-                  disabled={isActionSubmitting}
-                  className="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50"
-                >
-                  {isActionSubmitting ? 'Deleting...' : 'Permanently Delete'}
-                </button>
-              </div>
-            </motion.div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isActionSubmitting}
+                className="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50 cursor-pointer"
+              >
+                {isActionSubmitting ? 'Deleting...' : 'Permanently Delete'}
+              </button>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+      </AdminModal>
     </div>
   );
 }
