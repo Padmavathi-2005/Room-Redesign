@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import AdminModal from '@/components/admin/AdminModal';
+import { useAdminSearch } from '@/context/AdminSearchContext';
 import { adminService, AdminUser } from '@/services/admin.service';
 
 interface UserSubscriptionDetails {
@@ -54,6 +55,7 @@ interface UserCreditLog {
 }
 
 export default function AdminUsersPage() {
+  const { searchQuery } = useAdminSearch();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -366,7 +368,8 @@ export default function AdminUsersPage() {
       <DataTable
         columns={columns}
         data={users}
-        searchPlaceholder="Search users by name, email, or role..."
+        externalSearchQuery={searchQuery}
+        hideSearchInput={true}
         searchKeys={['email', 'firstName', 'lastName', 'role', 'subscriptionTier']}
         isLoading={isLoading}
         emptyMessage="No user accounts found matching your query."
