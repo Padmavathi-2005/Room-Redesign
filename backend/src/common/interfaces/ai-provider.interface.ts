@@ -6,6 +6,7 @@ export interface WorkflowStepItem {
 }
 
 export interface ImageGenerationInput {
+  userId?: string;
   prompt: string;
   negativePrompt?: string;
   imageBuffer?: Buffer;

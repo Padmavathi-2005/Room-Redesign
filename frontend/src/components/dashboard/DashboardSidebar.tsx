@@ -22,6 +22,7 @@ import {
   Info,
   Mail,
   HelpCircle,
+  Gift,
 } from 'lucide-react';
 
 import { CreditTokenIcon } from '@/components/ui';
@@ -112,9 +113,6 @@ export default function DashboardSidebar({
     { label: 'Home', href: '/dashboard', icon: Home },
     { label: 'Projects Workspace', href: '/projects', icon: Folder },
     { label: 'My Designs', href: '/designs', icon: LayoutGrid },
-    { label: 'Interior Design', href: '/generate?tool=interior-design', icon: Wand2 },
-    { label: 'Exterior Design', href: '/generate?tool=exterior-design', icon: Building2 },
-    { label: 'Floor Plan', href: '/generate?tool=floor-plan-generator', icon: Ruler },
     { label: 'Inspiration', href: '/dashboard/inspiration', icon: Sparkles },
   ];
 

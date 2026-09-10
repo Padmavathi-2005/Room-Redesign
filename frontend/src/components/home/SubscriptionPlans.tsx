@@ -5,12 +5,14 @@ import { motion } from 'framer-motion';
 import { Check, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { CreditTokenIcon } from '../ui';
+import { useCurrency } from '@/context/CurrencyContext';
 
 interface Plan {
   id: 'starter' | 'standard' | 'professional';
   name: string;
   subtitle: string;
   price: string;
+  numericPrice: number;
   discountBadge?: string;
   creditsBadge: string;
   popular?: boolean;
@@ -23,6 +25,7 @@ const PRICING_PLANS: Plan[] = [
     name: 'Free Plan',
     subtitle: 'Explore RoomAI tools & workspace',
     price: '$0',
+    numericPrice: 0,
     creditsBadge: '0 credits',
     features: [
       '0 Initial Credits',
@@ -37,6 +40,7 @@ const PRICING_PLANS: Plan[] = [
     name: 'Starter Plan',
     subtitle: 'Ideal for homeowners & single room projects',
     price: '$19',
+    numericPrice: 19,
     discountBadge: 'POPULAR',
     creditsBadge: '40 credits',
     popular: true,
@@ -53,6 +57,7 @@ const PRICING_PLANS: Plan[] = [
     name: 'Pro Plan',
     subtitle: 'For professional designers & architects',
     price: '$39',
+    numericPrice: 39,
     creditsBadge: '100 credits',
     features: [
       '100 AI Credits per month',
@@ -66,8 +71,30 @@ const PRICING_PLANS: Plan[] = [
 ];
 
 export default function SubscriptionPlans() {
+  const { formatPrice } = useCurrency();
+  const [userAssignedPlan, setUserAssignedPlan] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkUserPlan = () => {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          try {
+            const u = JSON.parse(stored);
+            if (u && u.plan) {
+              setUserAssignedPlan(u.plan.toLowerCase());
+            }
+          } catch (e) {}
+        }
+      };
+      checkUserPlan();
+      window.addEventListener('user-updated', checkUserPlan);
+      return () => window.removeEventListener('user-updated', checkUserPlan);
+    }
+  }, []);
+
   return (
-    <section id="pricing" className="relative w-full pt-36 sm:pt-40 pb-20 bg-slate-100/60 dark:bg-slate-900/60 border-y border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
+    <section id="pricing" className="relative w-full pt-36 sm:pt-40 pb-20 bg-transparent text-slate-900 dark:text-white">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
 
         {/* Section Header */}
@@ -131,17 +158,34 @@ export default function SubscriptionPlans() {
                 </div>
 
                 {/* Price */}
-                <div className="text-center py-2">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-heading">
-                      {plan.price}
-                    </span>
-                    {plan.discountBadge && (
-                      <span className="px-2.5 py-0.5 text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded-full border border-amber-200 dark:border-amber-800">
-                        {plan.discountBadge}
+                <div className="text-center py-2 space-y-1">
+                  {userAssignedPlan && (userAssignedPlan.includes(plan.id) || (userAssignedPlan.includes('pro') && plan.id === 'professional') || (userAssignedPlan.includes('agency') && plan.id === 'professional') || (userAssignedPlan.includes('starter') && plan.id === 'standard')) ? (
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-2xl font-bold text-slate-400 line-through tracking-tight font-heading">
+                          {formatPrice(plan.numericPrice)}
+                        </span>
+                        <span className="text-2xl font-black text-amber-500 font-heading">
+                          {formatPrice(0)}
+                        </span>
+                      </div>
+                      <span className="inline-flex items-center gap-1 px-3 py-1 text-[11px] font-black bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 rounded-[10px] shadow-md border border-amber-300">
+                        <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+                        <span>FREE ASSIGNED (ADMIN GRANTED)</span>
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-heading">
+                        {formatPrice(plan.numericPrice)}
+                      </span>
+                      {plan.discountBadge && (
+                        <span className="px-2.5 py-0.5 text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded-full border border-amber-200 dark:border-amber-800">
+                          {plan.discountBadge}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <span className="text-xs text-slate-400 font-medium">per month</span>
                 </div>
 

@@ -316,9 +316,16 @@ export class ProjectsService {
   async remove(id: string): Promise<{ success: boolean; id: string }> {
     try {
       if (Types.ObjectId.isValid(id)) {
+        const objId = new Types.ObjectId(id);
+        // Delete the project itself
         await this.projectModel.findByIdAndDelete(id).exec();
-        await this.roomModel.deleteMany({ projectId: id }).exec();
-        await this.conversationModel.deleteMany({ projectId: id }).exec();
+        // Delete all project rooms (uploaded room configs)
+        await this.roomModel.deleteMany({ projectId: objId }).exec();
+        // Delete all conversations
+        await this.conversationModel.deleteMany({ projectId: objId }).exec();
+        // Delete ALL AI-generated room images/generations belonging to this project
+        await this.generationModel.deleteMany({ projectId: objId }).exec();
+        this.logger.log(`Deleted project ${id} and all associated rooms, conversations, and generations.`);
       }
     } catch (err) {
       // Fall through

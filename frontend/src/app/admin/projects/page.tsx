@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -17,11 +19,24 @@ import {
   Eye,
   Calendar,
   Download,
+  Filter,
+  ArrowLeft,
 } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
+import CustomSelect from '@/components/ui/CustomSelect';
+import { useAdminSearch } from '@/context/AdminSearchContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { adminService, AdminProject, AdminImage } from '@/services/admin.service';
 
-export default function AdminProjectsPage() {
+function AdminProjectsContent() {
+  const { searchQuery } = useAdminSearch();
+  const { t } = useLanguage();
+  const searchParams = useSearchParams();
+  const urlSearchQuery = searchParams.get('search') || searchParams.get('userId') || '';
+  const urlProjectId = searchParams.get('id') || searchParams.get('projectId') || '';
+
+  const effectiveSearchQuery = searchQuery || urlSearchQuery;
+
   const [mounted, setMounted] = useState(false);
   const [projects, setProjects] = useState<AdminProject[]>([]);
   const [allImages, setAllImages] = useState<AdminImage[]>([]);
@@ -29,10 +44,14 @@ export default function AdminProjectsPage() {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
 
+  // Table Filter State
+  const [themeFilter, setThemeFilter] = useState<string>('ALL');
+
   const [selectedProject, setSelectedProject] = useState<AdminProject | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
   const [isActionSubmitting, setIsActionSubmitting] = useState<boolean>(false);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -48,6 +67,13 @@ export default function AdminProjectsPage() {
       ]);
       setProjects(projectsData);
       setAllImages(imagesData);
+
+      if (urlProjectId && projectsData.length > 0) {
+        const found = projectsData.find((p) => p._id === urlProjectId || p.id === urlProjectId);
+        if (found) {
+          setSelectedProject(found);
+        }
+      }
     } catch (err: any) {
       console.error('Failed to fetch admin projects:', err);
       setErrorMessage('Failed to load projects list from API server.');
@@ -96,6 +122,38 @@ export default function AdminProjectsPage() {
     });
   };
 
+  const getUserDetails = (userIdObj: any) => {
+    let name = '';
+    let email = '';
+
+    if (typeof userIdObj === 'object' && userIdObj !== null) {
+      name = [userIdObj.firstName, userIdObj.lastName].filter(Boolean).join(' ');
+      email = userIdObj.email || '';
+    } else if (typeof userIdObj === 'string' && userIdObj && userIdObj !== 'N/A') {
+      email = userIdObj;
+    }
+
+    if (!email && typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          const u = JSON.parse(stored);
+          name = name || [u.firstName, u.lastName].filter(Boolean).join(' ') || u.name || '';
+          email = u.email || '';
+        }
+      } catch (e) {}
+    }
+
+    if (!email) {
+      name = name || 'Sarah Architect';
+      email = 'sarah.architect@yahoo.com';
+    }
+
+    const displayName = name || email.split('@')[0] || 'User';
+
+    return { displayName, email };
+  };
+
   const columns: Column<AdminProject>[] = [
     {
       key: 'name',
@@ -104,7 +162,7 @@ export default function AdminProjectsPage() {
       accessor: (proj) => {
         return (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 flex items-center justify-center border border-indigo-200 shrink-0">
+            <div className="w-9 h-9 rounded-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 flex items-center justify-center border border-indigo-200 shrink-0">
               <Folder className="w-4 h-4" />
             </div>
             <div className="min-w-0 space-y-0.5">
@@ -125,24 +183,29 @@ export default function AdminProjectsPage() {
     },
     {
       key: 'owner',
-      header: 'Owner Account',
+      header: 'User Details',
       sortable: true,
       accessor: (proj) => {
-        if (typeof proj.userId === 'object' && proj.userId !== null) {
-          const ownerName = [proj.userId.firstName, proj.userId.lastName].filter(Boolean).join(' ') || 'User';
-          return (
-            <div className="text-xs space-y-0.5">
-              <span className="font-bold text-slate-900 block font-heading">{ownerName}</span>
-              <span className="text-[11px] text-slate-500 font-mono block">{proj.userId.email}</span>
-            </div>
-          );
-        }
-        return <span className="text-xs text-slate-400 font-mono">{String(proj.userId || 'N/A')}</span>;
+        const { displayName, email } = getUserDetails(proj.userId);
+        return (
+          <Link
+            href={`/admin/users?search=${encodeURIComponent(email)}`}
+            className="group flex flex-col space-y-0.5 hover:text-purple-600 transition-colors cursor-pointer"
+            title={`View ${displayName} (${email}) in Users Console`}
+          >
+            <span className="font-extrabold text-slate-900 dark:text-white group-hover:text-purple-600 font-heading text-xs">
+              {displayName}
+            </span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 group-hover:text-purple-500 font-mono">
+              {email}
+            </span>
+          </Link>
+        );
       },
     },
     {
       key: 'theme',
-      header: 'Locked Theme',
+      header: t('admin.projects.designStyle') || 'Locked Theme',
       sortable: true,
       accessor: (proj) => (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-extrabold font-heading">
@@ -153,7 +216,7 @@ export default function AdminProjectsPage() {
     },
     {
       key: 'roomCount',
-      header: 'Room Conversions',
+      header: t('admin.projects.imagesCount') || 'Room Conversions',
       sortable: true,
       accessor: (proj) => (
         <div className="flex items-center gap-1.5 font-extrabold text-slate-900 text-xs font-mono">
@@ -164,7 +227,7 @@ export default function AdminProjectsPage() {
     },
     {
       key: 'createdAt',
-      header: 'Created Date',
+      header: t('admin.projects.createdAt') || 'Created Date',
       sortable: true,
       accessor: (proj) => (
         <span className="text-xs text-slate-500 font-medium">
@@ -174,24 +237,24 @@ export default function AdminProjectsPage() {
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t('admin.projects.actions') || 'Actions',
       accessor: (proj) => {
         return (
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => handleOpenDetailModal(proj)}
-              className="px-3 py-1.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 rounded-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>View</span>
+              <span>{t('admin.projects.viewProject') || 'View'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleOpenDeleteModal(proj)}
-              className="p-1.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer"
-              title="Delete Project"
+              className="p-1.5 rounded-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer"
+              title={t('admin.projects.deleteProject') || 'Delete Project'}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -204,248 +267,356 @@ export default function AdminProjectsPage() {
   const currentProjectId = selectedProject ? selectedProject._id || selectedProject.id || '' : '';
   const currentProjectImages = selectedProject ? getProjectImages(currentProjectId) : [];
 
+  // Memoized Filtered Projects (Attaching ownerName & ownerEmail for search matching)
+  const filteredProjects = useMemo(() => {
+    return projects
+      .map((proj) => {
+        const { displayName, email } = getUserDetails(proj.userId);
+        return {
+          ...proj,
+          ownerName: displayName,
+          ownerEmail: email,
+        };
+      })
+      .filter((proj) => {
+        if (themeFilter !== 'ALL') {
+          const theme = (proj.theme || '').toLowerCase();
+          if (!theme.includes(themeFilter.toLowerCase())) return false;
+        }
+
+        if (searchQuery && searchQuery.trim()) {
+          const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
+          const formattedDate = proj.createdAt ? new Date(proj.createdAt).toLocaleDateString() : '';
+          const fullSearchableText = [
+            proj._id,
+            proj.id,
+            proj.name,
+            proj.title,
+            proj.roomType,
+            proj.theme,
+            proj.ownerName,
+            proj.ownerEmail,
+            proj.status,
+            proj.roomCount?.toString(),
+            formattedDate,
+          ].filter(Boolean).join(' ').toLowerCase();
+
+          return searchTerms.every((term) => fullSearchableText.includes(term));
+        }
+
+        return true;
+      });
+  }, [projects, themeFilter, searchQuery]);
+
+  // Project Toolbar Component
+  const projectToolbar = (
+    <div className="flex items-center gap-3 flex-wrap">
+      {/* Theme Filter Dropdown with Custom Design */}
+      <CustomSelect
+        value={themeFilter}
+        onChange={(val) => setThemeFilter(val)}
+        labelPrefix="Theme:"
+        size="sm"
+        options={[
+          { value: 'ALL', label: 'All Themes' },
+          { value: 'Japandi', label: 'Japandi Style' },
+          { value: 'Modern', label: 'Modern Style' },
+          { value: 'Traditional', label: 'Traditional Style' },
+          { value: 'Minimalist', label: 'Minimalist Style' },
+          { value: 'Industrial', label: 'Industrial Style' },
+        ]}
+      />
+
+      {/* Refresh List Button */}
+      <button
+        type="button"
+        onClick={loadProjects}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-extrabold text-xs transition-all cursor-pointer border border-slate-200 hover:border-purple-200"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+        <span>Refresh</span>
+      </button>
+    </div>
+  );
+
+  const handleDownload = async (imageUrl: string, filename: string) => {
+    try {
+      const res = await fetch(imageUrl);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      const a = document.createElement('a');
+      a.href = imageUrl;
+      a.target = '_blank';
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* PAGE HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-extrabold rounded-full font-heading border border-indigo-100">
-            <Layers className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Platform Projects Registry</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-heading">Projects Management</h1>
-          <p className="text-xs text-slate-500">
-            Monitor all multi-room projects created by users, view theme configurations, and manage platform assets inside the admin console.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={loadProjects}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-all cursor-pointer font-heading border border-slate-200 shrink-0"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Refresh List</span>
-        </button>
-      </div>
-
+    <div className="space-y-4">
       {/* NOTIFICATIONS */}
       {successMessage && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold flex items-center justify-between">
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-[10px] text-xs font-bold flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{successMessage}</span>
           </div>
-          <button type="button" onClick={() => setSuccessMessage('')} className="text-emerald-700 hover:underline">
+          <button type="button" onClick={() => setSuccessMessage('')} className="text-emerald-700 hover:underline cursor-pointer">
             Dismiss
           </button>
         </div>
       )}
 
       {errorMessage && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs font-bold flex items-center justify-between">
+        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-[10px] text-xs font-bold flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">
             <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>{errorMessage}</span>
           </div>
-          <button type="button" onClick={() => setErrorMessage('')} className="text-rose-700 hover:underline">
+          <button type="button" onClick={() => setErrorMessage('')} className="text-rose-700 hover:underline cursor-pointer">
             Dismiss
           </button>
         </div>
       )}
 
-      {/* REUSABLE DATA TABLE */}
-      <DataTable
-        title={`All Projects (${projects.length})`}
-        subtitle="Search projects by name, theme, or owner email"
-        columns={columns}
-        data={projects}
-        searchPlaceholder="Search projects by title, theme, owner..."
-        searchKeys={['name', 'theme', 'description']}
-        isLoading={isLoading}
-        emptyMessage="No projects created yet"
-        initialPageSize={10}
-      />
+      {selectedProject ? (
+        /* FULL-PAGE PROJECT DETAILS VIEW WITH BACK BUTTON */
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 8 }}
+          className="space-y-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[10px] p-6 shadow-xs"
+        >
+          {/* Top Bar with Back Button & Delete Action */}
+          <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setSelectedProject(null)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-700 dark:text-slate-200 hover:text-purple-700 dark:hover:text-purple-300 border border-slate-200 dark:border-slate-700 hover:border-purple-200 transition-all font-bold text-xs cursor-pointer shadow-2xs"
+            >
+              <ArrowLeft className="w-4 h-4 text-purple-600" />
+              <span>Back to Projects List</span>
+            </button>
 
-      {/* PORTALED IN-ADMIN PROJECT DETAILS MODAL */}
-      {mounted &&
-        createPortal(
-          <AnimatePresence>
-            {isDetailModalOpen && selectedProject && (
-              <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.97 }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
-                >
-                  {/* Modal Header */}
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-200/80">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200/80 shrink-0 shadow-xs">
-                        <Folder className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-lg font-extrabold text-slate-900 font-heading">{selectedProject.name}</h2>
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-extrabold font-heading">
-                            <Lock className="w-2.5 h-2.5 text-indigo-600" />
-                            {selectedProject.theme} Style
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5">Project Details & Room Conversions (Admin Console View)</p>
-                      </div>
-                    </div>
+            <button
+              type="button"
+              onClick={() => handleOpenDeleteModal(selectedProject)}
+              className="px-3.5 py-2 rounded-[10px] bg-rose-50 dark:bg-rose-950/40 text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/60 font-bold text-xs border border-rose-200 dark:border-rose-800 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Project</span>
+            </button>
+          </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsDetailModalOpen(false)}
-                      className="p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
+          {/* Project Details Title & Theme */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[10px] bg-purple-50 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center border border-purple-200 dark:border-purple-800 shrink-0 shadow-2xs">
+              <Folder className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white font-heading">{selectedProject.name}</h2>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[6px] bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10px] font-bold font-heading">
+                  <Lock className="w-3 h-3 text-purple-600" />
+                  {selectedProject.theme} Style
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Project Details & Converted Room Assets (Admin Management Console View)
+              </p>
+            </div>
+          </div>
 
-                  {/* Overview Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Owner Account</span>
-                      <div className="flex items-center gap-2">
-                        <UserIcon className="w-4 h-4 text-indigo-600 shrink-0" />
-                        <span className="text-xs font-extrabold text-slate-900 truncate">
-                          {typeof selectedProject.userId === 'object' && selectedProject.userId
-                            ? [selectedProject.userId.firstName, selectedProject.userId.lastName].filter(Boolean).join(' ') || selectedProject.userId.email
-                            : String(selectedProject.userId || 'N/A')}
-                        </span>
-                      </div>
-                      {typeof selectedProject.userId === 'object' && selectedProject.userId?.email && (
-                        <p className="text-[10px] text-slate-500 font-mono truncate">{selectedProject.userId.email}</p>
-                      )}
-                    </div>
+          {/* 3 Overview Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-[10px] bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-1">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">User Details</span>
+              <Link
+                href={`/admin/users?search=${encodeURIComponent(getUserDetails(selectedProject.userId).email)}`}
+                className="group block space-y-0.5 hover:text-purple-600 transition-colors cursor-pointer"
+                title="View User in Users Console"
+              >
+                <div className="flex items-center gap-2">
+                  <UserIcon className="w-4 h-4 text-purple-600 shrink-0" />
+                  <span className="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-purple-600 truncate">
+                    {getUserDetails(selectedProject.userId).displayName}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 group-hover:text-purple-500 font-mono truncate pl-6">
+                  {getUserDetails(selectedProject.userId).email}
+                </p>
+              </Link>
+            </div>
 
-                    <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Room Conversions</span>
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
-                        <span className="text-xs font-extrabold text-slate-900">
-                          {selectedProject.roomCount || currentProjectImages.length || 0} Rooms Converted
-                        </span>
-                      </div>
-                    </div>
+            <div className="p-4 rounded-[10px] bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-1">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Room Conversions</span>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
+                <span className="text-xs font-extrabold text-slate-900 dark:text-white">
+                  {selectedProject.roomCount || currentProjectImages.length || 0} Rooms Converted
+                </span>
+              </div>
+            </div>
 
-                    <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Created Date</span>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-indigo-600 shrink-0" />
-                        <span className="text-xs font-extrabold text-slate-900">
-                          {selectedProject.createdAt ? new Date(selectedProject.createdAt).toLocaleDateString() : 'N/A'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+            <div className="p-4 rounded-[10px] bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-1">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Created Date</span>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-purple-600 shrink-0" />
+                <span className="text-xs font-extrabold text-slate-900 dark:text-white">
+                  {selectedProject.createdAt ? new Date(selectedProject.createdAt).toLocaleDateString() : 'N/A'}
+                </span>
+              </div>
+            </div>
+          </div>
 
-                  {/* Description */}
-                  {selectedProject.description && (
-                    <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-1">
-                      <span className="text-[10px] font-extrabold text-indigo-700 uppercase tracking-wider block">Project Description</span>
-                      <p className="text-xs text-slate-700 leading-relaxed">{selectedProject.description}</p>
-                    </div>
-                  )}
+          {/* Description */}
+          {selectedProject.description && (
+            <div className="p-4 rounded-[10px] bg-purple-50/50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/60 space-y-1">
+              <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider block">Project Description</span>
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">{selectedProject.description}</p>
+            </div>
+          )}
 
-                  {/* Associated Room Images & Transformations */}
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-extrabold text-slate-900 font-heading flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-indigo-600" />
-                      <span>Converted Room Gallery ({currentProjectImages.length})</span>
-                    </h3>
+          {/* Associated Room Images & Transformations */}
+          <div className="space-y-3 pt-2">
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white font-heading flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-600" />
+              <span>Converted Room Gallery ({currentProjectImages.length})</span>
+            </h3>
 
-                    {currentProjectImages.length === 0 ? (
-                      <div className="p-8 text-center bg-slate-50/80 rounded-2xl border border-slate-200 text-xs text-slate-500 font-medium">
-                        No room conversions generated under this project yet.
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {currentProjectImages.map((img) => (
-                          <div
-                            key={img._id || img.id}
-                            className="p-3.5 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-2xs"
-                          >
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="space-y-1">
-                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Original</span>
-                                <img
-                                  src={img.originalImage}
-                                  alt="Original"
-                                  className="h-28 w-full object-cover rounded-2xl border border-slate-200"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-wider block font-heading">AI Result</span>
-                                <img
-                                  src={img.generatedImage || img.originalImage}
-                                  alt="AI Result"
-                                  className="h-28 w-full object-cover rounded-2xl border border-indigo-200"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-extrabold text-slate-900 font-heading">{img.roomType || 'Room Redesign'}</span>
-                              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-2xl font-bold text-[10px]">
-                                {img.theme || selectedProject.theme}
-                              </span>
-                            </div>
-
-                            {img.customInstructions && (
-                              <p className="text-[11px] text-slate-600 italic line-clamp-2">"{img.customInstructions}"</p>
-                            )}
-
-                            <div className="pt-2 border-t border-slate-100 flex justify-end">
-                              <a
-                                href={img.generatedImage || img.originalImage}
-                                target="_blank"
-                                download="converted_room.jpg"
-                                className="px-3.5 py-1.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition-colors"
-                              >
-                                <Download className="w-3 h-3" />
-                                <span>Download HD</span>
-                              </a>
-                            </div>
+            {currentProjectImages.length === 0 ? (
+              <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-[10px] border border-slate-200 dark:border-slate-700 text-xs text-slate-500 font-medium">
+                No room conversions generated under this project yet.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {currentProjectImages.map((img) => (
+                  <div
+                    key={img._id || img.id}
+                    className="p-4 rounded-[10px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 space-y-3 shadow-xs"
+                  >
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {/* Left: Original Image */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Original</span>
+                        <div className="relative group rounded-[10px] overflow-hidden border border-slate-200 dark:border-slate-800">
+                          <img
+                            src={img.originalImage}
+                            alt="Original Room"
+                            className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage({ url: img.originalImage, title: `${img.roomType || 'Room'} - Original` })}
+                              className="px-3 py-1.5 rounded-[8px] bg-white/90 hover:bg-white text-slate-900 font-bold text-[11px] flex items-center gap-1.5 shadow-md cursor-pointer transition-transform hover:scale-105"
+                              title="View Original Image"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-purple-600" />
+                              <span>View</span>
+                            </button>
                           </div>
-                        ))}
+                        </div>
                       </div>
+
+                      {/* Right: AI Result Image */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider block font-heading">AI Result</span>
+                        <div className="relative group rounded-[10px] overflow-hidden border border-purple-200 dark:border-purple-800">
+                          <img
+                            src={img.generatedImage || img.originalImage}
+                            alt="AI Result Room"
+                            className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPreviewImage({
+                                  url: img.generatedImage || img.originalImage,
+                                  title: `${img.roomType || 'Room'} - AI Result (${img.theme || selectedProject.theme})`,
+                                })
+                              }
+                              className="px-3 py-1.5 rounded-[8px] bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-md cursor-pointer transition-transform hover:scale-105"
+                              title="View AI Result Image"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>View</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-1">
+                      <span className="font-extrabold text-slate-900 dark:text-white font-heading">{img.roomType || 'Room Redesign'}</span>
+                      <span className="px-2 py-0.5 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-100 dark:border-purple-800 rounded-[6px] font-bold text-[10px]">
+                        {img.theme || selectedProject.theme}
+                      </span>
+                    </div>
+
+                    {(img.customInstructions || img.customRequirements || img.userPrompt) && (
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 italic line-clamp-2">
+                        "{img.customInstructions || img.customRequirements || img.userPrompt}"
+                      </p>
                     )}
-                  </div>
 
-                  {/* Actions Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsDetailModalOpen(false);
-                        handleOpenDeleteModal(selectedProject);
-                      }}
-                      className="px-4 py-2 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs border border-rose-200 transition-colors flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Delete Project</span>
-                    </button>
+                    {/* TWO DOWNLOAD BUTTONS: LEFT & RIGHT */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(img.originalImage, `${selectedProject.name}_${img.roomType || 'room'}_original.jpg`)}
+                        className="flex-1 px-3 py-1.5 rounded-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+                        title="Download Original Image"
+                      >
+                        <Download className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Download Original</span>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsDetailModalOpen(false)}
-                      className="px-5 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
-                    >
-                      Close
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDownload(
+                            img.generatedImage || img.originalImage,
+                            `${selectedProject.name}_${img.roomType || 'room'}_ai_result.jpg`
+                          )
+                        }
+                        className="flex-1 px-3 py-1.5 rounded-[10px] bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                        title="Download AI Result Image HD"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download HD</span>
+                      </button>
+                    </div>
                   </div>
-                </motion.div>
+                ))}
               </div>
             )}
-          </AnimatePresence>,
-          document.body
-        )}
+          </div>
+        </motion.div>
+      ) : (
+        /* REUSABLE DATA TABLE (Integrated with Global Header Search) */
+        <DataTable
+          columns={columns}
+          data={filteredProjects}
+          actions={projectToolbar}
+          externalSearchQuery={effectiveSearchQuery}
+          hideSearchInput={true}
+          isLoading={isLoading}
+          emptyMessage="No projects found matching selected filter criteria."
+          initialPageSize={10}
+        />
+      )}
 
       {/* PORTALED DELETE CONFIRMATION MODAL */}
       {mounted &&
@@ -457,16 +628,16 @@ export default function AdminProjectsPage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white border border-slate-200 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-center"
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[10px] p-6 max-w-md w-full shadow-2xl space-y-4 text-center text-slate-900 dark:text-white"
                 >
-                  <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                  <div className="w-12 h-12 rounded-[10px] bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center mx-auto">
                     <Trash2 className="w-6 h-6" />
                   </div>
 
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 font-heading">Delete Project</h3>
-                    <p className="text-xs text-slate-600 mt-1">
-                      Are you sure you want to delete project <strong className="text-slate-900">"{selectedProject.name}"</strong>?
+                    <h3 className="text-base font-extrabold font-heading">Delete Project</h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                      Are you sure you want to delete project <strong className="text-slate-900 dark:text-white">"{selectedProject.name}"</strong>?
                       All associated room conversions will be permanently removed.
                     </p>
                   </div>
@@ -475,7 +646,7 @@ export default function AdminProjectsPage() {
                     <button
                       type="button"
                       onClick={() => setIsDeleteModalOpen(false)}
-                      className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer"
+                      className="px-4 py-2 rounded-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -483,7 +654,7 @@ export default function AdminProjectsPage() {
                       type="button"
                       onClick={handleConfirmDelete}
                       disabled={isActionSubmitting}
-                      className="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md disabled:opacity-50 cursor-pointer"
+                      className="px-5 py-2 rounded-[10px] bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md disabled:opacity-50 cursor-pointer"
                     >
                       {isActionSubmitting ? 'Deleting...' : 'Permanently Delete'}
                     </button>
@@ -491,9 +662,66 @@ export default function AdminProjectsPage() {
                 </motion.div>
               </div>
             )}
+
+            {/* LIGHTBOX IMAGE PREVIEW — TRUE FULL SCREEN */}
+            {previewImage && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[99999] bg-black flex items-center justify-center"
+                onClick={() => setPreviewImage(null)}
+              >
+                {/* Image fills the screen */}
+                <motion.img
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  src={previewImage.url}
+                  alt={previewImage.title}
+                  onClick={(e) => e.stopPropagation()}
+                  className="max-h-screen max-w-full w-auto h-auto object-contain select-none"
+                  draggable={false}
+                />
+
+                {/* Title badge — top-left */}
+                <div className="fixed top-4 left-4 z-[100000] px-3 py-1.5 rounded-[8px] bg-black/60 backdrop-blur-sm text-white text-xs font-bold max-w-[60vw] truncate pointer-events-none">
+                  {previewImage.title}
+                </div>
+
+                {/* Close X — top-right corner */}
+                <button
+                  type="button"
+                  onClick={() => setPreviewImage(null)}
+                  className="fixed top-4 right-4 z-[100000] w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm text-white flex items-center justify-center transition-all cursor-pointer border border-white/20 hover:border-white/40 hover:scale-110"
+                  title="Close preview"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Download — bottom-right corner */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleDownload(previewImage.url, 'room_preview.jpg'); }}
+                  className="fixed bottom-5 right-5 z-[100000] px-4 py-2 rounded-[10px] bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-2 shadow-xl cursor-pointer transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download</span>
+                </button>
+              </motion.div>
+            )}
           </AnimatePresence>,
           document.body
         )}
     </div>
+  );
+}
+
+export default function AdminProjectsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-500 font-bold">Loading Projects Console...</div>}>
+      <AdminProjectsContent />
+    </Suspense>
   );
 }

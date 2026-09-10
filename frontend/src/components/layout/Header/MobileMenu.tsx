@@ -14,7 +14,6 @@ interface MobileMenuProps {
 }
 
 const PUBLIC_NAV_LINKS = [
-  { label: 'Designs', href: '/designs' },
   { label: 'AI Models', href: '/tools' },
   { label: 'Generate', href: '/generate', requireAuth: true },
   { label: 'Pricing', href: '/pricing' },
@@ -26,17 +25,18 @@ const DASHBOARD_NAV_LINKS = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'My Designs', href: '/designs' },
   { label: 'Projects', href: '/projects' },
-  { label: 'AI Tools', href: '/generate' },
+  { label: 'Generate', href: '/generate' },
   { label: 'Wishlist', href: '/wishlist' },
-  { label: 'Shopping List', href: '/shopping-list' },
-  { label: 'Credits & Plans', href: '/pricing' },
+  { label: 'Credits & Plans', href: '/billing' },
+  { label: 'Transactions', href: '/transactions' },
   { label: 'Profile Settings', href: '/profile' },
 ];
 
 export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = rawPathname || '';
   const router = useRouter();
 
   useEffect(() => {
@@ -70,18 +70,7 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
     }
   };
 
-  const isDashboardRoute =
-    pathname !== '/' &&
-    (pathname.startsWith('/dashboard') ||
-     pathname.startsWith('/generate') ||
-     pathname.startsWith('/designs') ||
-     pathname.startsWith('/projects') ||
-     pathname.startsWith('/wishlist') ||
-     pathname.startsWith('/shopping-list') ||
-     pathname.startsWith('/profile') ||
-     pathname.startsWith('/pricing'));
-
-  const navLinks = isDashboardRoute ? DASHBOARD_NAV_LINKS : PUBLIC_NAV_LINKS;
+  const navLinks = DASHBOARD_NAV_LINKS;
 
   return (
     <div className="lg:hidden">
@@ -163,10 +152,10 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
                     </nav>
                   </div>
 
-                  {/* Bottom Theme & Auth Options */}
-                  <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  {/* Bottom Theme & Studio Info */}
+                  <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
                     <ThemeToggle />
-                    <span className="text-xs font-bold text-slate-500 font-heading">RoomAI Studio</span>
+                    <span className="text-xs font-bold text-slate-500 font-heading">RoomAI</span>
                   </div>
                 </motion.div>
               </>

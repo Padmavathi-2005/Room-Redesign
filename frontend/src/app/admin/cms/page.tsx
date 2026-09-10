@@ -27,6 +27,8 @@ interface CmsPageItem {
   title: string;
   slug: string;
   description: string;
+  seoTitle?: string;
+  seoDescription?: string;
   status: 'draft' | 'published';
   isSystemPage: boolean;
   views: number;
@@ -106,12 +108,28 @@ export default function AdminCmsListPage() {
   };
 
   const filteredPages = pages.filter((p) => {
-    const matchesSearch =
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.slug.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+    if (!matchesStatus) return false;
+
+    if (!searchQuery || !searchQuery.trim()) return true;
+
+    const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    const formattedDate = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : '';
+
+    const fullSearchableText = [
+      p._id,
+      p.title,
+      p.slug,
+      p.status,
+      p.author,
+      p.seoTitle,
+      p.seoDescription,
+      p.isSystemPage ? 'system' : 'custom',
+      p.views?.toString(),
+      formattedDate,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    return searchTerms.every((term) => fullSearchableText.includes(term));
   });
 
   const totalViews = pages.reduce((acc, p) => acc + (p.views || 0), 0);
@@ -161,7 +179,7 @@ export default function AdminCmsListPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-black text-slate-800 font-heading">
                   <th className="py-3.5 px-5">Page Title & Slug</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">Type</th>

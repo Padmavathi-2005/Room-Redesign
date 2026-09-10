@@ -18,8 +18,10 @@ import {
   X,
 } from 'lucide-react';
 import { notificationService, NotificationItem } from '@/services/notification.service';
+import { useAdminSearch } from '@/context/AdminSearchContext';
 
 export default function AdminNotificationsPage() {
+  const { searchQuery } = useAdminSearch();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'users' | 'read'>('all');
   const [loading, setLoading] = useState(true);
@@ -104,15 +106,32 @@ export default function AdminNotificationsPage() {
   };
 
   const filteredNotifications = notifications.filter((item) => {
-    if (filter === 'unread') return !item.isRead;
-    if (filter === 'read') return item.isRead;
-    if (filter === 'users') {
-      return (
-        item.title.toLowerCase().includes('user') ||
-        item.message.toLowerCase().includes('registered')
-      );
-    }
-    return true;
+    const matchesFilter =
+      filter === 'all'
+        ? true
+        : filter === 'unread'
+        ? !item.isRead
+        : filter === 'read'
+        ? item.isRead
+        : item.title.toLowerCase().includes('user') ||
+          item.message.toLowerCase().includes('registered');
+
+    if (!matchesFilter) return false;
+
+    if (!searchQuery || !searchQuery.trim()) return true;
+
+    const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    const formattedDate = item.timestamp ? new Date(item.timestamp).toLocaleDateString() : '';
+
+    const fullSearchableText = [
+      item.title,
+      item.message,
+      item.type,
+      item.link,
+      formattedDate,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    return searchTerms.every((term) => fullSearchableText.includes(term));
   });
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -139,70 +158,45 @@ export default function AdminNotificationsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      {/* Admin Header */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-500/20">
-            <Bell className="w-6 h-6 stroke-[2.2]" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black font-heading text-slate-900 dark:text-white flex items-center gap-2">
-              <span>Admin Notifications & Alerts</span>
-              {unreadCount > 0 && (
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
-                  {unreadCount} Unread
-                </span>
-              )}
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              Monitor live user registrations, system alerts, payment events, and send platform broadcasts.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsBroadcastOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold shadow-md shadow-purple-500/20 transition-all cursor-pointer"
-          >
-            <Radio className="w-4 h-4" />
-            <span>Send Broadcast</span>
-          </button>
-
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllRead}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition-all cursor-pointer"
-            >
-              <Check className="w-4 h-4" />
-              <span>Mark All Read</span>
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Main Notifications List Container */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Filter By</span>
+      <div className="p-6 sm:p-8 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+              {(['all', 'unread', 'users', 'read'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setFilter(tab)}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold capitalize transition-all cursor-pointer ${
+                    filter === tab
+                      ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {tab === 'users' ? 'New Registrations' : tab}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
-            {(['all', 'unread', 'users', 'read'] as const).map((tab) => (
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => setIsBroadcastOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold shadow-md shadow-purple-500/20 transition-all cursor-pointer"
+            >
+              <Radio className="w-4 h-4" />
+              <span>Send Broadcast</span>
+            </button>
+
+            {unreadCount > 0 && (
               <button
-                key={tab}
-                onClick={() => setFilter(tab)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold capitalize transition-all cursor-pointer ${
-                  filter === tab
-                    ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                onClick={handleMarkAllRead}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition-all cursor-pointer"
               >
-                {tab === 'users' ? 'New Registrations' : tab}
+                <Check className="w-4 h-4" />
+                <span>Mark All Read</span>
               </button>
-            ))}
+            )}
           </div>
         </div>
 
@@ -222,7 +216,9 @@ export default function AdminNotificationsPage() {
                 No Admin Alerts Found
               </h3>
               <p className="text-xs text-slate-400 font-medium">
-                No notifications found matching your current filter selection.
+                {searchQuery
+                  ? `No notifications found matching "${searchQuery}".`
+                  : 'No notifications found matching your current filter selection.'}
               </p>
             </div>
           </div>

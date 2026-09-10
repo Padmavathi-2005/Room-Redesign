@@ -7,6 +7,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 import { Project, ProjectSchema } from '../projects/schemas/project.schema';
 import { RoomGeneration, RoomSchema } from '../../rooms/schemas/room.schema';
 import { ProductTool, ProductToolSchema } from '../uploads/schemas/product-tool.schema';
+import { Invoice, InvoiceSchema } from '../subscription/schemas/invoice.schema';
 
 import { SubscriptionModule } from '../subscription/subscription.module';
 
@@ -18,6 +19,7 @@ import { SubscriptionModule } from '../subscription/subscription.module';
       { name: Project.name, schema: ProjectSchema },
       { name: RoomGeneration.name, schema: RoomSchema },
       { name: ProductTool.name, schema: ProductToolSchema },
+      { name: Invoice.name, schema: InvoiceSchema },
     ]),
     SubscriptionModule,
   ],

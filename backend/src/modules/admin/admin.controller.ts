@@ -6,6 +6,7 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -47,9 +48,9 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   async addCredits(
     @Param('id') id: string,
-    @Body() body: { amount: number },
+    @Body() body: { amount: number; reason?: string },
   ) {
-    return this.adminService.addCreditsToUser(id, body.amount || 0);
+    return this.adminService.addCreditsToUser(id, body.amount || 0, body.reason);
   }
 
   @Delete('users/:id')
@@ -92,8 +93,8 @@ export class AdminController {
   }
 
   @Get('analytics')
-  async getAnalytics() {
-    return this.adminService.getAnalyticsData();
+  async getAnalytics(@Query('range') range?: string) {
+    return this.adminService.getAnalyticsData(range);
   }
 
   @Get('transactions')

@@ -39,5 +39,6 @@ backend/.env
 *.log
 docker_data/
 coverage/
-.turbo/
+*.turbo/
 backend/uploads/
+*.tsbuildinfo

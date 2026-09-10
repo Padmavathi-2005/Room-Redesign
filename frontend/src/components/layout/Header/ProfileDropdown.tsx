@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Settings, CreditCard, LogOut, ChevronDown, Zap, Wand2, Sparkles, Crown } from 'lucide-react';
+import { LayoutDashboard, Settings, CreditCard, LogOut, ChevronDown, Zap, Wand2, Sparkles, Crown, Receipt } from 'lucide-react';
 import { CreditTokenIcon } from '@/components/ui';
 
 export interface UserProfileData {
@@ -82,7 +82,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 hover:border-blue-300 dark:hover:border-slate-700 transition-colors focus:outline-none cursor-pointer group shadow-2xs overflow-visible"
+        className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-amber-400 dark:hover:border-amber-500 transition-all focus:outline-none focus-visible:outline-none focus-visible:ring-0 outline-none cursor-pointer group shadow-sm hover:shadow-md overflow-visible"
       >
         {/* Avatar Image / Initials Container */}
         <div className="relative shrink-0 flex items-center justify-center overflow-visible">
@@ -93,7 +93,7 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
               <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#2563eb,#06b6d4,#8b5cf6,#ec4899,#f97316,#2563eb)] animate-[spin_5s_linear_infinite]" />
 
               {/* Inner Gap Ring (2px gap thickness - White in Light Mode / Slate-900 in Dark Mode) */}
-              <div className="absolute inset-[2px] rounded-full bg-white dark:bg-slate-900 z-0" />
+              <div className="absolute inset-[2px] rounded-full bg-white dark:bg-slate-800 z-0" />
 
               {/* Core Upright Avatar Picture / Initials (28px x 28px) */}
               <div className="relative z-10 w-[28px] h-[28px] rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white font-extrabold text-[11px] tracking-wider shadow-2xs shrink-0">
@@ -125,16 +125,16 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
         <div className="flex flex-col text-left justify-center shrink-0 min-w-0">
           {/* Top Row: User Name + Chevron Icon */}
           <div className="flex items-center gap-1 leading-tight">
-            <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 max-w-[90px] truncate capitalize transition-colors">
+            <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 max-w-[90px] truncate capitalize transition-colors">
               {capitalizedName}
             </span>
-            <ChevronDown className={`w-3 h-3 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3 h-3 text-slate-400 dark:text-slate-500 group-hover:text-amber-500 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
           </div>
 
           {/* Bottom Row: Credit Icon + Numeric Value */}
-          <div className="flex items-center gap-1 pt-0.5 leading-tight">
+          <div className="flex items-center gap-1.5 pt-0.5 leading-tight">
             <CreditTokenIcon size="xs" />
-            <span className="text-[11px] font-black text-primary tracking-tight">{credits}</span>
+            <span className="text-[11px] font-black text-amber-600 dark:text-amber-300 tracking-tight">{credits}</span>
           </div>
         </div>
       </button>
@@ -216,6 +216,15 @@ export default function ProfileDropdown({ user, onSignOut }: ProfileDropdownProp
               >
                 <CreditCard className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 <span>Billing & Plans</span>
+              </Link>
+
+              <Link
+                href="/transactions"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-bold text-slate-800 dark:text-slate-200"
+              >
+                <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Transactions</span>
               </Link>
 
               <Link

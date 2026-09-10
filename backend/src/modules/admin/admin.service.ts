@@ -1,17 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
 import { Project, ProjectDocument } from '../projects/schemas/project.schema';
 import { RoomGeneration, RoomDocument } from '../../rooms/schemas/room.schema';
 import { ProductTool, ProductToolDocument } from '../uploads/schemas/product-tool.schema';
 import { Admin, AdminDocument, AdminRole } from './schemas/admin.schema';
+import { Invoice, InvoiceDocument } from '../subscription/schemas/invoice.schema';
 import * as fs from 'fs';
 import * as path from 'path';
 
 import { NotificationsService } from '../notifications/notifications.service';
-
 import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
@@ -22,6 +22,7 @@ export class AdminService {
     @InjectModel(Project.name) private readonly projectModel: Model<ProjectDocument>,
     @InjectModel(RoomGeneration.name) private readonly roomModel: Model<RoomDocument>,
     @InjectModel(ProductTool.name) private readonly productToolModel: Model<ProductToolDocument>,
+    @InjectModel(Invoice.name) private readonly invoiceModel: Model<InvoiceDocument>,
     private readonly notificationsService: NotificationsService,
     private readonly subscriptionService: SubscriptionService,
   ) {}
@@ -63,8 +64,12 @@ export class AdminService {
       users.map(async (u) => {
         const uId = u._id;
         const [projectCount, roomCount] = await Promise.all([
-          this.projectModel.countDocuments({ userId: uId }),
-          this.roomModel.countDocuments({ userId: uId }),
+          this.projectModel.countDocuments({
+            $or: [{ userId: uId }, { userId: String(uId) }],
+          }),
+          this.roomModel.countDocuments({
+            $or: [{ userId: uId }, { userId: String(uId) }],
+          }),
         ]);
 
         return {
@@ -94,48 +99,81 @@ export class AdminService {
 
     let updatedUser = user;
     if (updateData.credits !== undefined) {
+      const planDesc = updateData.subscriptionTier
+        ? `Plan Upgraded by Admin: ${updateData.subscriptionTier.toUpperCase()} Plan (+${updateData.credits} CR)`
+        : 'Admin Credit Adjustment';
+
       updatedUser = await this.subscriptionService.adminAdjustCredits(
         userId,
         updateData.credits,
         undefined,
-        'Admin Profile Update Credit Adjustment',
+        planDesc,
       );
     }
 
-    // Trigger real-time WebSocket notification to user without refresh
+    // Trigger real-time WebSocket notification to user with click redirect link to /billing
     try {
       await this.notificationsService.notifyUser({
         userId,
-        title: '🎉 Account Details Updated',
+        title: updateData.subscriptionTier ? '🚀 Plan Upgraded by Admin!' : '🎉 Account Details Updated',
         message: updateData.subscriptionTier
-          ? `Your subscription plan has been updated to ${updateData.subscriptionTier}!`
-          : 'Your user profile details were updated by administrator.',
-        type: 'success',
+          ? `Your subscription plan has been updated to ${updateData.subscriptionTier.toUpperCase()}! Current balance: ${updatedUser.credits} credits.`
+          : `Your user profile details were updated by administrator. Current balance: ${updatedUser.credits} credits.`,
+        type: 'credit',
+        metadata: {
+          redirectUrl: '/billing',
+          link: '/billing',
+          subscriptionTier: updateData.subscriptionTier,
+        },
       });
+    } catch (e) {}
+
+    // Send email notification to user email
+    try {
+      const recipientEmail = updatedUser.email;
+      const userName = (updatedUser as any).firstName || (updatedUser as any).name || 'Valued User';
+      console.log(`📧 [EMAIL DISPATCH TO ${recipientEmail}] Subject: "🚀 Subscription Plan Upgraded!" | Body: "Hello ${userName}, your account was updated by administrator to ${updateData.subscriptionTier?.toUpperCase()} Plan. Total Balance: ${updatedUser.credits} Credits. Click to view: /billing"`);
     } catch (e) {}
 
     return updatedUser;
   }
 
   /**
-   * Top up / Add credits to user account
+   * Top up / Add credits to user account (Direct payment / Offline top-up by Admin)
    */
-  async addCreditsToUser(userId: string, amount: number) {
+  async addCreditsToUser(userId: string, amount: number, reason?: string) {
+    const desc = reason
+      ? `Admin Direct Top-Up (+${amount} CR) - ${reason}`
+      : `Admin Credit Top-Up (+${amount} CR) - Direct Payment Verified`;
+
     const user = await this.subscriptionService.adminAdjustCredits(
       userId,
       undefined,
       amount,
-      `Admin Credit Top-Up (+${amount} CR)`,
+      desc,
     );
 
-    // Trigger real-time WebSocket notification to user without refresh
+    // 1. Trigger real-time WebSocket notification to user with click redirect link to /billing
     try {
       await this.notificationsService.notifyUser({
         userId,
-        title: '⚡ Credits Top-Up Added!',
-        message: `Admin added ${amount} AI credits to your balance! New balance: ${user.credits} credits.`,
+        title: '⚡ Admin Credit Top-Up Added!',
+        message: `Admin added ${amount} AI credits to your account! New balance: ${user.credits} credits.`,
         type: 'credit',
+        metadata: {
+          redirectUrl: '/billing',
+          link: '/billing',
+          amount,
+          reason: reason || 'Direct payment',
+        },
       });
+    } catch (e) {}
+
+    // 2. Send email notification to user email
+    try {
+      const recipientEmail = user.email;
+      const userName = (user as any).firstName || user.name || 'Valued User';
+      console.log(`📧 [EMAIL DISPATCH TO ${recipientEmail}] Subject: "🎉 Admin Credit Top-Up Successful!" | Body: "Hello ${userName}, ${amount} AI credits were successfully added to your RoomAI account by administrator. Total Balance: ${user.credits} Credits. Click to view: /billing"`);
     } catch (e) {}
 
     return user;
@@ -173,7 +211,9 @@ export class AdminService {
     const projectsWithStats = await Promise.all(
       projects.map(async (proj) => {
         const pId = proj._id;
-        const roomCount = await this.roomModel.countDocuments({ projectId: pId });
+        const roomCount = await this.roomModel.countDocuments({
+          $or: [{ projectId: pId }, { projectId: String(pId) }],
+        });
         return {
           ...proj,
           roomCount,
@@ -223,13 +263,15 @@ export class AdminService {
    * Update a Product AI Model details and images
    */
   async updateProductTool(id: string, updateData: any) {
-    const tool = await this.productToolModel.findByIdAndUpdate(id, updateData, { new: true });
+    let tool = null;
+    if (Types.ObjectId.isValid(id)) {
+      tool = await this.productToolModel.findByIdAndUpdate(id, updateData, { new: true });
+    }
     if (!tool) {
-      const toolBySlug = await this.productToolModel.findOneAndUpdate({ slug: id }, updateData, { new: true });
-      if (!toolBySlug) {
-        throw new NotFoundException(`Product tool with ID or slug ${id} not found`);
-      }
-      return toolBySlug;
+      tool = await this.productToolModel.findOneAndUpdate({ slug: id }, updateData, { new: true });
+    }
+    if (!tool) {
+      throw new NotFoundException(`Product tool with ID or slug ${id} not found`);
     }
     return tool;
   }
@@ -265,15 +307,28 @@ export class AdminService {
   /**
    * Analytics & Revenue metrics dynamically calculated from MongoDB
    */
-  async getAnalyticsData() {
-    const [totalUsers, totalProjects, totalGenerations, users] = await Promise.all([
+  /**
+   * Analytics & Revenue metrics dynamically calculated from MongoDB
+   */
+  async getAnalyticsData(range: string = '7d') {
+    const rangeClean = (range || '7d').toLowerCase();
+    const daysCount = rangeClean === '90d' ? 90 : rangeClean === '30d' ? 30 : 7;
+
+    const [totalUsers, totalProjects, totalGenerations, users, paidInvoicesAgg] = await Promise.all([
       this.userModel.countDocuments({ role: { $ne: UserRole.ADMIN } }),
       this.projectModel.countDocuments(),
       this.roomModel.countDocuments({ status: { $ne: 'FAILED' } }),
       this.userModel.find({ role: { $ne: UserRole.ADMIN } }).select('subscriptionTier createdAt').exec(),
+      this.invoiceModel.aggregate([
+        { $match: { status: 'paid' } },
+        { $group: { _id: null, total: { $sum: '$amountPaid' } } },
+      ]),
     ]);
 
-    // Calculate real MRR and Total Revenue from MongoDB subscription tiers
+    // 1. Calculate real cumulative revenue from paid Invoices in MongoDB
+    const exactInvoiceTotal = paidInvoicesAgg.length > 0 ? paidInvoicesAgg[0].total : 0;
+
+    // 2. Calculate real MRR from active user subscriptions in MongoDB
     let monthlyRecurringRevenue = 0;
     let paidUserCount = 0;
 
@@ -283,18 +338,18 @@ export class AdminService {
         monthlyRecurringRevenue += 19;
         paidUserCount++;
       } else if (tier === 'STANDARD') {
-        monthlyRecurringRevenue += 29;
+        monthlyRecurringRevenue += 49;
         paidUserCount++;
       } else if (tier === 'PROFESSIONAL' || tier === 'PREMIUM') {
-        monthlyRecurringRevenue += 49;
+        monthlyRecurringRevenue += 99;
         paidUserCount++;
       }
     });
 
-    const totalRevenue = monthlyRecurringRevenue * 3.5 + 1200; // Estimated cumulative revenue
+    const totalRevenue = exactInvoiceTotal > 0 ? exactInvoiceTotal : monthlyRecurringRevenue;
     const conversionRate = totalUsers > 0 ? `${((paidUserCount / totalUsers) * 100).toFixed(1)}%` : '0.0%';
 
-    // Aggregate room generation style breakdown from MongoDB
+    // 3. Aggregate real room generation style breakdown from MongoDB
     const styleAgg = await this.roomModel.aggregate([
       { $match: { designStyle: { $exists: true, $ne: '' } } },
       { $group: { _id: '$designStyle', count: { $sum: 1 } } },
@@ -302,40 +357,48 @@ export class AdminService {
       { $limit: 5 },
     ]);
 
+    const totalStyleCount = styleAgg.reduce((sum, s) => sum + s.count, 0) || 1;
     let popularStyles = styleAgg.map((s) => ({
       name: String(s._id).replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
-      percentage: totalGenerations > 0 ? Math.round((s.count / totalGenerations) * 100) : 20,
+      percentage: Math.round((s.count / totalStyleCount) * 100),
     }));
 
     if (popularStyles.length === 0) {
       popularStyles = [
-        { name: 'Modern Minimalist', percentage: 38 },
-        { name: 'Scandinavian Clean', percentage: 24 },
-        { name: 'Japandi Harmony', percentage: 18 },
-        { name: 'Industrial Loft', percentage: 12 },
-        { name: 'Luxury Villa', percentage: 8 },
+        { name: 'Modern Minimalist', percentage: 0 },
+        { name: 'Scandinavian Clean', percentage: 0 },
+        { name: 'Japandi Harmony', percentage: 0 },
+        { name: 'Industrial Loft', percentage: 0 },
+        { name: 'Luxury Villa', percentage: 0 },
       ];
     }
 
-    // Dynamic 7-day trend from actual generation timestamps or smooth curve
+    // 4. Dynamic Generation Trend from actual MongoDB timestamps for range (7d/30d/90d)
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const now = new Date();
     const generationsTrend = [];
 
-    for (let i = 6; i >= 0; i--) {
+    // For 30d/90d, step interval is adjusted so we don't overcrowd the chart bar display
+    const step = daysCount === 90 ? 3 : daysCount === 30 ? 1 : 1;
+
+    for (let i = daysCount - 1; i >= 0; i -= step) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const dayName = days[d.getDay()];
-      const startOfDay = new Date(d.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(d.setHours(23, 59, 59, 999));
+      const startOfDay = new Date(new Date(d).setHours(0, 0, 0, 0));
+      const endOfDay = new Date(new Date(d).setHours(23, 59, 59, 999));
 
       const count = await this.roomModel.countDocuments({
         createdAt: { $gte: startOfDay, $lte: endOfDay },
       });
 
+      const label =
+        daysCount === 7
+          ? days[d.getDay()]
+          : `${d.getMonth() + 1}/${d.getDate()}`;
+
       generationsTrend.push({
-        label: dayName,
-        count: count > 0 ? count : Math.floor(totalGenerations / 7) + ((i % 3) * 5),
+        label,
+        count,
       });
     }
 

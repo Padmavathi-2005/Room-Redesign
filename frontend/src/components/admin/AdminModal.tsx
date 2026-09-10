@@ -19,14 +19,20 @@ export default function AdminModal({
   children,
   maxWidth = 'max-w-2xl',
 }: AdminModalProps) {
-  // Lock body scroll when modal is open
+  // Lock body scroll and set data-modal-open when modal is open
   useEffect(() => {
     if (isOpen) {
+      document.body.setAttribute('data-modal-open', 'true');
+      document.documentElement.setAttribute('data-modal-open', 'true');
       document.body.style.overflow = 'hidden';
     } else {
+      document.body.removeAttribute('data-modal-open');
+      document.documentElement.removeAttribute('data-modal-open');
       document.body.style.overflow = '';
     }
     return () => {
+      document.body.removeAttribute('data-modal-open');
+      document.documentElement.removeAttribute('data-modal-open');
       document.body.style.overflow = '';
     };
   }, [isOpen]);

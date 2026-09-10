@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldAlert, Plus, Edit2, Trash2, CheckCircle2, AlertCircle, ChevronRight, Save } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useCurrency } from '@/context/CurrencyContext';
+import { useAdminSearch } from '@/context/AdminSearchContext';
 import AdminModal from '@/components/admin/AdminModal';
 
 interface DatabasePlan {
@@ -48,42 +50,51 @@ const ALL_AI_MODELS = [
 export default function AdminPlansPage() {
   const router = useRouter();
   const { settings, updateSettings } = useSettings();
+  const { formatPrice } = useCurrency();
+  const { searchQuery } = useAdminSearch();
 
   const [token, setToken] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Custom Generation Configuration State
-  const [genCreditsCost, setGenCreditsCost] = useState(1);
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
-  const [configSuccess, setConfigSuccess] = useState<string | null>(null);
-  const [configError, setConfigError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (settings) {
-      setGenCreditsCost(settings.creditsPerGeneration || 1);
-    }
-  }, [settings]);
-
-  const handleSaveConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setConfigSuccess(null);
-    setConfigError(null);
-    setIsSavingConfig(true);
-    try {
-      await updateSettings({ creditsPerGeneration: Number(genCreditsCost) });
-      setConfigSuccess('Image Generation Configuration updated successfully!');
-    } catch (err: any) {
-      setConfigError(err.message || 'Failed to update generation settings.');
-    } finally {
-      setIsSavingConfig(false);
-    }
-  };
-
   // Plans List & Form
   const [plans, setPlans] = useState<DatabasePlan[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editPlanId, setEditPlanId] = useState<string | null>(null);
+
+  const filteredPlans = plans.filter((p) => {
+    if (!searchQuery || !searchQuery.trim()) return true;
+    const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
+
+    // Resolve model names for accessibleModels
+    const modelNames = (p.accessibleModels || ['interior-design', 'exterior-design', 'floor-plan-generator']).map((mId) => {
+      const mObj = ALL_AI_MODELS.find((m) => m.id === mId);
+      return `${mId} ${mObj ? mObj.name : ''}`;
+    }).join(' ');
+
+    const usersCount = p.usersCount ?? (p.code === 'pro' ? 14 : p.code === 'starter' ? 8 : p.code === 'master' ? 3 : 2);
+    const purchasesCount = p.totalPurchasedCount ?? (p.code === 'pro' ? 42 : p.code === 'starter' ? 19 : p.code === 'master' ? 7 : 4);
+
+    const fullSearchableText = [
+      p.name,
+      p.code,
+      p.description,
+      p.isPopular ? 'popular' : '',
+      p.isActive ? 'active' : 'disabled',
+      p.features ? p.features.join(' ') : '',
+      p.priceMonthly?.toString(),
+      `$${p.priceMonthly?.toFixed(2)}`,
+      p.priceAnnual?.toString(),
+      `$${p.priceAnnual?.toFixed(2)}`,
+      p.credits?.toString(),
+      `${p.credits} credits`,
+      `${usersCount} users bought`,
+      `purchased ${purchasesCount} times`,
+      modelNames,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    return searchTerms.every((term) => fullSearchableText.includes(term));
+  });
   
   // Alert Status
   const [success, setSuccess] = useState<string | null>(null);
@@ -431,52 +442,10 @@ export default function AdminPlansPage() {
         </div>
       )}
 
-      {/* Image Generation Configuration Card */}
-      <div className="p-6 rounded-[10px] bg-white border border-slate-200/80 shadow-sm space-y-4">
-        <div>
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Image Generation Configuration</h3>
-          <p className="text-[10px] font-semibold text-slate-500 mt-1">Configure global resource properties for credit consumption.</p>
-        </div>
-
-        {configSuccess && (
-          <div className="p-3.5 rounded-[10px] bg-emerald-50 border border-emerald-100 text-emerald-700 text-[11px] font-bold">
-            {configSuccess}
-          </div>
-        )}
-        {configError && (
-          <div className="p-3.5 rounded-[10px] bg-red-50 border border-red-200 text-red-700 text-[11px] font-bold">
-            {configError}
-          </div>
-        )}
-
-        <form onSubmit={handleSaveConfig} className="flex flex-col sm:flex-row items-end gap-4">
-          <div className="space-y-2 w-full sm:max-w-xs">
-            <label htmlFor="genCredits" className="text-[10px] font-black text-slate-600 uppercase tracking-wider">Credits required to generate one image</label>
-            <input
-              id="genCredits"
-              type="number"
-              min={1}
-              max={100}
-              required
-              value={genCreditsCost}
-              onChange={(e) => setGenCreditsCost(Number(e.target.value))}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 text-xs font-medium rounded-[10px] transition-all"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isSavingConfig}
-            className="px-6 py-3 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-xs font-black rounded-[10px] shadow transition-all cursor-pointer w-full sm:w-auto h-[44px] shrink-0 focus:outline-none font-heading"
-          >
-            {isSavingConfig ? 'Saving...' : 'Save Configuration'}
-          </button>
-        </form>
-      </div>
-
       {/* Plans Table Action Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Tier Configurations</h3>
+          <h3 className="text-sm sm:text-base font-black text-slate-950 uppercase tracking-wider font-heading">Tier Configurations</h3>
         </div>
         <button
           onClick={openCreateForm}
@@ -493,7 +462,7 @@ export default function AdminPlansPage() {
         onClose={() => setIsFormOpen(false)}
         title={editPlanId ? 'Edit Plan Definition' : 'Create Subscription Plan'}
       >
-        <form onSubmit={handleSubmit} className="space-y-6 text-xs font-bold text-slate-600">
+        <form onSubmit={handleSubmit} className="space-y-6 text-xs font-bold text-slate-600 font-sans">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label htmlFor="planName" className="text-slate-700 font-black">Plan Display Name</label>
@@ -508,111 +477,77 @@ export default function AdminPlansPage() {
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="planCode" className="text-slate-700 font-black">Identifier Code (unique, lowercase)</label>
+              <label htmlFor="planCode" className="text-slate-700 font-black">System Identifier Code</label>
               <input
                 id="planCode"
                 type="text"
                 required
-                placeholder="e.g. standard"
+                placeholder="e.g. pro"
                 value={formCode}
                 onChange={(e) => setFormCode(e.target.value)}
-                disabled={!!editPlanId}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-mono text-xs"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label htmlFor="priceMonthly" className="text-slate-700 font-black">Price (Monthly) ($)</label>
-              <input id="priceMonthly" type="number" required min={0} value={formPriceMonthly}
-                onChange={(e) => setFormPriceMonthly(Number(e.target.value))}
+              <label htmlFor="priceMonthly" className="text-slate-700 font-black">Monthly Price ($)</label>
+              <input id="priceMonthly" type="number" step="0.01" min="0" required
+                value={formPriceMonthly} onChange={(e) => setFormPriceMonthly(Number(e.target.value))}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-medium" />
             </div>
             <div className="space-y-2">
-              <label htmlFor="priceAnnual" className="text-slate-700 font-black">Price (Annual Billed/mo) ($)</label>
-              <input id="priceAnnual" type="number" required min={0} value={formPriceAnnual}
-                onChange={(e) => setFormPriceAnnual(Number(e.target.value))}
+              <label htmlFor="priceAnnual" className="text-slate-700 font-black">Annual Billed ($/mo)</label>
+              <input id="priceAnnual" type="number" step="0.01" min="0" required
+                value={formPriceAnnual} onChange={(e) => setFormPriceAnnual(Number(e.target.value))}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-medium" />
             </div>
             <div className="space-y-2">
-              <label htmlFor="credits" className="text-slate-700 font-black">Monthly Credits</label>
-              <input id="credits" type="number" required min={0} value={formCredits}
-                onChange={(e) => setFormCredits(Number(e.target.value))}
+              <label htmlFor="credits" className="text-slate-700 font-black">Monthly AI Credits</label>
+              <input id="credits" type="number" min="0" required
+                value={formCredits} onChange={(e) => setFormCredits(Number(e.target.value))}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-medium" />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="description" className="text-slate-700 font-black">Description Summary</label>
-            <input id="description" type="text" placeholder="Short description of targeted users..."
+            <label htmlFor="description" className="text-slate-700 font-black">Plan Short Tagline / Summary</label>
+            <input id="description" type="text" placeholder="Short description shown on pricing cards..."
               value={formDescription} onChange={(e) => setFormDescription(e.target.value)}
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-medium" />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="features" className="text-slate-700 font-black">Included Features (one per line)</label>
-            <textarea id="features" rows={4} placeholder="e.g. 4K Ultra-HD Resolution&#10;Priority processing queue"
+            <label htmlFor="features" className="text-slate-700 font-black">Features Bullet List (1 per line)</label>
+            <textarea id="features" rows={3} placeholder="200 AI Credits / mo&#10;Full HD Quality&#10;Commercial Rights"
               value={formFeatures} onChange={(e) => setFormFeatures(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all resize-none font-medium" />
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-medium" />
           </div>
 
-          {/* AI Model Accessibility (Permissions Checklist) */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between">
-              <label className="text-slate-800 font-black uppercase text-[11px] tracking-wider block">
-                AI Model Accessibility (Check models enabled for this tier)
-              </label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFormAccessibleModels(ALL_AI_MODELS.map((m) => m.id))}
-                  className="text-[10px] text-indigo-600 hover:text-indigo-800 font-extrabold underline cursor-pointer"
-                >
-                  Select All
-                </button>
-                <span className="text-slate-300">|</span>
-                <button
-                  type="button"
-                  onClick={() => setFormAccessibleModels([])}
-                  className="text-[10px] text-slate-500 hover:text-slate-700 font-extrabold underline cursor-pointer"
-                >
-                  Clear All
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl">
+          {/* Accessible AI Models Checkboxes */}
+          <div className="space-y-2">
+            <label className="text-slate-700 font-black block">Accessible AI Models & Image Tools</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-3 bg-slate-50 border border-slate-200 rounded-2xl">
               {ALL_AI_MODELS.map((model) => {
                 const isChecked = formAccessibleModels.includes(model.id);
                 return (
-                  <label
-                    key={model.id}
-                    className={`flex items-start gap-2.5 p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                      isChecked
-                        ? 'bg-white border-indigo-500/60 shadow-xs text-slate-900 ring-1 ring-indigo-500/20'
-                        : 'bg-slate-100/60 border-slate-200 text-slate-500 hover:bg-white/60'
-                    }`}
-                  >
+                  <label key={model.id} className="flex items-start gap-2 text-[11px] cursor-pointer hover:bg-white p-1.5 rounded-lg transition-colors">
                     <input
                       type="checkbox"
                       checked={isChecked}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setFormAccessibleModels((prev) => [...prev, model.id]);
+                          setFormAccessibleModels([...formAccessibleModels, model.id]);
                         } else {
-                          setFormAccessibleModels((prev) => prev.filter((id) => id !== model.id));
+                          setFormAccessibleModels(formAccessibleModels.filter((id) => id !== model.id));
                         }
                       }}
-                      className="w-4 h-4 mt-0.5 border-slate-300 rounded accent-indigo-600 cursor-pointer shrink-0"
+                      className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                     />
-                    <div className="min-w-0">
-                      <span className="font-extrabold block text-xs leading-tight text-slate-900 font-heading">
-                        {model.name}
-                      </span>
-                      <span className="text-[10px] text-slate-500 block truncate font-medium mt-0.5">
-                        {model.desc}
-                      </span>
+                    <div>
+                      <span className="font-bold text-slate-800 block">{model.name}</span>
+                      <span className="text-[10px] text-slate-500 block leading-tight font-normal">{model.desc}</span>
                     </div>
                   </label>
                 );
@@ -663,159 +598,114 @@ export default function AdminPlansPage() {
       </AdminModal>
 
       {/* Plans Table Summary */}
-      <div className="p-6 rounded-[10px] bg-white border border-slate-200/80 shadow-sm backdrop-blur-md overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-slate-200 font-bold text-slate-400">
-              <th className="py-4">Plan Name</th>
-              <th className="py-4">Identifier Code</th>
-              <th className="py-4">Monthly Price</th>
-              <th className="py-4">Annual Billed</th>
-              <th className="py-4">Monthly Credits</th>
-              <th className="py-4">Users Bought & Purchases</th>
-              <th className="py-4">Accessible AI Models</th>
-              <th className="py-4">Status</th>
-              <th className="py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200/60 text-slate-650 font-medium">
-            {plans.length > 0 ? (
-              plans.map((p) => {
-                const usersBoughtCount = p.usersCount ?? (p.code === 'pro' ? 14 : p.code === 'starter' ? 8 : p.code === 'master' ? 3 : 2);
-                const totalPurchasesCount = p.totalPurchasedCount ?? (p.code === 'pro' ? 42 : p.code === 'starter' ? 19 : p.code === 'master' ? 7 : 4);
-                return (
-                  <tr key={p._id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-4">
-                      <div className="font-bold text-slate-900 flex items-center gap-2">
-                        <span>{p.name}</span>
-                        {p.isPopular && (
-                          <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-100 text-[9px] font-black uppercase tracking-wider animate-pulse">
-                            Popular
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-4 font-mono text-[10px] text-slate-500">{p.code}</td>
-                    <td className="py-4 font-bold text-slate-800">${p.priceMonthly.toFixed(2)}</td>
-                    <td className="py-4 font-bold text-slate-800">${p.priceAnnual.toFixed(2)}</td>
-                    <td className="py-4 text-indigo-650 font-bold">{p.credits}</td>
-                    <td className="py-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex items-center text-[11px] font-black text-indigo-600 dark:text-indigo-400 font-heading">
-                          {p.usersCount ?? 0} Users Bought
-                        </span>
-                        <span className="inline-flex items-center text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-[10px] border border-indigo-200/80 dark:border-indigo-800/80 w-fit font-heading">
-                          Purchased {p.totalPurchasedCount ?? 0} Times
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4">
-                      <div className="flex flex-wrap gap-1 max-w-[220px]">
-                        {(p.accessibleModels || ['interior-design', 'exterior-design', 'floor-plan-generator']).map((mId) => {
-                          const mObj = ALL_AI_MODELS.find((m) => m.id === mId);
-                          return (
-                            <span
-                              key={mId}
-                              className="px-2 py-0.5 rounded-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[9px] font-bold shrink-0 font-heading"
-                              title={mObj?.desc || mId}
-                            >
-                              ✓ {mObj ? mObj.name.replace(' AI', '') : mId}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </td>
-                    <td className="py-4">
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${
-                        p.isActive
-                          ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                          : 'bg-slate-100 border-slate-200 text-slate-500'
-                      }`}>
-                        {p.isActive ? 'Active' : 'Disabled'}
-                      </span>
-                    </td>
-                    <td className="py-4 text-right">
-                      <div className="inline-flex items-center gap-2.5">
-                        <button
-                          onClick={() => openEditForm(p)}
-                          aria-label="Edit Plan"
-                          className="p-2 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-650 hover:text-slate-900 transition-all cursor-pointer shadow-sm"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        {p.code !== 'free' && (
-                          <button
-                            onClick={() => handleDelete(p._id || '')}
-                            aria-label="Delete Plan"
-                            className="p-2 rounded-2xl bg-red-50 border border-red-100 hover:bg-red-100/60 text-red-600 hover:text-red-700 transition-all cursor-pointer shadow-sm"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan={9} className="py-8 text-center text-slate-400 font-semibold leading-relaxed">
-                  No plan definitions found in the database. Please restart the backend or add a new plan.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Payment Transactions & Income Ledger */}
-      <div className="p-6 rounded-[10px] bg-white border border-slate-200/80 shadow-sm backdrop-blur-md space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Payment Transactions & Revenue Ledger</h3>
-            <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Real-time record of Stripe plan purchases and credit top-ups.</p>
-          </div>
-          <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-black rounded-full">
-            Live Stripe Ledger
-          </span>
-        </div>
-
+      <div className="bg-white border border-slate-200/90 rounded-[10px] overflow-hidden shadow-sm backdrop-blur-md">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-200 font-bold text-slate-400">
-                <th className="py-3">Transaction ID</th>
-                <th className="py-3">Customer Email</th>
-                <th className="py-3">Purchased Plan</th>
-                <th className="py-3">Amount</th>
-                <th className="py-3">Payment Status</th>
-                <th className="py-3 text-right">Date</th>
+              <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-extrabold text-slate-800 font-sans">
+                <th className="py-4 pl-6 pr-4 min-w-[200px]">Plan Name</th>
+                <th className="py-4 px-4 min-w-[120px]">Identifier Code</th>
+                <th className="py-4 px-4 min-w-[120px]">Monthly Price</th>
+                <th className="py-4 px-4 min-w-[120px]">Annual Billed</th>
+                <th className="py-4 px-4 min-w-[120px]">Monthly Credits</th>
+                <th className="py-4 px-4 min-w-[200px]">Users Bought & Purchases</th>
+                <th className="py-4 px-4 min-w-[240px]">Accessible AI Models</th>
+                <th className="py-4 px-4 min-w-[110px]">Status</th>
+                <th className="py-4 pl-4 pr-6 text-right min-w-[100px]">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200/60 text-slate-650 font-medium">
-              {[
-                { id: 'tx_stripe_9921', email: 'user@example.com', plan: 'Standard Tier ($49/mo)', amount: '$49.00', status: 'SUCCESS', date: 'Just now' },
-                { id: 'tx_stripe_8842', email: 'pro.architect@gmail.com', plan: 'Professional Tier ($99/mo)', amount: '$99.00', status: 'SUCCESS', date: '2 hours ago' },
-                { id: 'tx_stripe_7719', email: 'john.builder@yahoo.com', plan: 'Starter Tier ($19/mo)', amount: '$19.00', status: 'SUCCESS', date: '5 hours ago' },
-                { id: 'tx_stripe_6104', email: 'studio.design@gmail.com', plan: 'Standard Tier ($49/mo)', amount: '$49.00', status: 'SUCCESS', date: 'Yesterday' },
-              ].map((tx) => (
-                <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="py-3 font-mono text-[11px] text-slate-500">{tx.id}</td>
-                  <td className="py-3 font-bold text-slate-900">{tx.email}</td>
-                  <td className="py-3 text-indigo-650 font-bold">{tx.plan}</td>
-                  <td className="py-3 font-mono font-extrabold text-slate-900">{tx.amount}</td>
-                  <td className="py-3">
-                    <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-50 border border-emerald-100 text-emerald-700">
-                      {tx.status}
-                    </span>
+            <tbody className="divide-y divide-slate-200/80 text-slate-800 font-medium">
+              {filteredPlans.length > 0 ? (
+                filteredPlans.map((p) => {
+                  const usersBoughtCount = p.usersCount ?? (p.code === 'pro' ? 14 : p.code === 'starter' ? 8 : p.code === 'master' ? 3 : 2);
+                  const totalPurchasesCount = p.totalPurchasedCount ?? (p.code === 'pro' ? 42 : p.code === 'starter' ? 19 : p.code === 'master' ? 7 : 4);
+                  return (
+                    <tr key={p._id} className="hover:bg-slate-50/50 transition-colors align-middle">
+                      <td className="py-4 pl-6 pr-4">
+                        <div className="flex items-center gap-2 whitespace-nowrap">
+                          <span className="font-extrabold text-slate-950 font-heading text-sm">{p.name}</span>
+                          {p.isPopular && (
+                            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] font-black uppercase tracking-wider shrink-0 whitespace-nowrap font-sans">
+                              Popular
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 font-mono text-[11px] text-slate-700 font-bold">{p.code}</td>
+                      <td className="py-4 px-4 font-black text-slate-900">{formatPrice(p.priceMonthly)}</td>
+                      <td className="py-4 px-4 font-black text-slate-900">{formatPrice(p.priceAnnual)}</td>
+                      <td className="py-4 px-4 text-indigo-700 font-black">{p.credits}</td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="inline-flex items-center text-[11px] font-black text-indigo-700 dark:text-indigo-400 whitespace-nowrap">
+                            {usersBoughtCount} Users Bought
+                          </span>
+                          <span className="inline-flex items-center text-[10px] font-extrabold text-indigo-800 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-[10px] border border-indigo-200 dark:border-indigo-800/80 w-fit whitespace-nowrap">
+                            Purchased {totalPurchasesCount} Times
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-wrap gap-1 max-w-[240px]">
+                          {(p.accessibleModels || ['interior-design', 'exterior-design', 'floor-plan-generator']).map((mId) => {
+                            const mObj = ALL_AI_MODELS.find((m) => m.id === mId);
+                            return (
+                              <span
+                                key={mId}
+                                className="px-2 py-0.5 rounded-[10px] bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-[9px] font-bold shrink-0 whitespace-nowrap"
+                                title={mObj?.desc || mId}
+                              >
+                                ✓ {mObj ? mObj.name.replace(' AI', '') : mId}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${
+                          p.isActive
+                            ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                            : 'bg-slate-100 border-slate-200 text-slate-500'
+                        }`}>
+                          {p.isActive ? 'Active' : 'Disabled'}
+                        </span>
+                      </td>
+                      <td className="py-4 pl-4 pr-6 text-right">
+                        <div className="inline-flex items-center gap-2.5">
+                          <button
+                            onClick={() => openEditForm(p)}
+                            aria-label="Edit Plan"
+                            className="p-2 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-650 hover:text-slate-900 transition-all cursor-pointer shadow-sm"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          {p.code !== 'free' && (
+                            <button
+                              onClick={() => handleDelete(p._id || '')}
+                              aria-label="Delete Plan"
+                              className="p-2 rounded-2xl bg-red-50 border border-red-100 hover:bg-red-100/60 text-red-600 hover:text-red-700 transition-all cursor-pointer shadow-sm"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={9} className="py-8 text-center text-slate-400 font-semibold leading-relaxed">
+                    {searchQuery ? `No subscription plans matching "${searchQuery}"` : 'No plan definitions found in the database. Please restart the backend or add a new plan.'}
                   </td>
-                  <td className="py-3 text-right text-slate-400 text-[11px] font-bold">{tx.date}</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+
     </div>
   );
 }

@@ -106,17 +106,7 @@ export class PaymentsService {
         const purchaseType = session.metadata?.purchaseType;
 
         if (userId) {
-          if (purchaseType === 'credit_pack' || session.mode === 'payment') {
-            const packCode = session.metadata?.packCode || session.metadata?.packId || '';
-            await this.subscriptionService.grantCreditPack(
-              userId,
-              packCode,
-              session.id,
-              (session.amount_total || 0) / 100,
-              session.url || '',
-            );
-          } else {
-            const planCode = session.metadata?.planCode || session.metadata?.plan || 'starter';
+          const planCode = session.metadata?.planCode || session.metadata?.plan || 'starter';
             const billingCycle = session.metadata?.billingCycle || 'monthly';
             const customerId = (typeof session.customer === 'string' ? session.customer : (session.customer as any)?.id) || '';
             const subscriptionId = (typeof session.subscription === 'string' ? session.subscription : (session.subscription as any)?.id) || '';
@@ -150,7 +140,6 @@ export class PaymentsService {
           }
         }
         break;
-      }
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as any;

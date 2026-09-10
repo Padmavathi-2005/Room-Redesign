@@ -22,10 +22,12 @@ import {
   Trash,
   Save,
   Layout,
-  Power
+  Power,
+  ExternalLink
 } from 'lucide-react';
 import { adminService, AdminModel } from '@/services/admin.service';
 import { useAdminSearch } from '@/context/AdminSearchContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 const BACKEND_URL = 'http://localhost:3002';
 
@@ -82,6 +84,7 @@ const fetchDataSourceOptions = async (source: string): Promise<string[]> => {
 export default function AdminModelsPage() {
   const router = useRouter();
   const { searchQuery } = useAdminSearch();
+  const { t } = useLanguage();
   const [models, setModels] = useState<AdminModel[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -90,6 +93,41 @@ export default function AdminModelsPage() {
   const [editingModel, setEditingModel] = useState<AdminModel | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [successMsg, setSuccessMsg] = useState<string>('');
+
+  const filteredModels = models.filter((m) => {
+    let matchesCategory = selectedCategory === 'all';
+    if (!matchesCategory) {
+      if (selectedCategory === 'floorplan') {
+        matchesCategory = m.category === 'floorplan' || m.category === 'floor-plans' || m.category === 'architectural';
+      } else if (selectedCategory === 'editing') {
+        matchesCategory = m.category === 'editing' || m.category === 'garden' || m.category === 'gardens';
+      } else if (selectedCategory === 'interior') {
+        matchesCategory = m.category === 'interior' || m.category === 'interiors' || m.category === 'commercial' || m.category === 'real-estate' || m.category === 'specialty' || m.category === 'video';
+      } else if (selectedCategory === 'exterior') {
+        matchesCategory = m.category === 'exterior' || m.category === 'exteriors';
+      } else {
+        matchesCategory = m.category === selectedCategory;
+      }
+    }
+
+    if (!matchesCategory) return false;
+
+    if (searchQuery && searchQuery.trim()) {
+      const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      const fullSearchableText = [
+        m.name,
+        m.slug,
+        m.description,
+        m.category,
+        m.badge,
+        m.creditCost?.toString(),
+      ].filter(Boolean).join(' ').toLowerCase();
+
+      return searchTerms.every((term) => fullSearchableText.includes(term));
+    }
+
+    return true;
+  });
   
   // Database option cache
   const [dbOptions, setDbOptions] = useState<Record<string, string[]>>({});
@@ -245,7 +283,7 @@ export default function AdminModelsPage() {
       if (uploadRes && uploadRes.url) {
         const fullUrl = uploadRes.url.startsWith('http')
           ? uploadRes.url
-          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${uploadRes.url}`;
+          : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/v1\/?$/, '') : 'http://localhost:5001'}${uploadRes.url}`;
 
         const updated = await adminService.updateModel(modelId, {
           [imageType]: fullUrl,
@@ -345,27 +383,7 @@ export default function AdminModelsPage() {
     setWidgets(prev => prev.map(w => w.id === widgetId ? { ...w, [field]: val } : w));
   };
 
-  const filteredModels = models.filter((m) => {
-    let matchesCategory = selectedCategory === 'all';
-    if (!matchesCategory) {
-      if (selectedCategory === 'floorplan') {
-        matchesCategory = m.category === 'floorplan' || m.category === 'floor-plans' || m.category === 'architectural';
-      } else if (selectedCategory === 'editing') {
-        matchesCategory = m.category === 'editing' || m.category === 'garden' || m.category === 'gardens';
-      } else if (selectedCategory === 'interior') {
-        matchesCategory = m.category === 'interior' || m.category === 'interiors' || m.category === 'commercial' || m.category === 'real-estate' || m.category === 'specialty' || m.category === 'video';
-      } else if (selectedCategory === 'exterior') {
-        matchesCategory = m.category === 'exterior' || m.category === 'exteriors';
-      } else {
-        matchesCategory = m.category === selectedCategory;
-      }
-    }
-    const matchesSearch =
-      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (m.description || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+
 
   return (
     <div className="space-y-6">
@@ -377,24 +395,33 @@ export default function AdminModelsPage() {
         <div className="space-y-6 animate-fade-in">
           
           {/* Back Navigation bar */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <button
               onClick={stopCustomizing}
-              className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-purple-700 bg-white border border-slate-200 hover:border-purple-100 px-4 py-2 rounded-2xl transition-all duration-200 cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-purple-700 bg-white border border-slate-200 hover:border-purple-100 px-4 py-2 rounded-[10px] transition-all duration-200 cursor-pointer shadow-sm"
             >
               <ChevronLeft className="h-4 w-4" /> Back to AI Models
             </button>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-mono">Customizing inputs for:</span>
-              <span className="text-xs font-extrabold text-purple-700 bg-purple-50 border border-purple-100 px-3 py-1 rounded-2xl">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs text-slate-400 font-mono hidden sm:inline">Customizing inputs for:</span>
+              <span className="text-xs font-extrabold text-purple-700 bg-purple-50 border border-purple-100 px-3 py-1 rounded-[10px]">
                 {customizingWidgetsModel.name}
               </span>
+              <a
+                href={`/generate?tool=${customizingWidgetsModel?.slug || ''}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>View Page</span>
+              </a>
             </div>
           </div>
 
           {/* Tools Core Config Header */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="bg-white border border-slate-200 rounded-[10px] p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex-1">
               <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                 <ClipboardList className="w-5 h-5 text-purple-600" /> Configure Dynamic Input Form
@@ -404,15 +431,16 @@ export default function AdminModelsPage() {
             
             <button
               onClick={handleSaveWidgets}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-extrabold rounded-2xl transition-all duration-200 shadow-md cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-[10px] transition-all duration-200 shadow-sm cursor-pointer"
             >
-              <Save className="h-4 w-4" /> Save Form Schema
+              <Save className="h-3.5 w-3.5" />
+              <span>Save</span>
             </button>
           </div>
 
           {/* Success Notification Banner */}
           {successMsg && (
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-3 text-xs shadow-sm">
+            <div className="p-4 rounded-[10px] bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-3 text-xs shadow-sm">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
               <span className="font-bold">{successMsg}</span>
             </div>
@@ -422,20 +450,20 @@ export default function AdminModelsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* Widget Configurations Drawer (Col-span 8) */}
-            <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+            <div className="lg:col-span-8 bg-white border border-slate-200 rounded-[10px] p-6 shadow-sm flex flex-col gap-4">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center justify-between">
-                <span>🎛️ Active Form Inputs ({widgets.length})</span>
-                <span className="text-[10px] text-slate-400 font-mono">Parameters List</span>
+                <span>🎛️ {t('admin.models.activeInputs') || 'Active Form Inputs'} ({widgets.length})</span>
+                <span className="text-[10px] text-slate-400 font-mono">{t('admin.models.parametersList') || 'Parameters List'}</span>
               </h3>
 
               <div className="flex flex-col gap-4 max-h-[500px] overflow-y-auto pr-1">
                 {widgets.length === 0 ? (
-                  <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 text-xs italic bg-slate-50/30">
+                  <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-[10px] text-slate-400 text-xs italic bg-slate-50/30">
                     Form inputs are empty. Click a component from the Widget Shelf on the right to start building.
                   </div>
                 ) : (
                   widgets.map((widget, index) => (
-                    <div key={widget.id} className="border border-slate-200 bg-slate-50/50 rounded-2xl p-4 flex flex-col gap-3 relative">
+                    <div key={widget.id} className="border border-slate-200 bg-slate-50/50 rounded-[10px] p-4 flex flex-col gap-3 relative">
                       
                       {/* Widget Header & Required Toggle */}
                       <div className="flex items-center justify-between border-b border-slate-200 pb-2">
@@ -469,7 +497,7 @@ export default function AdminModelsPage() {
                             type="text"
                             value={widget.label}
                             onChange={e => updateWidgetField(widget.id, 'label', e.target.value)}
-                            className="bg-white border border-slate-200 rounded-2xl px-3 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-purple-500"
+                            className="bg-white border border-slate-200 rounded-[10px] px-3 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-purple-500"
                           />
                         </div>
 
@@ -479,7 +507,7 @@ export default function AdminModelsPage() {
                             type="text"
                             value={widget.id}
                             onChange={e => updateWidgetField(widget.id, 'id', e.target.value.trim().toLowerCase().replace(/\s+/g, '-'))}
-                            className="bg-white border border-slate-200 rounded-2xl px-3 py-1.5 text-xs font-mono text-slate-500 focus:outline-none"
+                            className="bg-white border border-slate-200 rounded-[10px] px-3 py-1.5 text-xs font-mono text-slate-500 focus:outline-none"
                           />
                         </div>
 
@@ -490,7 +518,7 @@ export default function AdminModelsPage() {
                             placeholder="e.g. 50 or 33.3 or 100"
                             value={widget.width || '100'}
                             onChange={e => updateWidgetField(widget.id, 'width', e.target.value)}
-                            className="bg-white border border-slate-200 rounded-2xl px-3 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-purple-500"
+                            className="bg-white border border-slate-200 rounded-[10px] px-3 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-purple-500"
                           />
                         </div>
 
@@ -499,7 +527,7 @@ export default function AdminModelsPage() {
                           <select
                             value={widget.planRequirement || 'free'}
                             onChange={e => updateWidgetField(widget.id, 'planRequirement', e.target.value)}
-                            className="bg-white border border-slate-200 rounded-2xl px-3 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-purple-500 cursor-pointer"
+                            className="bg-white border border-slate-200 rounded-[10px] px-3 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-purple-500 cursor-pointer"
                           >
                             <option value="free">Free Tier & up</option>
                             <option value="starter">Starter Tier & up</option>
@@ -517,7 +545,7 @@ export default function AdminModelsPage() {
                             <select
                               value={widget.dataSource || ''}
                               onChange={e => updateWidgetField(widget.id, 'dataSource', e.target.value || undefined)}
-                              className="bg-white border border-slate-200 rounded-2xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none"
+                              className="bg-white border border-slate-200 rounded-[10px] px-3 py-1.5 text-xs text-gray-800 focus:outline-none"
                             >
                               <option value="">Static Options List (Defined Below)</option>
                               <option value="room-types">Room Types collection</option>
@@ -547,7 +575,7 @@ export default function AdminModelsPage() {
                                   updateWidgetField(widget.id, 'options', optionsArray);
                                 }}
                                 placeholder="Value 1, Value 2, Value 3"
-                                className="w-full bg-white border border-slate-200 rounded-2xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none"
+                                className="w-full bg-white border border-slate-200 rounded-[10px] px-3 py-1.5 text-xs text-gray-800 focus:outline-none"
                               />
                             </div>
                           )}
@@ -563,7 +591,7 @@ export default function AdminModelsPage() {
                               type="number"
                               value={widget.min || 0}
                               onChange={e => updateWidgetField(widget.id, 'min', parseFloat(e.target.value))}
-                              className="bg-white border border-slate-200 rounded-2xl px-2 py-1 text-xs focus:outline-none"
+                              className="bg-white border border-slate-200 rounded-[10px] px-2 py-1 text-xs focus:outline-none"
                             />
                           </div>
                           <div className="flex flex-col gap-1">
@@ -572,7 +600,7 @@ export default function AdminModelsPage() {
                               type="number"
                               value={widget.max || 1.0}
                               onChange={e => updateWidgetField(widget.id, 'max', parseFloat(e.target.value))}
-                              className="bg-white border border-slate-200 rounded-2xl px-2 py-1 text-xs focus:outline-none"
+                              className="bg-white border border-slate-200 rounded-[10px] px-2 py-1 text-xs focus:outline-none"
                             />
                           </div>
                           <div className="flex flex-col gap-1">
@@ -581,7 +609,7 @@ export default function AdminModelsPage() {
                               type="number"
                               value={widget.step || 0.05}
                               onChange={e => updateWidgetField(widget.id, 'step', parseFloat(e.target.value))}
-                              className="bg-white border border-slate-200 rounded-2xl px-2 py-1 text-xs focus:outline-none"
+                              className="bg-white border border-slate-200 rounded-[10px] px-2 py-1 text-xs focus:outline-none"
                             />
                           </div>
                           <div className="flex flex-col gap-1">
@@ -590,7 +618,7 @@ export default function AdminModelsPage() {
                               type="number"
                               value={widget.defaultValue || 0.8}
                               onChange={e => updateWidgetField(widget.id, 'defaultValue', parseFloat(e.target.value))}
-                              className="bg-white border border-slate-200 rounded-2xl px-2 py-1 text-xs focus:outline-none"
+                              className="bg-white border border-slate-200 rounded-[10px] px-2 py-1 text-xs focus:outline-none"
                             />
                           </div>
                         </div>
@@ -602,7 +630,7 @@ export default function AdminModelsPage() {
             </div>
 
             {/* Widget Shelf Library (Col-span 4) */}
-            <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-3">
+            <div className="lg:col-span-4 bg-white border border-slate-200 rounded-[10px] p-6 shadow-sm flex flex-col gap-3">
               <h3 className="text-xs font-bold text-purple-700 uppercase tracking-widest border-b border-slate-100 pb-3 flex items-center gap-1.5">
                 <Wand2 className="w-4 h-4 text-purple-600" /> Widget Shelf
               </h3>
@@ -615,7 +643,7 @@ export default function AdminModelsPage() {
                     key={w.type}
                     type="button"
                     onClick={() => addWidget(w.type, w.defaultLabel)}
-                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-purple-50/40 border border-slate-200 hover:border-purple-200 rounded-2xl transition-all duration-150 text-left group cursor-pointer"
+                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-purple-50/40 border border-slate-200 hover:border-purple-200 rounded-[10px] transition-all duration-150 text-left group cursor-pointer"
                   >
                     <div className="flex flex-col">
                       <span className="text-[11px] font-bold text-slate-800 group-hover:text-purple-700 transition-colors duration-150">{w.type}</span>
@@ -628,244 +656,7 @@ export default function AdminModelsPage() {
             </div>
           </div>
 
-          {/* Dynamic simulator preview */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <h3 className="text-xs font-bold text-purple-700 uppercase tracking-widest border-b border-slate-100 pb-3 mb-5 flex items-center gap-1.5">
-              <Layout className="h-4 w-4 text-purple-700" /> Interactive Simulator
-            </h3>
 
-            <div className="max-w-xl bg-slate-50/50 border border-slate-200 rounded-2xl p-6 mx-auto shadow-sm relative">
-              
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 mb-5">
-                <h4 className="text-xs font-extrabold text-slate-900">
-                  ⚡ {widgetToolName} Preview Form
-                </h4>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] text-slate-400 font-bold uppercase">Test Tier:</span>
-                  <select
-                    value={mockSubscriberTier}
-                    onChange={(e) => setMockSubscriberTier(e.target.value)}
-                    className="bg-white border border-slate-200 rounded-2xl px-2 py-1 text-[10px] font-extrabold text-purple-700 focus:outline-none cursor-pointer"
-                  >
-                    <option value="free">Free Plan</option>
-                    <option value="starter">Starter Plan</option>
-                    <option value="standard">Standard Pro</option>
-                    <option value="professional">Professional</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap -mx-2 gap-y-4">
-                {widgets.length === 0 ? (
-                  <div className="w-full text-center py-6 text-slate-400 text-xs italic">
-                    Preview is empty. Add widgets above to preview fields.
-                  </div>
-                ) : (
-                  widgets.map(w => {
-                    let widthVal = '100';
-                    if (w.width) {
-                      const parsed = parseFloat(w.width.replace('%', ''));
-                      if (!isNaN(parsed)) {
-                        widthVal = String(parsed);
-                      } else if (w.width === 'half') {
-                        widthVal = '50';
-                      }
-                    }
-
-                    const isLocked = isWidgetLockedInMock(w);
-
-                    const widgetFieldContent = (
-                      <>
-                        {/* Dropdown */}
-                        {w.type === 'Select Dropdown' && (
-                          <select className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none font-semibold font-mono">
-                            {(w.dataSource ? (dbOptions[w.dataSource] || ['Loading options...']) : (w.options || [])).map((opt, oIdx) => (
-                              <option key={oIdx} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        )}
-
-                        {/* Option Grid */}
-                        {w.type === 'Option Grid' && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {(w.dataSource ? (dbOptions[w.dataSource] || ['Loading options...']) : (w.options || [])).map((opt, oIdx) => (
-                              <div key={oIdx} className={`px-3.5 py-1.5 rounded-lg text-xs transition-all border cursor-pointer ${oIdx === 0 ? 'bg-purple-50/70 border-purple-600 text-purple-800 font-bold shadow-2xs' : 'bg-white text-slate-700 border-slate-200'}`}>
-                                {opt}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Products / Furniture Picker or Check Grid */}
-                        {(w.id === 'selected-products' || w.dataSource === 'products' || (w.label && w.label.toLowerCase().includes('product'))) ? (
-                          <div className="space-y-2 pt-1 border-t border-slate-100 w-full">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-mono">
-                                0 / 10 selected
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                              {['All', 'Furniture', 'Electronics', 'Decoration', 'Lighting', 'Flooring', 'Appliances'].map((cat, cIdx) => (
-                                <span
-                                  key={cat}
-                                  className={`py-1 px-2.5 text-[10px] font-bold rounded-lg whitespace-nowrap border ${
-                                    cIdx === 0
-                                      ? 'bg-purple-600 text-white border-purple-600'
-                                      : 'bg-slate-50 text-slate-600 border-slate-200'
-                                  }`}
-                                >
-                                  {cat}
-                                </span>
-                              ))}
-                            </div>
-                            <div className="flex flex-wrap gap-1.5 p-2 bg-slate-50/80 rounded-xl border border-slate-200/90">
-                              {(w.options && w.options.length > 0 ? w.options : [
-                                'Sectional Sofa', 'Executive Desk', 'King Velvet Bed', 'Oak Dining Table', 'Cognac Armchair', 'Leather Recliner Chair', 'Floating TV Console', 'Oak Bookshelf & Display'
-                              ]).map((opt, oIdx) => (
-                                <div key={oIdx} className="px-2.5 py-1 text-xs font-semibold rounded-lg border bg-white border-slate-200 text-slate-700 flex items-center gap-1">
-                                  <span>{opt}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : w.type === 'Check Grid' ? (
-                          <div className="flex flex-wrap gap-1.5">
-                            {(w.dataSource ? (dbOptions[w.dataSource] || ['Loading options...']) : (w.options || [])).map((opt, oIdx) => (
-                              <div key={oIdx} className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 flex items-center gap-2 cursor-pointer shadow-2xs`}>
-                                <span>{opt}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : null}
-
-                        {/* Range Slider */}
-                        {w.type === 'Range Slider' && (
-                          <div className="flex flex-col gap-1.5 bg-white border border-slate-200 p-3 rounded-2xl shadow-xs">
-                            <div className="flex justify-between text-xs font-mono">
-                              <span className="text-slate-400">Range:</span>
-                              <span className="text-purple-600 font-bold">{w.defaultValue}</span>
-                            </div>
-                            <input 
-                              type="range" 
-                              min={w.min} 
-                              max={w.max} 
-                              step={w.step} 
-                              value={w.defaultValue} 
-                              className="w-full accent-purple-600 h-1 bg-slate-200 rounded-2xl cursor-pointer"
-                              readOnly
-                            />
-                          </div>
-                        )}
-
-                        {/* Color Swatch */}
-                        {w.type === 'Color Swatch' && (
-                          <div className="flex flex-wrap gap-2">
-                            {(w.dataSource ? (dbOptions[w.dataSource] || ['Loading options...']) : (w.options || [])).map((opt, oIdx) => (
-                              <div key={oIdx} className="px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-700 hover:bg-slate-55 cursor-pointer shadow-xs flex items-center gap-1.5">
-                                <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
-                                <span>{opt}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Text Input / Text Block */}
-                        {(w.type === 'Text Input' || w.type === 'Text Block' || w.type === 'Input' || w.type === 'Text Area') && (
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-semibold text-slate-400 font-mono">
-                                40 chars left
-                              </span>
-                            </div>
-                            <input 
-                              type="text"
-                              maxLength={w.maxLength || 40} 
-                              placeholder={w.placeholder || `e.g. Type ${w.label.toLowerCase()}...`} 
-                              className="w-full bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none font-medium shadow-2xs"
-                            />
-                          </div>
-                        )}
-
-                        {/* Asset Picker */}
-                        {w.type === 'Asset Picker' && (
-                          <div className="border border-dashed border-slate-300 rounded-2xl p-6 text-center hover:bg-white cursor-pointer bg-white">
-                            <span className="text-[10px] text-slate-400 block font-semibold">Upload Image reference</span>
-                          </div>
-                        )}
-                      </>
-                    );
-
-                    return (
-                      <div 
-                        key={w.id} 
-                        className="px-2 w-full sm:w-[var(--widget-width)] flex flex-col gap-2 relative group"
-                        style={{ '--widget-width': `${widthVal}%` } as React.CSSProperties}
-                      >
-                        <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between">
-                          <span>{w.label}</span>
-                          {w.required && <span className="text-rose-500">*</span>}
-                          {isLocked && (
-                            <span className="text-[8px] font-black bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse flex items-center gap-0.5 shadow-xs">
-                              🔒 {w.planRequirement} tier
-                            </span>
-                          )}
-                        </label>
-
-                        {isLocked ? (
-                          <div 
-                            onClick={() => {
-                              setUpgradePopup({
-                                isOpen: true,
-                                fieldName: w.label,
-                                requiredPlan: (w.planRequirement || 'free').toUpperCase()
-                              });
-                            }}
-                            className="relative cursor-pointer"
-                          >
-                            <div className="opacity-45 select-none pointer-events-none transition-all duration-200">
-                              {widgetFieldContent}
-                            </div>
-                            <div className="absolute inset-0 bg-transparent" />
-                          </div>
-                        ) : (
-                          widgetFieldContent
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Floating upgrade popup notification */}
-              {upgradePopup && upgradePopup.isOpen && (
-                <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-white/10 flex items-center gap-3.5 max-w-sm backdrop-blur-md bg-opacity-95">
-                  <div className="w-10 h-10 rounded-2xl bg-purple-600/20 flex items-center justify-center text-purple-400 shrink-0">
-                    <Zap className="w-5 h-5 text-purple-400 animate-pulse" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-slate-100">Upgrade Required</h4>
-                    <p className="text-[10px] text-slate-400 mt-0.5 leading-normal">
-                      The field <strong className="text-purple-400">"{upgradePopup.fieldName}"</strong> is exclusively available on the <strong className="text-white">{upgradePopup.requiredPlan} Plan</strong> and higher.
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-1.5 shrink-0">
-                    <button
-                      onClick={() => window.location.href = '/pricing'}
-                      className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white text-[10px] font-black rounded-2xl shadow-sm transition-all cursor-pointer"
-                    >
-                      Upgrade
-                    </button>
-                    <button
-                      onClick={() => setUpgradePopup(null)}
-                      className="text-[9px] text-slate-400 hover:text-white font-bold cursor-pointer"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       ) : (
         
@@ -874,32 +665,32 @@ export default function AdminModelsPage() {
         // ==============================================
         <>
           {successMsg && (
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-3 text-xs shadow-sm">
+            <div className="p-4 rounded-[10px] bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-3 text-xs shadow-sm">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
               <span className="font-bold">{successMsg}</span>
             </div>
           )}
 
           {error && (
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-center gap-3 text-xs shadow-sm">
+            <div className="p-4 rounded-[10px] bg-rose-50 border border-rose-200 text-rose-900 flex items-center gap-3 text-xs shadow-sm">
               <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
               <span className="font-bold">{error}</span>
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-2 border-b border-slate-200">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
               {[
-                { id: 'all', label: `All Models (${models.length})` },
-                { id: 'interior', label: 'Interior' },
-                { id: 'exterior', label: 'Exterior' },
-                { id: 'floorplan', label: 'Floor Plan' },
-                { id: 'editing', label: 'Editing' },
+                { id: 'all', label: `${t('admin.models.allModels') || 'All Models'} (${models.length})` },
+                { id: 'interior', label: t('admin.models.interior') || 'Interior' },
+                { id: 'exterior', label: t('admin.models.exterior') || 'Exterior' },
+                { id: 'floorplan', label: t('admin.models.floorplan') || 'Floor Plan' },
+                { id: 'editing', label: t('admin.models.editing') || 'Editing' },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedCategory(tab.id)}
-                  className={`px-4 py-2 text-xs font-bold rounded-2xl whitespace-nowrap transition-all cursor-pointer ${
+                  className={`px-4 py-2 text-xs font-bold rounded-[10px] whitespace-nowrap transition-all cursor-pointer ${
                     selectedCategory === tab.id
                       ? 'bg-purple-600 text-white shadow-md'
                       : 'bg-white text-slate-600 border border-slate-200 hover:bg-purple-50 hover:text-purple-700'
@@ -911,173 +702,181 @@ export default function AdminModelsPage() {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-[10px] overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left rtl:text-right border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-600">
-                    <th className="py-3.5 px-4">Model & Slug</th>
-                    <th className="py-3.5 px-4">Category & Badge</th>
-                    <th className="py-3.5 px-4">Credits</th>
-                    <th className="py-3.5 px-4 text-center">Original Image (Before)</th>
-                    <th className="py-3.5 px-4 text-center">Converted Image (After)</th>
-                    <th className="py-3.5 px-4">Description</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-xs font-extrabold text-slate-800 font-sans">
+                    <th className="py-3.5 px-4">{t('admin.models.modelSlug') || 'Model & Slug'}</th>
+                    <th className="py-3.5 px-4">{t('admin.models.categoryBadge') || 'Category & Badge'}</th>
+                    <th className="py-3.5 px-4">{t('admin.models.credits') || 'Credits'}</th>
+                    <th className="py-3.5 px-4 text-center">{t('admin.models.originalImage') || 'Original Image (Before)'}</th>
+                    <th className="py-3.5 px-4 text-center">{t('admin.models.convertedImage') || 'Converted Image (After)'}</th>
+                    <th className="py-3.5 px-4">{t('admin.models.description') || 'Description'}</th>
+                    <th className="py-3.5 px-4 text-right rtl:text-left">{t('admin.models.actions') || 'Actions'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-800 font-medium">
-                  {filteredModels.map((model) => (
-                    <tr key={model._id || model.slug} className="hover:bg-slate-50/80 transition-colors">
-                      {/* Model & Slug */}
-                      <td className="py-4 px-4">
-                        <div className="font-extrabold text-slate-900 font-heading text-sm">
-                          {model.name}
-                        </div>
-                        <code className="text-[10px] font-mono text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 mt-1 inline-block">
-                          {model.slug}
-                        </code>
-                      </td>
+                  {filteredModels.length > 0 ? (
+                    filteredModels.map((model) => (
+                      <tr key={model._id || model.slug} className="hover:bg-slate-50/80 transition-colors">
+                        {/* Model & Slug */}
+                        <td className="py-4 px-4">
+                          <div className="font-extrabold text-slate-900 font-heading text-sm">
+                            {model.name}
+                          </div>
+                          <code className="text-[10px] font-mono text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 mt-1 inline-block">
+                            {model.slug}
+                          </code>
+                        </td>
 
-                      {/* Category & Badge */}
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col gap-1 items-start">
-                          <span className="capitalize font-bold px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700">
-                            {model.category}
+                        {/* Category & Badge */}
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className="capitalize font-bold px-2 py-0.5 rounded-md text-[10px] bg-slate-100 text-slate-700">
+                              {model.category}
+                            </span>
+                            {model.badge && (
+                              <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-purple-100 text-purple-800 border border-purple-200">
+                                {model.badge}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Credits */}
+                        <td className="py-4 px-4">
+                          <span className="inline-flex items-center gap-1 font-bold text-slate-900 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-[10px] text-xs">
+                            <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                            {model.creditCost}
                           </span>
-                          {model.badge && (
-                            <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-purple-100 text-purple-800 border border-purple-200">
-                              {model.badge}
-                            </span>
-                          )}
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Credits */}
-                      <td className="py-4 px-4">
-                        <span className="inline-flex items-center gap-1 font-bold text-slate-900 px-2 py-1 bg-amber-50 border border-amber-200 rounded-2xl text-xs">
-                          <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
-                          {model.creditCost}
-                        </span>
-                      </td>
+                        {/* Original Image thumbnail */}
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-20 h-14 rounded-[10px] overflow-hidden border border-slate-200 bg-slate-900 relative shadow-xs group">
+                              <img
+                                src={
+                                  model.originalImage
+                                    ? (model.originalImage.startsWith('/uploads/') ? `http://localhost:5001${model.originalImage}` : model.originalImage)
+                                    : 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop'
+                                }
+                                alt={`${model.name} Original`}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop';
+                                }}
+                              />
+                              <span className="absolute bottom-0.5 left-0.5 px-1 py-0.2 bg-slate-900/80 text-[7px] font-black text-white rounded-md">
+                                Original
+                              </span>
+                            </div>
 
-                      {/* Original Image thumbnail */}
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="w-20 h-14 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 relative shadow-xs group">
-                            <img
-                              src={
-                                model.originalImage
-                                  ? (model.originalImage.startsWith('/uploads/') ? `http://localhost:5001${model.originalImage}` : model.originalImage)
-                                  : 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop'
-                              }
-                              alt={`${model.name} Original`}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?q=80&w=800&auto=format&fit=crop';
-                              }}
-                            />
-                            <span className="absolute bottom-0.5 left-0.5 px-1 py-0.2 bg-slate-900/80 text-[7px] font-black text-white rounded">
-                              Original
-                            </span>
+                            <label className="px-2.5 py-1 rounded-[10px] bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors">
+                              {uploadingToolId === `${model._id || model.slug}-originalImage` ? (
+                                <span className="animate-pulse">{t('admin.models.uploading') || 'Uploading...'}</span>
+                              ) : (
+                                <>
+                                  <Upload className="w-2.5 h-2.5 text-purple-600" />
+                                  <span>{t('admin.models.upload') || 'Upload'}</span>
+                                </>
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleFileUpload(model._id || model.slug, 'originalImage', file);
+                                }}
+                              />
+                            </label>
                           </div>
+                        </td>
 
-                          <label className="px-2 py-1 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors">
-                            {uploadingToolId === `${model._id || model.slug}-originalImage` ? (
-                              <span className="animate-pulse">Uploading...</span>
-                            ) : (
-                              <>
-                                <Upload className="w-2.5 h-2.5 text-purple-600" />
-                                <span>Upload</span>
-                              </>
-                            )}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleFileUpload(model._id || model.slug, 'originalImage', file);
-                              }}
-                            />
-                          </label>
-                        </div>
-                      </td>
+                        {/* Converted Image thumbnail */}
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-20 h-14 rounded-[10px] overflow-hidden border border-slate-200 bg-slate-900 relative shadow-xs group">
+                              <img
+                                src={
+                                  model.convertedImage
+                                    ? (model.convertedImage.startsWith('/uploads/') ? `http://localhost:5001${model.convertedImage}` : model.convertedImage)
+                                    : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop'
+                                }
+                                alt={`${model.name} Converted`}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop';
+                                }}
+                              />
+                              <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 bg-purple-600 text-[7px] font-black text-white rounded-md flex items-center gap-0.5">
+                                <Sparkles className="w-1.5 h-1.5 text-amber-300 fill-amber-300" />
+                                <span>AI Render</span>
+                              </span>
+                            </div>
 
-                      {/* Converted Image thumbnail */}
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="w-20 h-14 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 relative shadow-xs group">
-                            <img
-                              src={
-                                model.convertedImage
-                                  ? (model.convertedImage.startsWith('/uploads/') ? `http://localhost:5001${model.convertedImage}` : model.convertedImage)
-                                  : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop'
-                              }
-                              alt={`${model.name} Converted`}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop';
-                              }}
-                            />
-                            <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 bg-purple-600 text-[7px] font-black text-white rounded flex items-center gap-0.5">
-                              <Sparkles className="w-1.5 h-1.5 text-amber-300 fill-amber-300" />
-                              <span>AI Render</span>
-                            </span>
+                            <label className="px-2.5 py-1 rounded-[10px] bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-xs">
+                              {uploadingToolId === `${model._id || model.slug}-convertedImage` ? (
+                                <span className="animate-pulse">{t('admin.models.uploading') || 'Uploading...'}</span>
+                              ) : (
+                                <>
+                                  <Upload className="w-2.5 h-2.5 text-white" />
+                                  <span>{t('admin.models.upload') || 'Upload'}</span>
+                                </>
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleFileUpload(model._id || model.slug, 'convertedImage', file);
+                                }}
+                              />
+                            </label>
                           </div>
+                        </td>
 
-                          <label className="px-2 py-1 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-xs">
-                            {uploadingToolId === `${model._id || model.slug}-convertedImage` ? (
-                              <span className="animate-pulse">Uploading...</span>
-                            ) : (
-                              <>
-                                <Upload className="w-2.5 h-2.5 text-white" />
-                                <span>Upload</span>
-                              </>
-                            )}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleFileUpload(model._id || model.slug, 'convertedImage', file);
-                              }}
-                            />
-                          </label>
-                        </div>
-                      </td>
+                        {/* Description */}
+                        <td className="py-4 px-4 max-w-xs text-slate-600 text-[11px] leading-relaxed line-clamp-2">
+                          {model.description || 'No description configured.'}
+                        </td>
 
-                      {/* Description */}
-                      <td className="py-4 px-4 max-w-xs text-slate-600 text-[11px] leading-relaxed line-clamp-2">
-                        {model.description || 'No description configured.'}
-                      </td>
+                        {/* Actions */}
+                        <td className="py-4 px-4 text-right">
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => setEditingModel(model)}
+                              className="px-3 py-1.5 rounded-[10px] bg-slate-100 hover:bg-purple-600 hover:text-white text-slate-700 text-xs font-extrabold inline-flex items-center gap-1 transition-all cursor-pointer"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                              <span>Edit</span>
+                            </button>
 
-                      {/* Actions */}
-                      <td className="py-4 px-4 text-right">
-                        <div className="inline-flex items-center gap-1.5">
-                          <button
-                            onClick={() => setEditingModel(model)}
-                            className="px-3 py-1.5 rounded-2xl bg-slate-100 hover:bg-purple-600 hover:text-white text-slate-700 text-xs font-extrabold inline-flex items-center gap-1 transition-all cursor-pointer"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                            <span>Edit</span>
-                          </button>
-
-                          {/* Dynamic Form Customizer button link */}
-                          <button
-                            onClick={() => startCustomizing(model)}
-                            className="px-3 py-1.5 rounded-2xl bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-700 hover:border-purple-600 text-xs font-extrabold inline-flex items-center gap-1.5 transition-all cursor-pointer border border-purple-100"
-                            title="Customize input fields & options"
-                          >
-                            <ClipboardList className="w-3.5 h-3.5" />
-                            <span>Form</span>
-                          </button>
-                        </div>
+                            {/* Dynamic Form Customizer button link */}
+                            <button
+                              onClick={() => startCustomizing(model)}
+                              className="px-3 py-1.5 rounded-[10px] bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-700 hover:border-purple-600 text-xs font-extrabold inline-flex items-center gap-1.5 transition-all cursor-pointer border border-purple-100"
+                              title="Customize input fields & options"
+                            >
+                              <ClipboardList className="w-3.5 h-3.5" />
+                              <span>Form</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400 font-bold leading-relaxed">
+                        {searchQuery ? `No AI models found matching "${searchQuery}"` : 'No models available.'}
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1088,7 +887,7 @@ export default function AdminModelsPage() {
       {/* Edit Model Details Modal Popup */}
       {editingModel && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+          <div className="bg-white rounded-[10px] max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-extrabold text-slate-900 font-heading">
                 Edit AI Model: {editingModel.name}
@@ -1108,7 +907,7 @@ export default function AdminModelsPage() {
                   type="text"
                   value={editingModel.name}
                   onChange={(e) => setEditingModel({ ...editingModel, name: e.target.value })}
-                  className="w-full p-2.5 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 mt-1"
+                  className="w-full p-2.5 border border-slate-200 rounded-[10px] text-xs font-semibold text-slate-900 mt-1"
                 />
               </div>
 
@@ -1120,7 +919,7 @@ export default function AdminModelsPage() {
                     value={editingModel.badge || ''}
                     onChange={(e) => setEditingModel({ ...editingModel, badge: e.target.value })}
                     placeholder="e.g. Model 01, Pro AI"
-                    className="w-full p-2.5 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 mt-1"
+                    className="w-full p-2.5 border border-slate-200 rounded-[10px] text-xs font-semibold text-slate-900 mt-1"
                   />
                 </div>
 
@@ -1130,7 +929,7 @@ export default function AdminModelsPage() {
                     type="number"
                     value={editingModel.creditCost}
                     onChange={(e) => setEditingModel({ ...editingModel, creditCost: Number(e.target.value) })}
-                    className="w-full p-2.5 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 mt-1"
+                    className="w-full p-2.5 border border-slate-200 rounded-[10px] text-xs font-semibold text-slate-900 mt-1"
                   />
                 </div>
               </div>
@@ -1141,7 +940,7 @@ export default function AdminModelsPage() {
                   rows={3}
                   value={editingModel.description || ''}
                   onChange={(e) => setEditingModel({ ...editingModel, description: e.target.value })}
-                  className="w-full p-2.5 border border-slate-200 rounded-2xl text-xs text-slate-900 mt-1 resize-none"
+                  className="w-full p-2.5 border border-slate-200 rounded-[10px] text-xs text-slate-900 mt-1 resize-none"
                 />
               </div>
 
@@ -1151,7 +950,7 @@ export default function AdminModelsPage() {
                   type="text"
                   value={editingModel.originalImage || ''}
                   onChange={(e) => setEditingModel({ ...editingModel, originalImage: e.target.value })}
-                  className="w-full p-2.5 border border-slate-200 rounded-2xl text-xs text-slate-900 font-mono mt-1"
+                  className="w-full p-2.5 border border-slate-200 rounded-[10px] text-xs text-slate-900 font-mono mt-1"
                 />
               </div>
 
@@ -1161,7 +960,7 @@ export default function AdminModelsPage() {
                   type="text"
                   value={editingModel.convertedImage || ''}
                   onChange={(e) => setEditingModel({ ...editingModel, convertedImage: e.target.value })}
-                  className="w-full p-2.5 border border-slate-200 rounded-2xl text-xs text-slate-900 font-mono mt-1"
+                  className="w-full p-2.5 border border-slate-200 rounded-[10px] text-xs text-slate-900 font-mono mt-1"
                 />
               </div>
             </div>
@@ -1170,7 +969,7 @@ export default function AdminModelsPage() {
               <button
                 type="button"
                 onClick={() => setEditingModel(null)}
-                className="px-4 py-2 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="px-4 py-2 rounded-[10px] text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
                 Cancel
               </button>
@@ -1178,7 +977,7 @@ export default function AdminModelsPage() {
                 type="button"
                 disabled={isSaving}
                 onClick={handleSaveModelEdit}
-                className="px-5 py-2 rounded-2xl text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700 shadow-md cursor-pointer"
+                className="px-5 py-2 rounded-[10px] text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700 shadow-md cursor-pointer"
               >
                 {isSaving ? 'Saving...' : 'Save Model Changes'}
               </button>

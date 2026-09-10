@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional, Inject } from '@nestjs/common';
 import { IAIProvider, ImageGenerationInput, ImageGenerationOutput, WorkflowStepItem } from '../../../common/interfaces/ai-provider.interface';
 import axios from 'axios';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 // INITIAL SANITIZED USER-FACING WORKFLOW STEPS
 export const INITIAL_WORKFLOW_STEPS: WorkflowStepItem[] = [
@@ -92,6 +93,10 @@ export class ManusProvider implements IAIProvider {
   readonly id = 'manus';
   readonly name = 'Manus AI';
   private readonly logger = new Logger(ManusProvider.name);
+
+  constructor(
+    @Optional() @Inject(NotificationsService) private readonly notificationsService?: NotificationsService,
+  ) {}
 
   // In-memory key index pointer for round-robin rotation
   private currentKeyIndex = 0;
@@ -550,6 +555,26 @@ export class ManusProvider implements IAIProvider {
         const totalTime = Date.now() - startTime;
         this.logger.log(`Manus AI generation request completed in ${totalTime}ms using Key #${keyIndex + 1}. Task ID: ${targetTaskId}`);
 
+        // Trigger real-time Socket.IO Admin Notification for successful generation without page refresh
+        if (this.notificationsService) {
+          this.notificationsService.notifyAdmin({
+            title: '🎨 AI Image Generation Successful',
+            message: `AI Room Redesign successfully rendered image in ${totalTime}ms (Task: ${targetTaskId || 'N/A'}).`,
+            type: 'success',
+            metadata: { taskId: targetTaskId, url: outputUrl, durationMs: totalTime },
+          }).catch((e) => this.logger.warn(`Admin notification error: ${e.message}`));
+
+          if (input.userId) {
+            this.notificationsService.notifyUser({
+              userId: input.userId,
+              title: '🎨 AI Room Redesign Ready!',
+              message: 'Your high-resolution room redesign has completed rendering and is ready to view.',
+              type: 'success',
+              metadata: { taskId: targetTaskId, url: outputUrl },
+            }).catch((e) => this.logger.warn(`User notification error: ${e.message}`));
+          }
+        }
+
         return {
           imageUrl: outputUrl,
           generatedImages: allCollectedGeneratedImages.length > 0 ? allCollectedGeneratedImages : [outputUrl],
@@ -567,14 +592,46 @@ export class ManusProvider implements IAIProvider {
 
         this.logger.warn(`Manus API Key #${keyIndex + 1} failed (Status ${status || 'Error'}): ${errMsg}`);
 
+        // Trigger Manus AI credit balance / quota limit warning notification
+        if (status === 429 || status === 402 || status === 401 || status === 403) {
+          if (this.notificationsService) {
+            this.notificationsService.notifyAdmin({
+              title: '⚠️ Manus AI Credits / Balance Limit Reached',
+              message: `Manus AI API Key #${keyIndex + 1} credit balance reached end or quota limit hit (Status ${status}): ${errMsg}`,
+              type: 'warning',
+              metadata: { keyIndex, status, error: errMsg },
+            }).catch((e) => this.logger.warn(`Admin notification error: ${e.message}`));
+          }
+        }
+
         // If rate limit (429), quota exceeded (402/403), or auth failure (401), try next key if available
         if ((status === 429 || status === 402 || status === 401 || status === 403) && i < apiKeys.length - 1) {
           this.logger.log(`⚠️ Auto-rotating to next available Manus API Key in pool...`);
           continue;
         }
 
+        // Trigger real-time Socket.IO Admin Notification for generation error
+        if (this.notificationsService) {
+          this.notificationsService.notifyAdmin({
+            title: '🚨 AI Image Generation Error',
+            message: `AI Room Redesign generation failed: ${errMsg}`,
+            type: 'alert',
+            metadata: { error: errMsg, keyIndex, status },
+          }).catch((e) => this.logger.warn(`Admin notification error: ${e.message}`));
+        }
+
         throw new Error(`Manus API Request Failed (Status ${status || 'Error'}): ${errMsg}`);
       }
+    }
+
+    // Trigger notification when all keys fail / balance reaches end
+    if (this.notificationsService) {
+      this.notificationsService.notifyAdmin({
+        title: '🔴 Manus AI Credits Exhausted',
+        message: `All ${apiKeys.length} Manus API keys failed or ran out of credits. Last error: ${lastErrorMessage}`,
+        type: 'alert',
+        metadata: { keysCount: apiKeys.length, lastError: lastErrorMessage },
+      }).catch((e) => this.logger.warn(`Admin notification error: ${e.message}`));
     }
 
     throw new Error(`All ${apiKeys.length} Manus API keys failed. Last error: ${lastErrorMessage}`);

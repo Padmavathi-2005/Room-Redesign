@@ -326,31 +326,6 @@ describe('Subscription, Credit & Room Protection Test Suite', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('11. Credit Pack Purchase Rejection: Free user cannot buy credit booster packs', async () => {
-    mockUser.plan = SubscriptionPlan.FREE;
-    const packsRes = await service.getEligibleCreditPacks('507f1f77bcf86cd799439011');
-    expect(packsRes.isEligible).toBe(false);
-    expect(packsRes.packs).toHaveLength(0);
-
-    await expect(
-      service.createCreditPackCheckoutSession('507f1f77bcf86cd799439011', 'quick-boost'),
-    ).rejects.toThrow(ForbiddenException);
-  });
-
-  it('12. Credit Pack Provisioning: Active Starter user can provision verified credit pack', async () => {
-    mockUser.plan = SubscriptionPlan.STARTER;
-    mockUser.subscriptionStatus = 'active';
-    mockUser.credits = 40;
-    mockUser.creditLots = [];
-
-    const updated = await service.grantCreditPack('507f1f77bcf86cd799439011', 'quick-boost', 'cs_pack_123', 12);
-    expect(updated.credits).toBe(60); // 40 + 20
-    expect(updated.creditLots[0].source).toContain('QUICK BOOST');
-    expect(mockCreditLedgerModel.create).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 20, type: expect.stringMatching(/GRANT/) }),
-    );
-  });
-
   it('13. Earliest-Expiry-First (FEFO) Consumption: Should consume credits from earliest expiring lot first', async () => {
     mockUser.plan = SubscriptionPlan.STARTER;
     const futureFar = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);

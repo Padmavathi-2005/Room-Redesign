@@ -7,8 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
   FolderKanban,
-  Wand2,
-  ShoppingCart,
+  Heart,
   Zap,
   Settings,
   Home,
@@ -16,7 +15,10 @@ import {
   PanelLeftOpen,
   Bell,
   Sparkles,
+  Receipt,
 } from 'lucide-react';
+
+import { useTranslation } from '@/context/LanguageContext';
 
 interface SidebarNavProps {
   className?: string;
@@ -24,7 +26,9 @@ interface SidebarNavProps {
 }
 
 export default function SidebarNav({ className = '', onToggleCollapse }: SidebarNavProps) {
-  const pathname = usePathname();
+  const { t } = useTranslation();
+  const rawPathname = usePathname();
+  const pathname = rawPathname || '';
   const isHomeOrDashboard = pathname === '/' || pathname === '/dashboard';
 
   // Manage collapse state — default collapsed on sub-pages (instead of home/dashboard page), expanded on home/dashboard
@@ -46,15 +50,15 @@ export default function SidebarNav({ className = '', onToggleCollapse }: Sidebar
     setUserOverride((prev) => (prev === null ? !isCollapsed : !prev));
   };
 
-  const NAV_ITEMS = [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'My Designs', href: '/designs', icon: Sparkles },
-    { label: 'Projects', href: '/projects', icon: FolderKanban },
-    { label: 'Notifications', href: '/notifications', icon: Bell },
-    { label: 'AI Tools', href: '/generate', icon: Wand2, badge: 'New' },
-    { label: 'Shopping List', href: '/shopping-list', icon: ShoppingCart },
-    { label: 'Credits & Plans', href: '/billing', icon: Zap },
-    { label: 'Profile Settings', href: '/profile', icon: Settings },
+  const NAV_ITEMS: Array<{ label: string; href: string; icon: any; badge?: string }> = [
+    { label: t('sidebar.dashboard'), href: '/dashboard', icon: LayoutDashboard },
+    { label: t('sidebar.myDesigns'), href: '/designs', icon: Sparkles },
+    { label: t('sidebar.projects'), href: '/projects', icon: FolderKanban },
+    { label: t('sidebar.notifications'), href: '/notifications', icon: Bell },
+    { label: t('sidebar.wishlist'), href: '/wishlist', icon: Heart },
+    { label: t('sidebar.creditsPlans'), href: '/billing', icon: Zap },
+    { label: t('sidebar.transactions'), href: '/transactions', icon: Receipt },
+    { label: t('sidebar.profileSettings'), href: '/profile', icon: Settings },
   ];
 
   return (
@@ -147,7 +151,7 @@ export default function SidebarNav({ className = '', onToggleCollapse }: Sidebar
                 <div className="absolute left-full ml-3.5 px-3.5 py-2 rounded-[10px] bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white text-[11px] font-extrabold whitespace-nowrap shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 z-[100] flex items-center gap-2 border border-blue-400/40 backdrop-blur-md translate-x-1.5 group-hover:translate-x-0 font-sans">
                   <div className="w-2 h-2 bg-blue-600 rotate-45 absolute -left-1 top-1/2 -translate-y-1/2 border-l border-b border-blue-400/40" />
                   <span className="relative z-10 font-sans">
-                    {item.href === '/dashboard' ? 'Back to Dashboard' : item.label}
+                    {item.href === '/dashboard' ? t('sidebar.backToDashboard') : item.label}
                   </span>
                   {item.badge && (
                     <span className="relative z-10 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-400 text-slate-900 shadow-xs font-sans">
@@ -177,13 +181,13 @@ export default function SidebarNav({ className = '', onToggleCollapse }: Sidebar
               </div>
               <div className="absolute left-full ml-3.5 px-3.5 py-2 rounded-[10px] bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white text-[11px] font-bold whitespace-nowrap shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 z-[100] border border-blue-400/40 backdrop-blur-md translate-x-1.5 group-hover:translate-x-0 font-sans">
                 <div className="w-2 h-2 bg-blue-600 rotate-45 absolute -left-1 top-1/2 -translate-y-1/2 border-l border-b border-blue-400/40" />
-                <span className="relative z-10 font-sans">Expand Sidebar</span>
+                <span className="relative z-10 font-sans">{t('sidebar.expand')}</span>
               </div>
             </>
           ) : (
             <div className="flex items-center gap-2.5 w-full">
               <PanelLeftClose className="w-4 h-4 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0 transition-transform group-hover:scale-110" />
-              <span className="text-xs transition-opacity duration-300 font-bold font-sans">Minimize Sidebar</span>
+              <span className="text-xs transition-opacity duration-300 font-bold font-sans">{t('sidebar.minimize')}</span>
             </div>
           )}
         </button>

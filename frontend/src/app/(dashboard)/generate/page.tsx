@@ -46,6 +46,7 @@ import {
   Wallet,
   CreditCard,
   Maximize2,
+  Eye,
   XCircle,
   Loader2,
 } from 'lucide-react';
@@ -55,6 +56,7 @@ import { useToast } from '@/context/ToastContext';
 import { CreditTokenIcon } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import { triggerImageDownload } from '@/utils/download';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface StudioToolConfig {
   id: string;
@@ -599,7 +601,8 @@ const CustomSelect: React.FC<{
   options: Array<{ value: string; label: string }>;
   placeholder?: string;
   className?: string;
-}> = ({ value, onChange, options, placeholder = 'Select option', className = '' }) => {
+}> = ({ value, onChange, options, placeholder, className = '' }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -618,8 +621,9 @@ const CustomSelect: React.FC<{
     if (!isOpen) setSearchQuery('');
   }, [isOpen]);
 
+  const defaultPlaceholder = placeholder || 'Select option';
   const selectedItem = options.find((opt) => opt.value === value);
-  const displayLabel = selectedItem ? selectedItem.label : value || placeholder;
+  const displayLabel = selectedItem ? selectedItem.label : value || defaultPlaceholder;
 
   const showSearch = options.length > 5;
   const filteredOptions = showSearch
@@ -657,7 +661,7 @@ const CustomSelect: React.FC<{
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search options..."
+                    placeholder={t.common?.search || 'Search options...'}
                     className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 font-medium"
                     onClick={(e) => e.stopPropagation()}
                   />
@@ -679,7 +683,7 @@ const CustomSelect: React.FC<{
 
             {filteredOptions.length === 0 ? (
               <div className="px-3 py-2 text-xs font-semibold text-slate-400 text-center">
-                No matching options found
+                {t.common?.search ? 'No matching options found' : 'No matching options found'}
               </div>
             ) : (
               filteredOptions.map((opt, idx) => {
@@ -715,12 +719,243 @@ function GenerateStudioContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const toolSlug = searchParams?.get('tool');
+
+  const getLocalizedToolName = (toolId: string, defaultName: string) => {
+    const map: Record<string, string | undefined> = {
+      'floor-plan-generator': t.generate?.tools?.floorPlanGenerator,
+      '3d-floor-plan': t.generate?.tools?.threeDFloorPlan,
+      'floor-plan-maker': t.generate?.tools?.floorPlanMaker,
+      'interior-design': t.generate?.tools?.interiorDesign,
+      'ai-room-decorator': t.generate?.tools?.roomDecorator,
+      'ai-room-cleaner': t.generate?.tools?.roomCleaner,
+      'paint-color-visualizer': t.generate?.tools?.paintVisualizer,
+      'style-transfer': t.generate?.tools?.styleTransfer,
+      'change-room-light': t.generate?.tools?.changeRoomLight,
+      'ai-wall-design': t.generate?.tools?.wallDesign,
+      'exterior-design': t.generate?.tools?.exteriorDesign,
+      'house-facade': t.generate?.tools?.houseFacade,
+      'backyard-patio': t.generate?.tools?.backyardPatio,
+      'landscape-design': t.generate?.tools?.landscapeDesign,
+      'pool-design': t.generate?.tools?.poolDesign,
+      'rooftop-terrace': t.generate?.tools?.rooftopTerrace,
+    };
+    return map[toolId] || defaultName;
+  };
+
+  const getLocalizedBadge = (badge: string) => {
+    const bLower = badge.toLowerCase().trim();
+    if (bLower.includes('top rated')) return t.generate?.topRated || badge;
+    if (bLower.includes('popular')) return t.generate?.popular || badge;
+    return badge;
+  };
+
+  const getLocalizedStyleName = (styleName: string) => {
+    const cleanKey = styleName.toLowerCase().replace(/[^a-z]/g, '') as keyof typeof t.styles;
+    if (t.styles && t.styles[cleanKey] && (t.styles[cleanKey] as any).name) {
+      return (t.styles[cleanKey] as any).name;
+    }
+    return styleName;
+  };
+
+  const getLocalizedFurnitureHandling = (optId: string, defaultLabel: string) => {
+    if (optId === 'replace-all' && t.generate?.furnitureOptions?.replace) return t.generate.furnitureOptions.replace;
+    if (optId === 'reuse' && t.generate?.furnitureOptions?.keep) return t.generate.furnitureOptions.keep;
+    if (optId === 'empty' && t.generate?.furnitureOptions?.empty) return t.generate.furnitureOptions.empty;
+    return defaultLabel;
+  };
+
+  const getLocalizedBudget = (slug: string, defaultName: string) => {
+    if ((slug === 'budget' || slug === 'economy') && t.generate?.budgets?.budget) return t.generate.budgets.budget;
+    if (slug === 'standard' && t.generate?.budgets?.standard) return t.generate.budgets.standard;
+    if (slug === 'premium' && t.generate?.budgets?.premium) return t.generate.budgets.premium;
+    if (slug === 'luxury' && t.generate?.budgets?.luxury) return t.generate.budgets.luxury;
+    return defaultName;
+  };
+
+  const getLocalizedRoomSize = (id: string, defaultLabel: string) => {
+    if (id === 'small' && t.generate?.sizes?.small) return t.generate.sizes.small;
+    if (id === 'medium' && t.generate?.sizes?.medium) return t.generate.sizes.medium;
+    if (id === 'large' && t.generate?.sizes?.large) return t.generate.sizes.large;
+    if (id === 'xlarge' && t.generate?.sizes?.xlarge) return t.generate.sizes.xlarge;
+    return defaultLabel;
+  };
+
+  const getLocalizedWidgetLabel = (rawLabel: string, widgetId: string): string => {
+    const fl = t.generate?.formLabels;
+    if (!fl) return rawLabel;
+
+    const id = (widgetId || '').toLowerCase();
+    const lower = (rawLabel || '').toLowerCase();
+
+    if (id === 'bedrooms-count' || id === 'bedrooms' || lower.includes('bedroom count') || lower.includes('bedrooms count')) {
+      return fl.bedroomsCount || rawLabel;
+    }
+    if (id === 'bathrooms-count' || id === 'bathrooms' || lower.includes('bathroom count') || lower.includes('bathrooms count')) {
+      return fl.bathroomsCount || rawLabel;
+    }
+    if (id === 'layout-style' || id === 'floor-plan-style' || lower.includes('layout style')) {
+      return fl.layoutStyle || rawLabel;
+    }
+    if (id === 'plot-dimensions' || lower.includes('plot dimension')) {
+      return fl.plotDimensions || rawLabel;
+    }
+    if (id === 'flooring-materials' || lower.includes('flooring material')) {
+      return fl.flooringMaterials || rawLabel;
+    }
+    if (id === 'perspective-view' || lower.includes('perspective view')) {
+      return fl.perspectiveView || rawLabel;
+    }
+    if (id === 'kitchen-style' || lower.includes('kitchen style')) {
+      return fl.kitchenStyle || rawLabel;
+    }
+    if (id === 'cabinet-color' || lower.includes('cabinet color')) {
+      return fl.cabinetColor || rawLabel;
+    }
+    if (id === 'countertop-material' || lower.includes('countertop material')) {
+      return fl.countertopMaterial || rawLabel;
+    }
+    if (id === 'appliance-finish' || lower.includes('appliance finish')) {
+      return fl.applianceFinish || rawLabel;
+    }
+    if (id === 'bathroom-style' || lower.includes('bathroom theme')) {
+      return fl.bathroomTheme || rawLabel;
+    }
+    if (id === 'tub-type' || lower.includes('bathtub selection') || lower.includes('bathtub')) {
+      return fl.bathtubSelection || rawLabel;
+    }
+    if (id === 'fixtures-finish' || lower.includes('fixtures finish')) {
+      return fl.fixturesFinish || rawLabel;
+    }
+    if (id === 'bedroom-style' || lower.includes('bedroom style')) {
+      return fl.bedroomStyle || rawLabel;
+    }
+    if (id === 'bed-size' || lower.includes('bed size')) {
+      return fl.bedSize || rawLabel;
+    }
+    if (id === 'color-theme' || lower.includes('bedding color')) {
+      return fl.beddingColorTheme || rawLabel;
+    }
+    if (id === 'decor-mode' || lower.includes('decoration mode')) {
+      return fl.decorationMode || rawLabel;
+    }
+    if (id === 'decor-accents' || lower.includes('decorative texture')) {
+      return fl.decorativeTextures || rawLabel;
+    }
+    if (id === 'decor-items' || lower.includes('decor items to add')) {
+      return fl.decorItemsToAdd || rawLabel;
+    }
+    if (id === 'clean-level' || lower.includes('declutter level')) {
+      return fl.declutterLevel || rawLabel;
+    }
+    if (id === 'items-to-remove' || lower.includes('items to remove')) {
+      return fl.itemsToRemove || rawLabel;
+    }
+    if (id === 'paint-color' || lower.includes('wall paint color')) {
+      return fl.wallPaintColor || rawLabel;
+    }
+    if (id === 'paint-finish' || lower.includes('paint finish')) {
+      return fl.paintFinish || rawLabel;
+    }
+    if (id === 'target-area' || lower.includes('target area')) {
+      return fl.targetArea || rawLabel;
+    }
+    if (id === 'floor-material' || lower.includes('floor material')) {
+      return fl.floorMaterial || rawLabel;
+    }
+    if (id === 'pattern' || lower.includes('layout pattern')) {
+      return fl.layoutPattern || rawLabel;
+    }
+    if (id === 'style-reference' || lower.includes('style reference')) {
+      return fl.uploadStyleReference || rawLabel;
+    }
+    if (id === 'blend-strength' || lower.includes('blend strength')) {
+      return fl.styleBlendStrength || rawLabel;
+    }
+    if (id === 'sunlight' || lower.includes('sunlight') || lower.includes('time of day')) {
+      return fl.timeOfDaySunlight || rawLabel;
+    }
+    if (id === 'temp' || lower.includes('color temperature')) {
+      return fl.colorTemperature || rawLabel;
+    }
+    if (id === 'lamps' || lower.includes('artificial lamp') || lower.includes('lamp light')) {
+      return fl.artificialLamps || rawLabel;
+    }
+    if (id === 'wall-treatment' || lower.includes('wall accent material')) {
+      return fl.wallAccentMaterial || rawLabel;
+    }
+    if (id === 'accent-color' || lower.includes('accent trim color')) {
+      return fl.accentTrimColor || rawLabel;
+    }
+    if (id === 'flooring' || lower.includes('flooring accent')) {
+      return fl.flooring || rawLabel;
+    }
+    if (id === 'control-strength' || lower.includes('structure preservation')) {
+      return fl.structurePreservation || rawLabel;
+    }
+    if (id === 'furniture-layout' || lower.includes('furniture')) {
+      return t.generate?.furnitureLayoutHandling || rawLabel;
+    }
+    if (id === 'budget-level' || lower.includes('budget')) {
+      return t.generate?.budgetLevel || rawLabel;
+    }
+    if (id === 'selected-products' || lower.includes('products')) {
+      return t.generate?.selectProducts || rawLabel;
+    }
+    if (id === 'room-size' || lower.includes('room size')) {
+      return t.generate?.roomSize || rawLabel;
+    }
+
+    return rawLabel;
+  };
+
+  const getLocalizedLayoutStyle = (style: string): string => {
+    const ls = t.generate?.formLabels?.layoutStyles;
+    if (!ls) return style;
+    if (style === 'Modern Open-Concept') return ls.modernOpen || style;
+    if (style === 'Minimalist Split-Level') return ls.splitLevel || style;
+    if (style === 'Luxury Villa Layout') return ls.luxuryVilla || style;
+    if (style === 'Traditional Family Home') return ls.traditionalFamily || style;
+    if (style === 'Executive Suite') return ls.executiveSuite || style;
+    return style;
+  };
+
+  const getLocalizedInterventionLevel = (lvl: string): string => {
+    const il = t.generate?.formLabels?.interventionLevels;
+    if (!il) return lvl;
+    if (lvl === 'Very Low') return il.veryLow || lvl;
+    if (lvl === 'Low') return il.low || lvl;
+    if (lvl === 'Medium') return il.medium || lvl;
+    if (lvl === 'Extreme') return il.extreme || lvl;
+    return lvl;
+  };
 
   // React State Hooks
   const [activeSpace, setActiveSpace] = useState<'floor-plans' | 'interiors' | 'exteriors' | 'gardens'>('interiors');
   const [selectedToolId, setSelectedToolId] = useState<string>(toolSlug || 'interior-design');
   const [isToolPickerOpen, setIsToolPickerOpen] = useState<boolean>(false);
+
+  // Credit Highlight state when redirected from bonus offer modal
+  const [isCreditHighlighted, setIsCreditHighlighted] = useState<boolean>(false);
+
+  useEffect(() => {
+    const highlightParam = searchParams?.get('highlightCredits');
+    if (highlightParam === 'true') {
+      setIsCreditHighlighted(true);
+      const timer = setTimeout(() => {
+        setIsCreditHighlighted(false);
+      }, 6000);
+
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('highlightCredits');
+        window.history.replaceState({}, '', url.pathname + url.search);
+      }
+
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   // Model 01: Floor Plan Generator State
   const [bedroomsCount, setBedroomsCount] = useState<number>(3);
@@ -771,6 +1006,7 @@ function GenerateStudioContent() {
   const [creditBlocked, setCreditBlocked] = useState<boolean>(false);
   const [creditRequired, setCreditRequired] = useState<number>(4);
   const [userCurrentCredits, setUserCurrentCredits] = useState<number>(0);
+  const [highlightCredits, setHighlightCredits] = useState<boolean>(false);
   const [generationDurationSeconds, setGenerationDurationSeconds] = useState<number>(0);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState<boolean>(false);
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({
@@ -814,7 +1050,7 @@ function GenerateStudioContent() {
   const sliderContainerRef = React.useRef<HTMLDivElement | null>(null);
   const toolPickerRef = React.useRef<HTMLDivElement>(null);
 
-  // Close tool picker popover when clicking outside or scrolling page
+  // Close tool picker popover when clicking outside
   useEffect(() => {
     if (!isToolPickerOpen) return;
 
@@ -824,18 +1060,12 @@ function GenerateStudioContent() {
       }
     };
 
-    const handleScroll = () => {
-      setIsToolPickerOpen(false);
-    };
-
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('touchstart', handleClickOutside);
-    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
-      window.removeEventListener('scroll', handleScroll);
     };
   }, [isToolPickerOpen]);
 
@@ -937,10 +1167,15 @@ function GenerateStudioContent() {
     if (qpGeneratedImage) {
       setGeneratedResult(qpGeneratedImage);
       setGeneratedImagesList([qpGeneratedImage]);
+      setShowTechnicalDetails(true);
+      if (!qpPresetImage) {
+        setUploadedImage(qpGeneratedImage);
+      }
     }
-    if (qpDesc && !qpDesc.toLowerCase().includes('8k uhd') && !qpDesc.toLowerCase().includes('consistency')) {
+    if (qpDesc) {
       setCustomRequirements(qpDesc);
       setShowCustomRequirements(true);
+      setCompiledPrompt(qpDesc);
     }
   }, [searchParams]);
 
@@ -1181,11 +1416,19 @@ function GenerateStudioContent() {
     const fetchDbTools = async () => {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
-        const res = await fetch(`${baseUrl}/ai-tools`);
+        const res = await fetch(`${baseUrl}/uploads/tools`);
         if (res.ok) {
           const json = await res.json();
-          if (json.data && Array.isArray(json.data)) {
+          if (json.data && Array.isArray(json.data) && json.data.length > 0) {
             setDbTools(json.data);
+            return;
+          }
+        }
+        const fallbackRes = await fetch(`${baseUrl}/ai-tools`);
+        if (fallbackRes.ok) {
+          const fallbackJson = await fallbackRes.json();
+          if (fallbackJson.data && Array.isArray(fallbackJson.data)) {
+            setDbTools(fallbackJson.data);
           }
         }
       } catch (e) {
@@ -1195,7 +1438,20 @@ function GenerateStudioContent() {
     fetchProjects();
     fetchDbTools();
 
-    // Fetch and sync user credits balance on mount so real credit count (e.g. 60) is loaded immediately
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('highlightCredits') === 'true' || params.get('rewardUnlocked') === 'true') {
+        setIsCreditHighlighted(true);
+        setTimeout(() => setIsCreditHighlighted(false), 8000);
+        // Clean URL state without reloading page
+        try {
+          const cleanUrl = window.location.pathname + (params.get('tool') ? `?tool=${params.get('tool')}` : '');
+          window.history.replaceState({}, '', cleanUrl);
+        } catch (e) {}
+      }
+    }
+
+  // Fetch and sync user credits balance on mount so real credit count (e.g. 60) is loaded immediately
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem('user');
@@ -1329,6 +1585,46 @@ function GenerateStudioContent() {
       return;
     }
 
+    // Step 0: Enforce strict validation for required widgets marked with red asterisk (*)
+    if (activeDbTool && Array.isArray(activeDbTool.widgets) && activeDbTool.widgets.length > 0) {
+      for (const widget of activeDbTool.widgets) {
+        if (widget && widget.required) {
+          const widgetId = widget.id || '';
+          const label = widget.label || widget.id || 'Field';
+          let val = dynamicWidgetValues[widgetId];
+
+          // Fallbacks for well-known mapped standard keys
+          if (val === undefined || val === null || val === '') {
+            if (widgetId === 'room-type') val = selectedRoomType;
+            else if (widgetId === 'design-style') val = selectedStyle;
+            else if (widgetId === 'color-palette') val = selectedPalette;
+            else if (widgetId === 'lighting-atmosphere' || widgetId === 'lighting-mood') val = selectedLighting;
+            else if (widgetId === 'budget-level') val = selectedBudget;
+            else if (widgetId === 'furniture-layout') val = furnitureHandling;
+            else if (widgetId === 'room-size') val = selectedSize;
+            else if (widgetId === 'selected-products') val = selectedProducts;
+          }
+
+          let isMissing = false;
+          if (val === undefined || val === null) {
+            isMissing = true;
+          } else if (Array.isArray(val)) {
+            isMissing = val.length === 0;
+          } else if (typeof val === 'string') {
+            isMissing = val.trim().length === 0;
+          }
+
+          if (isMissing) {
+            toast.error(
+              `"${label}" is a required field (*). Please select or enter a value before proceeding.`,
+              'Required Field Missing',
+            );
+            return; // STOP! Block submission when required field is empty
+          }
+        }
+      }
+    }
+
     const reqCredits = 4;
     setCreditRequired(reqCredits);
 
@@ -1384,6 +1680,13 @@ function GenerateStudioContent() {
     // Step 2: User has sufficient site credits! Proceed to backend room redesign call
     const currentSlug = toolSlug || selectedToolId || (activeSpace === 'floor-plans' ? 'floor-plan-generator' : activeSpace === 'exteriors' ? 'exterior-design' : activeSpace === 'gardens' ? 'landscape-design' : 'interior-design');
 
+    // Resolve Custom Requirements / Custom AI Instructions
+    const currentCustomInput = (
+      (showCustomRequirements && customRequirements.trim()) ||
+      (showCustomInstructions && customAiInstructions.trim()) ||
+      ''
+    );
+
     const bodyPayload = {
       originalImage: uploadedImage,
       toolSlug: currentSlug,
@@ -1411,6 +1714,10 @@ function GenerateStudioContent() {
       aiIntervention: INTERVENTION_LEVELS[aiInterventionIndex],
       projectId: selectedProjectId || undefined,
       projectName: projectsList.find((p) => (p._id || p.id) === selectedProjectId)?.name || undefined,
+      customInstructions: currentCustomInput,
+      customRequirements: currentCustomInput,
+      userPrompt: currentCustomInput,
+      dynamicWidgetValues,
     };
 
     const startTime = Date.now();
@@ -1578,41 +1885,80 @@ function GenerateStudioContent() {
   // SINGLE COMMON BACKGROUND CARD BOX WRAPPING ENTIRE STUDIO
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 sm:p-6 md:p-8 space-y-6 sm:space-y-8 shadow-2xs">
-      {/* SLEEK COMPACT TOOL HEADER BAR (2 ROWS ON MOBILE <640px, 1 ROW ON DESKTOP) */}
-      <div className="relative z-20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/70 shadow-2xs">
-        {/* ROW 1 ON MOBILE / LEFT SIDE ON DESKTOP: Tool Info & Switch Tool Button */}
-        <div className="flex items-center justify-between gap-3 min-w-0 w-full sm:w-auto">
-          {/* Active Tool Icon & Title */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0">
-              <ActiveToolIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="flex flex-col min-w-0 text-left">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white font-heading truncate">
-                  {activeToolConfig.name}
-                </h2>
-                {activeToolConfig.badge && (
+      {/* SLEEK COMPACT TOOL HEADER BAR (TOOL INFO ON LEFT, SWITCH TOOL + SPACE TABS ON RIGHT) */}
+      <div className="relative z-30 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/70 shadow-2xs">
+        {/* LEFT SIDE: Active Tool Icon, Title & Description */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0">
+            <ActiveToolIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+          <div className="flex flex-col min-w-0 text-left">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white font-heading truncate">
+                {getLocalizedToolName(activeToolConfig.id, activeDbTool?.name || activeToolConfig.name)}
+              </h2>
+              {(() => {
+                const badgeToDisplay = activeDbTool && typeof activeDbTool.badge === 'string'
+                  ? activeDbTool.badge.trim()
+                  : (activeToolConfig.badge || '').trim();
+
+                if (!badgeToDisplay) return null;
+
+                return (
                   <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800 shrink-0">
-                    {activeToolConfig.badge}
+                    {getLocalizedBadge(badgeToDisplay)}
                   </span>
-                )}
-              </div>
-              <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-sm sm:max-w-xl">
-                {activeToolConfig.description}
-              </p>
+                );
+              })()}
             </div>
           </div>
+        </div>
 
-          {/* Switch Tool Button (Positioned on Right in Row 1 on Mobile) */}
-          <div className="relative shrink-0" ref={toolPickerRef}>
+        {/* RIGHT SIDE: Unified Studio Controls (Space Category Tabs + Switch Tool Button Side-by-Side) */}
+        <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-2xs shrink-0 relative overflow-visible">
+          {/* Space Category Filter Pills */}
+          <div className="flex items-center gap-1 min-w-max overflow-x-auto [scrollbar-width:none]">
+            {(
+              [
+                { id: 'interiors', label: t.generate?.interiors || 'Interiors' },
+                { id: 'exteriors', label: t.generate?.exteriors || 'Exteriors' },
+                { id: 'floor-plans', label: t.generate?.floorPlans || 'Floor Plans' },
+                { id: 'gardens', label: t.generate?.gardens || 'Gardens' },
+              ] as const
+            ).map((space) => {
+              const isSpaceActive = activeSpace === space.id;
+              return (
+                <button
+                  key={space.id}
+                  type="button"
+                  onClick={() => {
+                    handleSelectSpace(space.id);
+                    setIsToolPickerOpen(false);
+                  }}
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer font-heading whitespace-nowrap shrink-0 ${
+                    isSpaceActive
+                      ? 'bg-primary text-white shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {space.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Divider */}
+          <div className="h-5 w-px bg-slate-200 dark:bg-slate-700/80 mx-0.5 shrink-0" />
+
+          {/* Switch Tool Button */}
+          <div className="relative shrink-0 z-50" ref={toolPickerRef}>
             <button
               type="button"
               onClick={() => setIsToolPickerOpen(!isToolPickerOpen)}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-2xs transition-all cursor-pointer font-heading hover:bg-blue-50/50 dark:hover:bg-blue-950/40 whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/50 text-slate-700 hover:text-primary dark:text-slate-200 dark:hover:text-primary text-[11px] sm:text-xs font-bold transition-all cursor-pointer font-heading whitespace-nowrap shrink-0"
             >
               <Wand2 className="w-3.5 h-3.5 text-primary shrink-0" />
-              <span className="whitespace-nowrap">Switch Tool</span>
+              <span className="whitespace-nowrap">{t.generate?.switchTool || 'Switch Tool'}</span>
               <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${isToolPickerOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -1624,11 +1970,14 @@ function GenerateStudioContent() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 z-[100] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-2 space-y-1 max-h-96 overflow-y-auto"
+                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 z-[9999] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-2 space-y-1 max-h-96 overflow-y-auto"
                 >
                   <div className="px-2 py-1.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 font-heading">
-                      {activeSpace} AI Models ({ALL_STUDIO_TOOLS.filter((t) => t.category === activeSpace).length})
+                      {activeSpace === 'interiors' ? (t.generate?.interiors || 'Interiors') :
+                       activeSpace === 'exteriors' ? (t.generate?.exteriors || 'Exteriors') :
+                       activeSpace === 'floor-plans' ? (t.generate?.floorPlans || 'Floor Plans') :
+                       (t.generate?.gardens || 'Gardens')} ({ALL_STUDIO_TOOLS.filter((t) => t.category === activeSpace).length})
                     </span>
                     <button
                       type="button"
@@ -1640,15 +1989,25 @@ function GenerateStudioContent() {
                   </div>
 
                   <div className="space-y-1 pt-1">
-                    {ALL_STUDIO_TOOLS.filter((t) => t.category === activeSpace).map((t) => {
-                      const ToolIcon = t.icon;
-                      const isSelected = selectedToolId === t.id;
+                    {ALL_STUDIO_TOOLS.filter((t) => t.category === activeSpace).map((tItem) => {
+                      const ToolIcon = tItem.icon;
+                      const isSelected = selectedToolId === tItem.id;
+                      const matchingDbTool = dbTools.find((d: any) => {
+                        const dSlug = (d?.slug || d?.id || '').toLowerCase();
+                        const tSlug = (tItem.id || '').toLowerCase();
+                        return dSlug === tSlug || dSlug.replace(/-/g, '') === tSlug.replace(/-/g, '');
+                      });
+                      const displayBadge = matchingDbTool && typeof matchingDbTool.badge === 'string'
+                        ? matchingDbTool.badge.trim()
+                        : (tItem.badge || '').trim();
+                      const displayName = getLocalizedToolName(tItem.id, matchingDbTool?.name || tItem.name);
+
                       return (
                         <button
-                          key={t.id}
+                          key={tItem.id}
                           type="button"
                           onClick={() => {
-                            handleSelectTool(t.id);
+                            handleSelectTool(tItem.id);
                             setIsToolPickerOpen(false);
                           }}
                           className={`w-full text-left p-2 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-heading ${
@@ -1659,8 +2018,8 @@ function GenerateStudioContent() {
                         >
                           <ToolIcon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : 'text-primary'}`} />
                           <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                            <span className="text-xs truncate font-bold">{t.name}</span>
-                            {t.badge && (
+                            <span className="text-xs truncate font-bold">{displayName}</span>
+                            {displayBadge && (
                               <span
                                 className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-black tracking-wider shrink-0 ml-auto ${
                                   isSelected
@@ -1668,7 +2027,7 @@ function GenerateStudioContent() {
                                     : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                                 }`}
                               >
-                                {t.badge}
+                                {getLocalizedBadge(displayBadge)}
                               </span>
                             )}
                           </div>
@@ -1681,39 +2040,6 @@ function GenerateStudioContent() {
             </AnimatePresence>
           </div>
         </div>
-
-        {/* ROW 2 ON MOBILE / RIGHT SIDE ON DESKTOP: Space Category Filter Pills */}
-        <div className="w-full sm:w-auto overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60 dark:border-slate-700/60">
-          <div className="flex items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-2xs min-w-max">
-            {(
-              [
-                { id: 'interiors', label: 'Interiors' },
-                { id: 'exteriors', label: 'Exteriors' },
-                { id: 'floor-plans', label: 'Floor Plans' },
-                { id: 'gardens', label: 'Gardens' },
-              ] as const
-            ).map((space) => {
-              const isSpaceActive = activeSpace === space.id;
-              return (
-                <button
-                  key={space.id}
-                  type="button"
-                  onClick={() => {
-                    handleSelectSpace(space.id);
-                    setIsToolPickerOpen(false);
-                  }}
-                  className={`px-2.5 sm:px-3 py-1 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer font-heading whitespace-nowrap shrink-0 ${
-                    isSpaceActive
-                      ? 'bg-primary text-white shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  {space.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       {/* MAIN STUDIO TWO-COLUMN LAYOUT (INSIDE SINGLE COMMON BACKGROUND) */}
@@ -1721,6 +2047,32 @@ function GenerateStudioContent() {
 
         {/* LEFT COLUMN: AI Render Interactive Viewer */}
         <div className="lg:col-span-7 space-y-5">
+
+          {/* BONUS CREDITS HIGHLIGHT ANNOUNCEMENT BANNER */}
+          {highlightCredits && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-purple-600/20 to-indigo-600/20 border-2 border-amber-400/80 shadow-[0_0_30px_rgba(251,191,36,0.5)] animate-pulse flex items-center justify-between gap-3 text-slate-900 dark:text-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-md shrink-0">
+                  <Coins className="w-5 h-5 animate-bounce" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider font-heading text-amber-600 dark:text-amber-300">
+                    🎁 Bonus Offer Credits Active!
+                  </h4>
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    Your newly added credits ({userCurrentCredits} total) are available to generate high-resolution AI renders now!
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHighlightCredits(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {/* GENERATION ERROR ALERT BANNER */}
           {generationError && (
@@ -1826,7 +2178,9 @@ function GenerateStudioContent() {
             return (
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2 text-xs font-bold">
-                  <span className="text-slate-500 dark:text-slate-400 font-heading">Studio Comparison View</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-heading">
+                    {t.generate?.studioComparisonView || 'Studio Comparison View'}
+                  </span>
                   {generatedResult && (
                     <button
                       type="button"
@@ -1835,7 +2189,7 @@ function GenerateStudioContent() {
                       className="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer font-heading"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Download Render</span>
+                      <span>{t.generate?.downloadRender || 'Download Render'}</span>
                     </button>
                   )}
                 </div>
@@ -1885,8 +2239,12 @@ function GenerateStudioContent() {
                       <div className="w-12 h-12 rounded-2xl bg-purple-100/80 dark:bg-purple-950/80 flex items-center justify-center mb-2.5 shadow-2xs border border-purple-200/60 dark:border-purple-800/60">
                         <Sparkles className="w-6 h-6 text-purple-600 dark:text-purple-400 animate-pulse" />
                       </div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white font-heading tracking-wide uppercase">AI Transformation Area</span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium max-w-xs">Configure options on the right & click Generate to transform your space</span>
+                      <span className="text-xs font-black text-slate-900 dark:text-white font-heading tracking-wide uppercase">
+                        {t.generate?.aiTransformationArea || 'AI Transformation Area'}
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium max-w-xs">
+                        {t.generate?.configureOptionsHint || 'Configure options on the right & click Generate to transform your space'}
+                      </span>
                     </div>
                   )}
 
@@ -1931,23 +2289,33 @@ function GenerateStudioContent() {
 
                 {/* STATUS BADGES */}
                 <div className="absolute top-4 left-4 px-3 py-1 bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-extrabold rounded-lg pointer-events-none z-20">
-                  {uploadedImage ? 'Before (Your Upload)' : 'Before (Sample)'}
+                  {uploadedImage
+                    ? (t.generate?.beforeUpload || 'Before (Your Upload)')
+                    : (t.generate?.beforeSample || 'Before (Sample)')}
                 </div>
                 <div className="absolute top-4 right-4 px-3 py-1 bg-primary text-white font-extrabold text-[11px] rounded-lg shadow-md pointer-events-none flex items-center gap-1 z-10 max-w-[220px]">
                   <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300 shrink-0" />
                   <span className="truncate">
                     {generatedResult
-                      ? `After (${selectedStyle} AI)`
+                      ? (t.generate?.afterStyle
+                          ? t.generate.afterStyle.replace('{style}', getLocalizedStyleName(selectedStyle))
+                          : `After (${getLocalizedStyleName(selectedStyle)} AI)`)
                       : uploadedImage
-                      ? 'Ready to Redesign'
-                      : `Sample ${activeToolConfig.name}`}
+                      ? (t.generate?.readyToRedesign || 'Ready to Redesign')
+                      : (t.generate?.samplePrefix
+                          ? t.generate.samplePrefix.replace('{tool}', getLocalizedToolName(activeToolConfig.id, activeToolConfig.name))
+                          : `Sample ${getLocalizedToolName(activeToolConfig.id, activeToolConfig.name)}`)}
                   </span>
                 </div>
 
                 {isDemoSample && (
                   <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/85 backdrop-blur-md text-white/90 rounded-xl text-[11px] font-bold z-20 border border-white/10">
                     <Info className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Sample Preview for {activeToolConfig.name}</span>
+                    <span>
+                      {t.generate?.samplePreviewFor
+                        ? t.generate.samplePreviewFor.replace('{tool}', getLocalizedToolName(activeToolConfig.id, activeToolConfig.name))
+                        : `Sample Preview for ${getLocalizedToolName(activeToolConfig.id, activeToolConfig.name)}`}
+                    </span>
                   </div>
                 )}
                 </div>
@@ -1962,10 +2330,14 @@ function GenerateStudioContent() {
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white font-heading">
-                    {activeToolConfig.name} Sample Inspiration Presets
+                    {t.generate?.sampleInspirationPresets
+                      ? t.generate.sampleInspirationPresets.replace('{tool}', getLocalizedToolName(activeToolConfig.id, activeToolConfig.name))
+                      : `${getLocalizedToolName(activeToolConfig.id, activeToolConfig.name)} Sample Inspiration Presets`}
                   </h3>
                 </div>
-                <span className="text-[11px] font-medium text-slate-400">Click any sample to test instantly</span>
+                <span className="text-[11px] font-medium text-slate-400">
+                  {t.generate?.clickSampleToTest || 'Click any sample to test instantly'}
+                </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -1990,7 +2362,7 @@ function GenerateStudioContent() {
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent p-2 flex flex-col justify-between">
                       <div className="flex items-center justify-end">
                         <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-white/20 text-white backdrop-blur-xs">
-                          {preset.style}
+                          {getLocalizedStyleName(preset.style)}
                         </span>
                       </div>
                       <div>
@@ -1998,7 +2370,7 @@ function GenerateStudioContent() {
                           {preset.title}
                         </h4>
                         <p className="text-[9px] text-purple-300 font-bold mt-0.5 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                          <span>Use Sample</span> →
+                          <span>{t.generate?.useSample || 'Use Sample'}</span> →
                         </p>
                       </div>
                     </div>
@@ -2388,16 +2760,14 @@ function GenerateStudioContent() {
           {/* Form Title */}
           <div>
             <h2 className="text-lg font-extrabold text-slate-900 font-heading">
-              Start Redesigning Your Space:
+              {t.generate?.startRedesigning || 'Start Redesigning Your Space:'}
             </h2>
           </div>
-
-
 
           {/* STEP 1: UPLOAD YOUR PHOTO */}
           <div className="space-y-2">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-primary font-heading">
-              Step 1: Upload Your Photo
+              {t.generate?.step1 || 'Step 1: Upload Your Photo'}
             </h3>
 
             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3">
@@ -2436,7 +2806,7 @@ function GenerateStudioContent() {
 
                   {/* HOVER CHANGE OPTION */}
                   <label className="absolute inset-x-0 bottom-0 py-1 bg-slate-900/75 backdrop-blur-xs text-white text-[10px] font-bold text-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10">
-                    Change File
+                    {t.generate?.changeFile || 'Change File'}
                     <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                   </label>
                 </div>
@@ -2444,9 +2814,9 @@ function GenerateStudioContent() {
                 <label className="flex flex-col items-center justify-center w-32 h-32 sm:w-28 sm:h-28 shrink-0 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary hover:bg-primary/5 text-slate-600 hover:text-primary rounded-[10px] cursor-pointer transition-all group p-2 text-center mx-auto sm:mx-0">
                   <Upload className="w-5 h-5 text-slate-400 group-hover:text-primary group-hover:scale-110 transition-all mb-1" />
                   <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-200 font-heading">
-                    Drop photo
+                    {t.generate?.dropPhoto || 'Drop photo'}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">or browse</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{t.generate?.orBrowse || 'or browse'}</span>
                   <span className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">PNG, JPG, WEBP</span>
                   <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                 </label>
@@ -2454,7 +2824,9 @@ function GenerateStudioContent() {
 
               {/* ALWAYS VISIBLE URL PASTE & FETCH INPUT */}
               <div className="flex-1 space-y-1.5 w-full min-w-0">
-                <span className="text-xs font-bold text-slate-700 block font-heading">Or paste Image URL:</span>
+                <span className="text-xs font-bold text-slate-700 block font-heading">
+                  {t.generate?.pasteImageUrl || 'Or paste Image URL:'}
+                </span>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="url"
@@ -2473,10 +2845,12 @@ function GenerateStudioContent() {
                     onClick={handleFetchUrlImage}
                     className="px-3.5 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-[10px] transition-all shadow-xs shrink-0 cursor-pointer"
                   >
-                    Fetch
+                    {t.generate?.fetch || 'Fetch'}
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">Paste image URL and click Fetch or press Enter</p>
+                <p className="text-[10px] text-slate-400 font-medium">
+                  {t.generate?.pasteImageUrlHint || 'Paste image URL and click Fetch or press Enter'}
+                </p>
               </div>
             </div>
           </div>
@@ -2485,7 +2859,7 @@ function GenerateStudioContent() {
           <div className="space-y-4 pt-2 border-t border-slate-100">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-primary font-heading">
-                Step 2: Customize
+                {t.generate?.step2 || 'Step 2: Customize'}
               </h3>
             </div>
 
@@ -2493,7 +2867,7 @@ function GenerateStudioContent() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between font-heading">
-                  <span>Select Project</span>
+                  <span>{t.generate?.selectProject || 'Select Project'}</span>
                 </label>
                 <div className="flex items-center gap-2">
                   <button
@@ -2501,7 +2875,7 @@ function GenerateStudioContent() {
                     onClick={() => setIsCreateProjectModalOpen(true)}
                     className="text-xs font-extrabold text-primary hover:text-primary/80 hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Create New Project
+                    <Plus className="w-3.5 h-3.5" /> {t.generate?.createNewProject || 'Create New Project'}
                   </button>
                 </div>
               </div>
@@ -2510,11 +2884,11 @@ function GenerateStudioContent() {
                 value={selectedProjectId}
                 onChange={(val) => handleSelectProject(val)}
                 options={[
-                  { value: '', label: '-- Standalone Generation (No Project) --' },
-                  { value: 'CREATE_NEW_PROJECT', label: '➕ Create New Project...' },
+                  { value: '', label: t.generate?.standaloneNoProject || '-- Standalone Generation (No Project) --' },
+                  { value: 'CREATE_NEW_PROJECT', label: t.generate?.createNewProjectOption || '➕ Create New Project...' },
                   ...projectsList.map((p) => ({
                     value: p._id || p.id || '',
-                    label: `📁 ${p.name} (${p.theme} Theme ${p.manusChatId ? '• AI Session Active' : ''})`,
+                    label: `📁 ${p.name} (${p.theme} ${t.projects?.lockedTheme || 'Theme'} ${p.manusChatId ? '• AI Session Active' : ''})`,
                   })),
                 ]}
               />
@@ -2531,6 +2905,13 @@ function GenerateStudioContent() {
                 const isColorPalette = widget.id === 'color-palette' || widget.dataSource === 'color-palettes' || (widget.label && widget.label.toLowerCase().includes('color palette'));
                 const isLighting = widget.id === 'lighting' || widget.id === 'lighting-atmosphere' || widget.id === 'lighting-mood' || widget.dataSource === 'lighting' || (widget.label && widget.label.toLowerCase().includes('lighting'));
 
+                const localizedLabel =
+                  isRoomType ? (t.generate?.roomType || label) :
+                  isDesignStyle ? (t.generate?.designStyle || label) :
+                  isColorPalette ? (t.generate?.colorPalette || label) :
+                  isLighting ? (t.generate?.lightingAtmosphere || label) :
+                  getLocalizedWidgetLabel(label, widgetId);
+
                 const options: string[] = isRoomType
                   ? ROOM_TYPES
                   : isDesignStyle
@@ -2542,18 +2923,20 @@ function GenerateStudioContent() {
                         : (widget.options && widget.options.length > 0 ? widget.options : []);
 
                 if (widget.type === 'Select Dropdown' || widget.type === 'Select') {
+                  const isLayoutStyleWidget = widget.id === 'floor-plan-style' || widget.id === 'layout-style' || (label && label.toLowerCase().includes('layout style'));
                   const curVal = dynamicWidgetValues[widgetId] || (
                     widget.id === 'room-type' ? selectedRoomType :
                       widget.id === 'design-style' ? selectedStyle :
                         widget.id === 'color-palette' ? selectedPalette :
                           widget.id === 'lighting-atmosphere' || widget.id === 'lighting-mood' ? selectedLighting :
-                            options[0] || ''
+                            isLayoutStyleWidget ? floorPlanStyle :
+                              options[0] || ''
                   );
 
                   return (
                     <div key={widgetId} className="space-y-1.5 w-full">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                        <span>{label}</span>
+                        <span>{localizedLabel}</span>
                         {isRequired && <span className="text-rose-500 font-extrabold">*</span>}
                       </label>
                       <CustomSelect
@@ -2564,47 +2947,64 @@ function GenerateStudioContent() {
                           else if (widget.id === 'design-style') setSelectedStyle(val);
                           else if (widget.id === 'color-palette') setSelectedPalette(val);
                           else if (widget.id === 'lighting-atmosphere' || widget.id === 'lighting-mood') setSelectedLighting(val);
+                          else if (isLayoutStyleWidget) setFloorPlanStyle(val);
                         }}
-                        options={options.map((opt: string) => ({ value: opt, label: opt }))}
+                        options={options.map((opt: string) => ({
+                          value: opt,
+                          label: isDesignStyle ? getLocalizedStyleName(opt) : isLayoutStyleWidget ? getLocalizedLayoutStyle(opt) : opt,
+                        }))}
                       />
                     </div>
                   );
                 }
 
                 if (widget.type === 'Option Grid' || widget.type === 'Button Group') {
+                  const isBedrooms = widget.id === 'bedrooms-count' || widget.id === 'bedrooms' || (label && label.toLowerCase().includes('bedroom'));
+                  const isBathrooms = widget.id === 'bathrooms-count' || widget.id === 'bathrooms' || (label && label.toLowerCase().includes('bathroom'));
                   const curVal = dynamicWidgetValues[widgetId] || (
                     widget.id === 'budget-level' ? selectedBudget :
                       widget.id === 'furniture-layout' ? furnitureHandling :
                         widget.id === 'room-size' ? selectedSize :
-                          options[0] || ''
+                          isBedrooms ? String(bedroomsCount) :
+                            isBathrooms ? String(bathroomsCount) :
+                              options[0] || ''
                   );
 
                   return (
                     <div key={widgetId} className="space-y-1.5 w-full">
                       <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                        <span>{label}</span>
+                        <span>{localizedLabel}</span>
                         {isRequired && <span className="text-rose-500 font-extrabold">*</span>}
                       </label>
                       <div className="flex flex-wrap gap-1.5">
-                        {options.map((opt: string) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() => {
-                              setDynamicWidgetValues((prev) => ({ ...prev, [widgetId]: opt }));
-                              if (widget.id === 'budget-level') setSelectedBudget(opt);
-                              else if (widget.id === 'furniture-layout') setFurnitureHandling(opt);
-                              else if (widget.id === 'room-size') setSelectedSize(opt);
-                            }}
-                            className={`px-3.5 py-1.5 rounded-[10px] text-xs transition-all border cursor-pointer ${
-                              curVal === opt
-                                ? 'bg-primary/15 border-primary text-primary font-bold shadow-2xs'
-                                : 'bg-white text-slate-700 border-slate-200 hover:border-primary/40 hover:bg-primary/5 font-semibold'
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
+                        {options.map((opt: string) => {
+                          const displayOpt =
+                            widget.id === 'budget-level' ? getLocalizedBudget(opt.toLowerCase(), opt) :
+                            widget.id === 'room-size' ? getLocalizedRoomSize(opt.toLowerCase(), opt) :
+                            widget.id === 'furniture-layout' ? getLocalizedFurnitureHandling(opt.toLowerCase(), opt) :
+                            opt;
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                setDynamicWidgetValues((prev) => ({ ...prev, [widgetId]: opt }));
+                                if (widget.id === 'budget-level') setSelectedBudget(opt);
+                                else if (widget.id === 'furniture-layout') setFurnitureHandling(opt);
+                                else if (widget.id === 'room-size') setSelectedSize(opt);
+                                else if (isBedrooms) setBedroomsCount(Number(opt));
+                                else if (isBathrooms) setBathroomsCount(Number(opt));
+                              }}
+                              className={`px-3.5 py-1.5 rounded-[10px] text-xs transition-all border cursor-pointer ${
+                                curVal === opt
+                                  ? 'bg-primary/15 border-primary text-primary font-bold shadow-2xs'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:border-primary/40 hover:bg-primary/5 font-semibold'
+                              }`}
+                            >
+                              {displayOpt}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -2619,7 +3019,7 @@ function GenerateStudioContent() {
                     <div key={widgetId} className="space-y-2 pt-1 border-t border-slate-100 w-full">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-bold text-slate-800 font-heading flex items-center gap-1.5">
-                          <span>{label}</span>
+                          <span>{t.generate?.selectProducts || localizedLabel}</span>
                           <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                             curArray.length >= 10
                               ? 'bg-rose-100 text-rose-700'
@@ -2627,7 +3027,7 @@ function GenerateStudioContent() {
                                 ? 'bg-primary/10 text-primary'
                                 : 'bg-slate-100 text-slate-500'
                           }`}>
-                            {curArray.length} / 10 selected
+                            {(t.generate?.selectedCount || '{count} / 10 selected').replace('{count}', String(curArray.length))}
                           </span>
                         </label>
 
@@ -2640,7 +3040,7 @@ function GenerateStudioContent() {
                             }}
                             className="text-[11px] text-rose-600 hover:underline font-semibold cursor-pointer"
                           >
-                            Clear all
+                            {t.generate?.clearAll || 'Clear all'}
                           </button>
                         )}
                       </div>
@@ -2711,7 +3111,7 @@ function GenerateStudioContent() {
                     <div key={widgetId} className="space-y-1.5 w-full">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                          <span>{label}</span>
+                          <span>{localizedLabel}</span>
                           {isRequired && <span className="text-rose-500 font-extrabold">*</span>}
                         </label>
                         {curArray.length > 0 && (
@@ -2753,18 +3153,18 @@ function GenerateStudioContent() {
 
                 if (widget.type === 'Text Input' || widget.type === 'Text Block' || widget.type === 'Input' || widget.type === 'Text Area') {
                   const maxLen = widget.maxLength || 40;
-                  const curVal = dynamicWidgetValues[widgetId] || '';
+                  const curVal = dynamicWidgetValues[widgetId] || (widget.id === 'plot-dimensions' ? plotDimensions : '');
                   const remaining = Math.max(0, maxLen - curVal.length);
 
                   return (
                     <div key={widgetId} className="space-y-1.5 w-full">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                          <span>{label}</span>
+                          <span>{localizedLabel}</span>
                           {isRequired && <span className="text-rose-500 font-extrabold">*</span>}
                         </label>
                         <span className="text-[10px] font-semibold text-slate-400 font-mono">
-                          {remaining} chars left
+                          {(t.generate?.formLabels?.charsLeft || '{count} chars left').replace('{count}', String(remaining))}
                         </span>
                       </div>
                       <div className="relative">
@@ -2775,8 +3175,13 @@ function GenerateStudioContent() {
                           onChange={(e) => {
                             const val = e.target.value;
                             setDynamicWidgetValues((prev) => ({ ...prev, [widgetId]: val }));
+                            if (widget.id === 'plot-dimensions') setPlotDimensions(val);
                           }}
-                          placeholder={widget.placeholder || `Type ${label.toLowerCase()}...`}
+                          placeholder={
+                            widgetId === 'plot-dimensions'
+                              ? (t.generate?.formLabels?.plotDimensionsPlaceholder || 'e.g. 40ft x 60ft or 12m x 15m')
+                              : widget.placeholder || (t.generate?.formLabels?.typePlaceholder || 'Type {field}...').replace('{field}', localizedLabel)
+                          }
                           className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all shadow-2xs"
                         />
                       </div>
@@ -2830,25 +3235,27 @@ function GenerateStudioContent() {
               return <div className="space-y-4">{widgetRows}</div>;
             })()}
 
-            {/* MODEL 01: FLOOR PLAN GENERATOR DEDICATED INPUT CARD */}
-            {(activeSpace === 'floor-plans' || ['floor-plan-generator', '3d-floor-plan', 'floor-plan-maker'].includes(selectedToolId) || ['floor-plan-generator', '3d-floor-plan', 'floor-plan-maker'].includes(toolSlug || '')) && (
+            {/* MODEL 01: FLOOR PLAN GENERATOR DEDICATED INPUT CARD (FALLBACK ONLY WHEN NO DB WIDGETS CONFIGURED) */}
+            {(!activeDbTool || !activeDbTool.widgets || activeDbTool.widgets.length === 0) && (activeSpace === 'floor-plans' || ['floor-plan-generator', '3d-floor-plan', 'floor-plan-maker'].includes(selectedToolId) || ['floor-plan-generator', '3d-floor-plan', 'floor-plan-maker'].includes(toolSlug || '')) && (
               <div className="p-4 rounded-2xl bg-blue-50/90 border border-blue-200/90 space-y-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-600" />
                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider font-heading">
-                      Model 01: 2D/3D Floor Plan Generator Parameters
+                      {t.generate?.formLabels?.floorPlanParamsTitle || 'Model 01: 2D/3D Floor Plan Generator Parameters'}
                     </h4>
                   </div>
                   <span className="px-2 py-0.5 rounded bg-blue-600 text-white text-[9px] font-black uppercase">
-                    {toolSlug === '3d-floor-plan' ? '3D Isometric' : '2D Blueprint'}
+                    {toolSlug === '3d-floor-plan' ? (t.generate?.formLabels?.isometric3D || '3D Isometric') : (t.generate?.formLabels?.blueprint2D || '2D Blueprint')}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Bedrooms Stepper */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-extrabold text-slate-800 font-heading">Bedrooms Count</label>
+                    <label className="text-xs font-extrabold text-slate-800 font-heading">
+                      {t.generate?.formLabels?.bedroomsCount || 'Bedrooms Count'}
+                    </label>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5, 6].map((num) => (
                         <button
@@ -2869,7 +3276,9 @@ function GenerateStudioContent() {
 
                   {/* Bathrooms Stepper */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-extrabold text-slate-800 font-heading">Bathrooms Count</label>
+                    <label className="text-xs font-extrabold text-slate-800 font-heading">
+                      {t.generate?.formLabels?.bathroomsCount || 'Bathrooms Count'}
+                    </label>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((num) => (
                         <button
@@ -2892,25 +3301,29 @@ function GenerateStudioContent() {
                 {/* Layout Style & Plot Dimensions */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-extrabold text-slate-800 font-heading">Layout Style</label>
+                    <label className="text-xs font-extrabold text-slate-800 font-heading">
+                      {t.generate?.formLabels?.layoutStyle || 'Layout Style'}
+                    </label>
                     <CustomSelect
                       value={floorPlanStyle}
                       onChange={(val) => setFloorPlanStyle(val)}
                       options={[
-                        { value: 'Modern Open-Concept', label: 'Modern Open-Concept' },
-                        { value: 'Minimalist Split-Level', label: 'Minimalist Split-Level' },
-                        { value: 'Luxury Villa Layout', label: 'Luxury Villa Layout' },
-                        { value: 'Traditional Family Home', label: 'Traditional Family Home' },
-                        { value: 'Executive Suite', label: 'Executive Suite' },
+                        { value: 'Modern Open-Concept', label: getLocalizedLayoutStyle('Modern Open-Concept') },
+                        { value: 'Minimalist Split-Level', label: getLocalizedLayoutStyle('Minimalist Split-Level') },
+                        { value: 'Luxury Villa Layout', label: getLocalizedLayoutStyle('Luxury Villa Layout') },
+                        { value: 'Traditional Family Home', label: getLocalizedLayoutStyle('Traditional Family Home') },
+                        { value: 'Executive Suite', label: getLocalizedLayoutStyle('Executive Suite') },
                       ]}
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-extrabold text-slate-800 font-heading">Plot Dimensions</label>
+                    <label className="text-xs font-extrabold text-slate-800 font-heading">
+                      {t.generate?.formLabels?.plotDimensions || 'Plot Dimensions'}
+                    </label>
                     <input
                       type="text"
-                      placeholder="e.g. 40ft x 60ft"
+                      placeholder={t.generate?.formLabels?.plotDimensionsPlaceholder || 'e.g. 40ft x 60ft or 12m x 15m'}
                       value={plotDimensions}
                       onChange={(e) => setPlotDimensions(e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-purple-600"
@@ -2926,7 +3339,7 @@ function GenerateStudioContent() {
                 {/* Building Type Dropdown (Required) */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>Building Type</span>
+                    <span>{t.generate?.formLabels?.buildingType || 'Building Type'}</span>
                     <span className="text-rose-500 font-extrabold">*</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
@@ -2940,7 +3353,7 @@ function GenerateStudioContent() {
                 {/* Roof Type Dropdown */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>Roof Type</span>
+                    <span>{t.generate?.formLabels?.roofType || 'Roof Type'}</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
                   <CustomSelect
@@ -2953,7 +3366,7 @@ function GenerateStudioContent() {
                 {/* Environment Dropdown */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>Environment</span>
+                    <span>{t.generate?.formLabels?.environment || 'Environment'}</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
                   <CustomSelect
@@ -2966,7 +3379,7 @@ function GenerateStudioContent() {
                 {/* Time of Day Dropdown */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>Time of Day</span>
+                    <span>{t.generate?.formLabels?.timeOfDay || 'Time of Day'}</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
                   <CustomSelect
@@ -2979,7 +3392,7 @@ function GenerateStudioContent() {
                 {/* House Angle Dropdown */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>House Angle</span>
+                    <span>{t.generate?.formLabels?.houseAngle || 'House Angle'}</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
                   <CustomSelect
@@ -2992,7 +3405,7 @@ function GenerateStudioContent() {
                 {/* Tool Dropdown */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>Tool</span>
+                    <span>{t.generate?.formLabels?.tool || 'Tool'}</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
                   <CustomSelect
@@ -3005,7 +3418,7 @@ function GenerateStudioContent() {
                 {/* Design Style Dropdown */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>Design Style</span>
+                    <span>{t.generate?.designStyle || 'Design Style'}</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
                   <CustomSelect
@@ -3018,7 +3431,7 @@ function GenerateStudioContent() {
                 {/* AI Intervention Slider */}
                 <div className="space-y-2 pt-1">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>AI Intervention</span>
+                    <span>{t.generate?.formLabels?.aiIntervention || 'AI Intervention'}</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
 
@@ -3038,7 +3451,7 @@ function GenerateStudioContent() {
                           key={lvl}
                           className={aiInterventionIndex === idx ? 'text-purple-700 font-extrabold scale-105 transition-all' : ''}
                         >
-                          {lvl}
+                          {getLocalizedInterventionLevel(lvl)}
                         </span>
                       ))}
                     </div>
@@ -3054,7 +3467,9 @@ function GenerateStudioContent() {
                       onChange={(e) => setShowCustomInstructions(e.target.checked)}
                       className="w-4 h-4 text-purple-600 bg-white border-slate-300 rounded focus:ring-purple-500 cursor-pointer"
                     />
-                    <span className="text-xs font-bold text-slate-800 font-heading">Custom AI Instructions</span>
+                    <span className="text-xs font-bold text-slate-800 font-heading">
+                      {t.generate?.formLabels?.customAiInstructions || 'Custom AI Instructions'}
+                    </span>
                   </label>
 
                   <AnimatePresence>
@@ -3069,7 +3484,7 @@ function GenerateStudioContent() {
                           rows={3}
                           value={customAiInstructions}
                           onChange={(e) => setCustomAiInstructions(e.target.value)}
-                          placeholder="e.g. A modern farmhouse facade with black window frames, timber accents and a metal roof."
+                          placeholder={t.generate?.formLabels?.customAiInstructionsPlaceholder || 'e.g. A modern farmhouse facade with black window frames, timber accents and a metal roof.'}
                           className="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all resize-none shadow-2xs mt-1"
                         />
                       </motion.div>
@@ -3084,7 +3499,7 @@ function GenerateStudioContent() {
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>Landscape Category</span>
+                    <span>{t.generate?.formLabels?.landscapeCategory || 'Landscape Category'}</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
                   <CustomSelect
@@ -3096,7 +3511,7 @@ function GenerateStudioContent() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>Garden Style</span>
+                    <span>{t.generate?.formLabels?.gardenStyle || 'Garden Style'}</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
                   <CustomSelect
@@ -3108,7 +3523,7 @@ function GenerateStudioContent() {
 
                 <div className="space-y-2 pt-1">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1 font-heading">
-                    <span>AI Intervention</span>
+                    <span>{t.generate?.formLabels?.aiIntervention || 'AI Intervention'}</span>
                     <HelpCircle className="w-3.5 h-3.5 text-purple-500 fill-purple-100 cursor-pointer" />
                   </label>
                   <div className="space-y-2 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200">
@@ -3124,7 +3539,7 @@ function GenerateStudioContent() {
                     <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
                       {INTERVENTION_LEVELS.map((lvl, idx) => (
                         <span key={lvl} className={aiInterventionIndex === idx ? 'text-purple-700 font-extrabold' : ''}>
-                          {lvl}
+                          {getLocalizedInterventionLevel(lvl)}
                         </span>
                       ))}
                     </div>
@@ -3140,7 +3555,7 @@ function GenerateStudioContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-800 font-heading">
-                      Room Type
+                      {t.generate?.roomType || 'Room Type'}
                     </label>
                     <CustomSelect
                       value={selectedRoomType}
@@ -3151,12 +3566,12 @@ function GenerateStudioContent() {
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-800 font-heading">
-                      Design Style
+                      {t.generate?.designStyle || 'Design Style'}
                     </label>
                     <CustomSelect
                       value={selectedStyle}
                       onChange={(val) => setSelectedStyle(val)}
-                      options={DESIGN_STYLES.map((style) => ({ value: style.name, label: style.name }))}
+                      options={DESIGN_STYLES.map((style) => ({ value: style.name, label: getLocalizedStyleName(style.name) }))}
                     />
                   </div>
                 </div>
@@ -3165,7 +3580,7 @@ function GenerateStudioContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-800 font-heading">
-                      Color Palette
+                      {t.generate?.colorPalette || 'Color Palette'}
                     </label>
                     <CustomSelect
                       value={selectedPalette}
@@ -3176,7 +3591,7 @@ function GenerateStudioContent() {
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-800 font-heading">
-                      Lighting Atmosphere
+                      {t.generate?.lightingAtmosphere || 'Lighting Atmosphere'}
                     </label>
                     <CustomSelect
                       value={selectedLighting}
@@ -3189,8 +3604,10 @@ function GenerateStudioContent() {
                 {/* FURNITURE & LAYOUT HANDLING */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 font-heading flex items-center justify-between">
-                    <span>Furniture & Layout Handling</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Works for furnished & empty rooms</span>
+                    <span>{t.generate?.furnitureLayoutHandling || 'Furniture & Layout Handling'}</span>
+                    <span className="text-[10px] text-slate-400 font-normal">
+                      {t.generate?.furnitureLayoutHint || 'Works for furnished & empty rooms'}
+                    </span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {FURNITURE_HANDLING_OPTIONS.map((opt) => (
@@ -3204,7 +3621,7 @@ function GenerateStudioContent() {
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                         }`}
                       >
-                        {opt.label}
+                        {getLocalizedFurnitureHandling(opt.id, opt.label)}
                       </button>
                     ))}
                   </div>
@@ -3213,7 +3630,7 @@ function GenerateStudioContent() {
                 {/* BUDGET LEVEL */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 font-heading">
-                    Budget Level
+                    {t.generate?.budgetLevel || 'Budget Level'}
                   </label>
                   <div className="grid grid-cols-4 gap-2">
                     {BUDGET_LEVELS.map((b) => (
@@ -3227,7 +3644,7 @@ function GenerateStudioContent() {
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                         }`}
                       >
-                        {b.name}
+                        {getLocalizedBudget(b.slug, b.name)}
                       </button>
                     ))}
                   </div>
@@ -3237,7 +3654,7 @@ function GenerateStudioContent() {
                 <div className="space-y-2 pt-1 border-t border-slate-100">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-800 font-heading flex items-center gap-1.5">
-                      <span>Select Specific Products / Furniture</span>
+                      <span>{t.generate?.selectProducts || 'Select Specific Products / Furniture'}</span>
                       <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                         selectedProducts.length >= 10
                           ? 'bg-rose-100 text-rose-700'
@@ -3245,7 +3662,7 @@ function GenerateStudioContent() {
                             ? 'bg-blue-100 text-blue-700'
                             : 'bg-slate-100 text-slate-500'
                       }`}>
-                        {selectedProducts.length} / 10 selected
+                        {(t.generate?.selectedCount || '{count} / 10 selected').replace('{count}', String(selectedProducts.length))}
                       </span>
                     </label>
 
@@ -3255,7 +3672,7 @@ function GenerateStudioContent() {
                         onClick={() => setSelectedProducts([])}
                         className="text-[11px] text-rose-600 hover:underline font-semibold"
                       >
-                        Clear all
+                        {t.generate?.clearAll || 'Clear all'}
                       </button>
                     )}
                   </div>
@@ -3314,7 +3731,7 @@ function GenerateStudioContent() {
                 {/* ROOM SIZE */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-800 font-heading">
-                    Room Size
+                    {t.generate?.roomSize || 'Room Size'}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {ROOM_SIZES.map((size) => (
@@ -3328,7 +3745,7 @@ function GenerateStudioContent() {
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                         }`}
                       >
-                        {size.label}
+                        {getLocalizedRoomSize(size.id, size.label)}
                       </button>
                     ))}
                   </div>
@@ -3346,7 +3763,7 @@ function GenerateStudioContent() {
                   className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300 cursor-pointer"
                 />
                 <span className="text-xs font-bold text-slate-800 font-heading">
-                  Custom Requirements
+                  {t.generate?.customRequirements || 'Custom Requirements'}
                 </span>
               </label>
 
@@ -3363,7 +3780,7 @@ function GenerateStudioContent() {
                       rows={3}
                       value={customRequirements}
                       onChange={(e) => setCustomRequirements(e.target.value)}
-                      placeholder="Describe your specific needs, preferences, or constraints (e.g. Add warm wooden slat walls & cream sofa)..."
+                      placeholder={t.generate?.customRequirementsPlaceholder || "Describe your specific needs, preferences, or constraints (e.g. Add warm wooden slat walls & cream sofa)..."}
                       className="w-full p-3.5 bg-white border border-slate-200 rounded-[10px] text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all resize-none shadow-2xs"
                     />
                   </motion.div>
@@ -3374,14 +3791,50 @@ function GenerateStudioContent() {
 
           {/* GENERATE ACTION BUTTON & CREDIT CHECK WARNING */}
           <div className="space-y-3 font-sans">
+            {/* CREDITS BALANCE BADGE WITH GLOWING LIGHT HIGHLIGHT */}
+            <div
+              className={`p-3.5 rounded-2xl transition-all duration-500 border ${
+                highlightCredits
+                  ? 'bg-amber-500/15 dark:bg-amber-500/20 border-amber-400 ring-4 ring-amber-400/80 shadow-[0_0_30px_rgba(251,191,36,0.8)] animate-pulse'
+                  : 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+              } flex items-center justify-between gap-3`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`p-2 rounded-xl flex items-center justify-center ${
+                    highlightCredits ? 'bg-amber-500 text-slate-950 animate-bounce shadow-md' : 'bg-purple-600/10 text-purple-600'
+                  }`}
+                >
+                  <CreditTokenIcon size="sm" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 block font-heading">
+                    {highlightCredits ? '🎉 Offer Credits Active' : (t.generate?.availableCredits || 'Available Studio Credits')}
+                  </span>
+                  <span className="text-sm font-black font-mono text-slate-900 dark:text-white flex items-center gap-1">
+                    {(t.generate?.creditsCount || '{amount} Credits').replace('{amount}', String(userCurrentCredits))}
+                  </span>
+                </div>
+              </div>
+              {highlightCredits && (
+                <span className="px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider animate-pulse shadow-sm">
+                  Newly Added ⚡
+                </span>
+              )}
+            </div>
+
             {userCurrentCredits < 4 && (
               <div className="p-3.5 rounded-[10px] bg-primary/10 border border-primary/20 text-slate-900 dark:text-slate-100 text-xs font-semibold flex items-center justify-between gap-3 shadow-xs">
                 <div className="flex items-center gap-2.5">
                   <AlertCircle className="w-4 h-4 text-primary shrink-0" />
                   <div>
-                    <span className="font-extrabold block text-slate-900 dark:text-white">Insufficient Credits Available</span>
+                    <span className="font-extrabold block text-slate-900 dark:text-white">
+                      {t.generate?.insufficientCreditsTitle || 'Insufficient Credits Available'}
+                    </span>
                     <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
-                      You have <strong className="text-primary">{userCurrentCredits} Credits</strong> available. Generation requires <strong>4 Credits</strong>.
+                      {(t.generate?.insufficientCreditsDesc || 'You have {current} Credits available. Generation requires {required} Credits.')
+                        .replace('{current}', String(userCurrentCredits))
+                        .replace('{required}', '4')}
                     </span>
                   </div>
                 </div>
@@ -3389,7 +3842,7 @@ function GenerateStudioContent() {
                   href="/billing"
                   className="px-3.5 py-1.5 rounded-[10px] bg-primary hover:bg-primary/90 text-white font-extrabold text-[11px] shrink-0 transition-colors shadow-xs"
                 >
-                  Get Credits
+                  {t.generate?.getCredits || 'Get Credits'}
                 </Link>
               </div>
             )}
@@ -3414,20 +3867,21 @@ function GenerateStudioContent() {
               {isGenerating ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Processing AI Redesign (${Math.floor(generationElapsedSeconds / 60).toString().padStart(2, '0')}:${(generationElapsedSeconds % 60).toString().padStart(2, '0')})...</span>
+                  <span>
+                    {(t.generate?.processingRedesign || 'Processing AI Redesign ({time})...')
+                      .replace('{time}', `${Math.floor(generationElapsedSeconds / 60).toString().padStart(2, '0')}:${(generationElapsedSeconds % 60).toString().padStart(2, '0')}`)}
+                  </span>
                 </>
               ) : userCurrentCredits < 4 ? (
                 <>
                   <CreditTokenIcon size="xs" />
-                  <span>Get Credits to Generate (Requires 4 Credits)</span>
+                  <span>{t.generate?.getCredits || 'Get Credits to Generate (Requires 4 Credits)'}</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 text-accent fill-accent" />
                   <span className="flex items-center gap-1.5">
-                    <span>Generate AI Redesign (</span>
-                    <CreditTokenIcon size="xs" />
-                    <span>4 Credits)</span>
+                    <span>{(t.generate?.generateWithCredits || 'Generate AI Redesign ({credits} Credits)').replace('{credits}', '4')}</span>
                   </span>
                 </>
               )}
@@ -3442,7 +3896,7 @@ function GenerateStudioContent() {
                 }}
                 className="w-full py-2 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-300 hover:text-rose-600 font-extrabold text-xs transition-all cursor-pointer font-heading border border-slate-200 dark:border-slate-700"
               >
-                Cancel / Stop Waiting
+                {t.generate?.cancelStopWaiting || 'Cancel / Stop Waiting'}
               </button>
             )}
           </div>
@@ -3452,44 +3906,17 @@ function GenerateStudioContent() {
       {/* FULL-WIDTH BOTTOM GALLERY FOR GENERATED AI RENDERS & RESOLUTION SPECS */}
       {generatedResult && (
         <div className="mt-10 p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-md space-y-5 animate-in fade-in duration-300">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-extrabold uppercase tracking-wider border border-purple-200 dark:border-purple-800">
-                  Full Width Delivery Gallery
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  High Resolution Output
-                </span>
-              </div>
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 font-heading">
-                Generated Architectural Render Gallery & Output Specs
+          {/* CLEAN & SIMPLE GALLERY HEADER */}
+          <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white font-heading">
+                {t.generate?.generatedRenders || 'Generated Renders'}
               </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                {(t.generate?.variationsReady || '{count} High-Resolution Variation(s) Ready')
+                  .replace('{count}', String((generatedImagesList.length > 0 ? generatedImagesList : [generatedResult]).length))}
+              </p>
             </div>
-            
-            {/* RESOLUTION & PIXEL SPEC BADGE MATCHING MANUS SPEC */}
-            <div className="px-3.5 py-2 rounded-2xl bg-slate-900 text-white text-xs font-mono flex items-center gap-2.5 shadow-sm border border-slate-800 shrink-0">
-              <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
-              <span>
-                <strong className="text-purple-300 font-bold">8K UHD</strong> resolution <span className="text-slate-300 font-bold">(7680 × 4320)</span>, 16:9 ratio
-              </span>
-            </div>
-          </div>
-
-          {/* RENDER GALLERY HEADER CONTROLS */}
-          <div className="flex items-center justify-between gap-3 pt-1 pb-2">
-            <div className="text-xs font-extrabold text-slate-700 dark:text-slate-300 font-heading">
-              Render Output Variations ({(generatedImagesList.length > 0 ? generatedImagesList : [generatedResult]).length} Available)
-            </div>
-            <button
-              type="button"
-              onClick={() => setImageFitMode(imageFitMode === 'contain' ? 'cover' : 'contain')}
-              className="px-3.5 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 text-purple-700 dark:text-purple-300 text-xs font-extrabold border border-purple-200 dark:border-purple-800 transition-all flex items-center gap-2 cursor-pointer shadow-xs"
-            >
-              <Maximize2 className="w-3.5 h-3.5" />
-              <span>{imageFitMode === 'contain' ? '🔍 View Mode: Full Uncropped (Fit 100%)' : '📐 View Mode: Fill Grid'}</span>
-            </button>
           </div>
 
           {/* RENDER GALLERY GRID */}
@@ -3497,46 +3924,39 @@ function GenerateStudioContent() {
             {(generatedImagesList.length > 0 ? generatedImagesList : [generatedResult]).map((imgUrl, idx) => (
               <div
                 key={idx}
-                className="group relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-center items-center h-[380px]"
+                className="group relative rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 aspect-[4/3] sm:aspect-[16/10]"
               >
                 <img
                   src={imgUrl}
                   alt={`AI Render Variation ${idx + 1}`}
                   onClick={() => setLightboxImageUrl(imgUrl)}
-                  className={`w-full h-full cursor-pointer transition-all duration-300 ${
-                    imageFitMode === 'contain' ? 'object-contain p-2.5' : 'object-cover group-hover:scale-[1.02]'
-                  }`}
+                  className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-[1.01]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex items-end justify-between pointer-events-none">
-                  <div className="text-white text-xs space-y-0.5 pointer-events-auto">
-                    <div className="font-extrabold font-heading">AI Render Output #{idx + 1}</div>
-                    <div className="text-[10px] text-slate-300 font-mono">8K UHD • Uncropped Full View</div>
-                  </div>
-                  <div className="flex items-center gap-2 pointer-events-auto">
-                    <button
-                      type="button"
-                      onClick={() => setLightboxImageUrl(imgUrl)}
-                      className="px-3 py-1.5 rounded-xl bg-white/25 hover:bg-white/40 backdrop-blur-md text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-                    >
-                      <Maximize2 className="w-3.5 h-3.5" />
-                      <span>Full View</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setGeneratedResult(imgUrl)}
-                      className="px-3 py-1.5 rounded-xl bg-purple-600/90 hover:bg-purple-600 backdrop-blur-md text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
-                    >
-                      Split View
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => triggerImageDownload(imgUrl, `redesign_render_${idx + 1}.png`)}
-                      className="p-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition-all shadow-md cursor-pointer"
-                      title="Download Render"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </div>
+
+                {/* OVER THE IMAGE: SMALL VIEW & DOWNLOAD ICONS */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxImageUrl(imgUrl);
+                    }}
+                    className="w-8 h-8 rounded-lg bg-black/55 hover:bg-black/80 text-white backdrop-blur-md flex items-center justify-center transition-all cursor-pointer shadow-sm hover:scale-105"
+                    title="View Full Resolution"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      triggerImageDownload(imgUrl, `redesign_render_${idx + 1}.png`);
+                    }}
+                    className="w-8 h-8 rounded-lg bg-black/55 hover:bg-black/80 text-white backdrop-blur-md flex items-center justify-center transition-all cursor-pointer shadow-sm hover:scale-105"
+                    title="Download Render"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -3547,17 +3967,20 @@ function GenerateStudioContent() {
             <div className="space-y-1">
               <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white font-heading">
                 <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                <span>Rate Your AI Redesign Quality & Experience</span>
+                <span>{t.generate?.rateQualityTitle || 'Rate Your AI Redesign Quality & Experience'}</span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Your rating helps us improve AI model fidelity. No personal user data or private room images are ever shared publicly.
+                {t.generate?.rateQualityDesc || 'Your rating helps us improve AI model fidelity. No personal user data or private room images are ever shared publicly.'}
               </p>
             </div>
 
             {hasSubmittedRating ? (
               <div className="px-3.5 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 border border-emerald-200 dark:border-emerald-800">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>Thank you for rating! ★ {userStarRating}/5 Rating Recorded</span>
+                <span>
+                  {(t.generate?.thankYouRating || 'Thank you for rating! ★ {rating}/5 Rating Recorded')
+                    .replace('{rating}', String(userStarRating))}
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-3">
@@ -3581,7 +4004,7 @@ function GenerateStudioContent() {
                   onClick={handleSendRatingFeedback}
                   className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer font-heading"
                 >
-                  Submit Rating
+                  {t.generate?.submitRating || 'Submit Rating'}
                 </button>
               </div>
             )}
@@ -3593,20 +4016,20 @@ function GenerateStudioContent() {
       <Modal
         isOpen={isCreateProjectModalOpen}
         onClose={() => setIsCreateProjectModalOpen(false)}
-        title="Create New Project"
-        subtitle="Group your AI room designs into a project workspace"
+        title={t.generate?.createNewProject || "Create New Project"}
+        subtitle={t.generate?.modalGroupDesc || "Group your AI room designs into a project workspace"}
         icon={<FolderPlus className="w-5 h-5" />}
         maxWidth="md"
       >
         <form onSubmit={handleCreateProjectSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              Project Name *
+              {t.generate?.projectNameLabel || 'Project Name *'}
             </label>
             <input
               type="text"
               required
-              placeholder="e.g. Living Room Renovation 2026"
+              placeholder={t.generate?.projectNamePlaceholder || "e.g. Living Room Renovation 2026"}
               value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
               className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -3615,7 +4038,7 @@ function GenerateStudioContent() {
 
           <div className="space-y-1.5">
             <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              Primary Design Theme
+              {t.projects?.lockedTheme || 'Primary Design Theme'}
             </label>
             <select
               value={newProjectTheme}
@@ -3626,7 +4049,7 @@ function GenerateStudioContent() {
                 const name = typeof s === 'string' ? s : s.name;
                 return (
                   <option key={name} value={name}>
-                    {name}
+                    {getLocalizedStyleName(name)}
                   </option>
                 );
               })}
@@ -3635,7 +4058,7 @@ function GenerateStudioContent() {
 
           <div className="space-y-1.5">
             <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              Description (Optional)
+              {t.projects?.customInstructions || 'Description (Optional)'}
             </label>
             <textarea
               rows={3}
@@ -3652,7 +4075,7 @@ function GenerateStudioContent() {
               onClick={() => setIsCreateProjectModalOpen(false)}
               className="px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-all cursor-pointer font-heading"
             >
-              Cancel
+              {t.common?.cancel || 'Cancel'}
             </button>
             <button
               type="submit"
@@ -3662,12 +4085,12 @@ function GenerateStudioContent() {
               {isCreatingProject ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Creating...</span>
+                  <span>{t.common?.loading || 'Creating...'}</span>
                 </>
               ) : (
                 <>
                   <FolderPlus className="w-4 h-4" />
-                  <span>Create & Select</span>
+                  <span>{t.projects?.createAndGenerateRoom || 'Create & Select'}</span>
                 </>
               )}
             </button>
@@ -3707,7 +4130,7 @@ function GenerateStudioContent() {
                   className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs transition-all flex items-center gap-2 shadow-lg cursor-pointer font-heading"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download High-Res Render</span>
+                  <span>{t.generate?.downloadRender || 'Download High-Res Render'}</span>
                 </button>
               </div>
             </div>

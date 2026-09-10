@@ -10,6 +10,8 @@ interface NavItemProps {
   label: string;
   onClick?: () => void;
   requireAuth?: boolean;
+  badge?: string;
+  badgeCount?: number;
 }
 
 const PROTECTED_ROUTES = [
@@ -32,7 +34,7 @@ const isProtectedRoute = (path: string) => {
   return PROTECTED_ROUTES.some((route) => cleanPath === route || cleanPath.startsWith(`${route}/`));
 };
 
-export default function NavItem({ href, label, onClick, requireAuth = false }: NavItemProps) {
+export default function NavItem({ href, label, onClick, requireAuth = false, badge, badgeCount }: NavItemProps) {
   const pathname = usePathname();
   const router = useRouter();
   const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
@@ -56,13 +58,25 @@ export default function NavItem({ href, label, onClick, requireAuth = false }: N
     <Link
       href={href}
       onClick={handleClick}
-      className={`relative py-1 text-sm font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl group ${
+      className={`relative py-1 text-sm font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl group inline-flex items-center gap-1.5 ${
         isActive
           ? 'text-primary font-semibold'
           : 'text-slate-800 dark:text-slate-100 hover:text-primary'
       }`}
     >
       <span>{label}</span>
+
+      {badgeCount !== undefined && badgeCount > 0 && (
+        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 shadow-2xs font-heading shrink-0">
+          {badgeCount}
+        </span>
+      )}
+
+      {badge && (
+        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 shadow-2xs font-heading shrink-0">
+          {badge}
+        </span>
+      )}
 
       {/* Active Indicator */}
       {isActive && (

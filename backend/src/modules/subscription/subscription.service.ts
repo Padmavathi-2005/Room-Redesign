@@ -6,7 +6,7 @@ import { SubscriptionPlanDefinition, SubscriptionPlanDefinitionDocument } from '
 import { Setting, SettingDocument } from '../settings/schemas/setting.schema';
 import { CreditLedger, CreditLedgerDocument, CreditTransactionType } from './schemas/credit-ledger.schema';
 import { Invoice, InvoiceDocument } from './schemas/invoice.schema';
-import { CreditPack, CreditPackDocument } from './schemas/credit-pack.schema';
+import { NotificationsService } from '../notifications/notifications.service';
 import Stripe from 'stripe';
 
 @Injectable()
@@ -18,7 +18,7 @@ export class SubscriptionService implements OnModuleInit {
     @InjectModel(Setting.name) private readonly settingModel: Model<SettingDocument>,
     @InjectModel(CreditLedger.name) private readonly creditLedgerModel: Model<CreditLedgerDocument>,
     @InjectModel(Invoice.name) private readonly invoiceModel: Model<InvoiceDocument>,
-    @InjectModel(CreditPack.name) private readonly packModel: Model<CreditPackDocument>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -99,58 +99,6 @@ export class SubscriptionService implements OnModuleInit {
         console.log('✅ Canonical Subscription Plans seeded successfully!');
       } else {
         console.log(`ℹ️ Subscription plans exist (${count} found). Preserving existing plan definitions.`);
-      }
-
-      // Seed initial Credit Booster Packs if collection is empty
-      const packCount = await this.packModel.countDocuments().exec();
-      if (packCount === 0) {
-        console.log('🌱 Seeding initial Credit Booster Packs (Quick Boost, Project Boost, Studio Reserve)...');
-        const initialPacks = [
-          {
-            name: 'Quick Boost',
-            code: 'quick-boost',
-            description: 'Fast 20-credit booster for single room projects.',
-            credits: 20,
-            price: 12,
-            currency: 'usd',
-            validityDays: 1,
-            eligiblePlans: ['starter', 'pro'],
-            isActive: true,
-            isPopular: false,
-            sortOrder: 1,
-            badge: 'QUICK BOOST',
-          },
-          {
-            name: 'Project Boost',
-            code: 'project-boost',
-            description: 'Optimal 50-credit booster for active redesign projects.',
-            credits: 50,
-            price: 28,
-            currency: 'usd',
-            validityDays: 10,
-            eligiblePlans: ['starter', 'pro'],
-            isActive: true,
-            isPopular: true,
-            sortOrder: 2,
-            badge: 'POPULAR BOOST',
-          },
-          {
-            name: 'Studio Reserve',
-            code: 'studio-reserve',
-            description: 'High-volume 120-credit reserve for professional design studios.',
-            credits: 120,
-            price: 60,
-            currency: 'usd',
-            validityDays: 30,
-            eligiblePlans: ['pro'],
-            isActive: true,
-            isPopular: false,
-            sortOrder: 3,
-            badge: 'STUDIO RESERVE',
-          },
-        ];
-        await this.packModel.insertMany(initialPacks);
-        console.log('✅ Initial Credit Booster Packs seeded successfully!');
       }
 
       // Clean up old mock test credit lots (PLAN $19, BONUS, REFUND) across all users in MongoDB
@@ -362,6 +310,15 @@ export class SubscriptionService implements OnModuleInit {
         metadata: { ...metadata, idempotencyKey },
       });
 
+      if (newBalance <= 1) {
+        this.notificationsService.notifyUser({
+          userId: updatedUser._id.toString(),
+          title: '⚡ Running Low on Credits',
+          message: `You have ${newBalance} credit${newBalance === 1 ? '' : 's'} remaining. Upgrade your plan or buy a credit pack to keep generating.`,
+          type: 'warning',
+        }).catch((e) => console.warn('Low credits user notification error:', e));
+      }
+
       return updatedUser;
     }
 
@@ -422,19 +379,15 @@ export class SubscriptionService implements OnModuleInit {
     if (targetLot) {
       targetLot.remainingCredits = (targetLot.remainingCredits || 0) + cost;
     } else {
-      const healExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      const restoredAmt = (user.credits || 0) + cost;
-      const refundLot = {
+      const defaultExpiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      user.creditLots.push({
         lotId: `lot-refund-${Date.now()}`,
-        source: 'Generation Refund Restored Entitlement',
-        initialCredits: restoredAmt,
-        remainingCredits: restoredAmt,
+        source: 'Generation Refund',
+        initialCredits: cost,
+        remainingCredits: cost,
         startDate: now,
-        expiryDate: healExpiry,
-      };
-      if (!user.creditLots) user.creditLots = [];
-      user.creditLots.unshift(refundLot);
-      targetLot = refundLot;
+        expiryDate: defaultExpiry,
+      });
     }
 
     const activeLots = (user.creditLots || []).filter((l) => !l.expiryDate || new Date(l.expiryDate) >= now);
@@ -464,6 +417,13 @@ export class SubscriptionService implements OnModuleInit {
       referenceType: 'room_generation_refund',
       metadata,
     });
+
+    this.notificationsService.notifyUser({
+      userId: user._id.toString(),
+      title: '⚠️ Credit Refunded',
+      message: `${cost} credit was automatically refunded to your balance due to a generation error.`,
+      type: 'credit',
+    }).catch((e) => console.warn('Credit refund user notification error:', e));
 
     return updatedUser || user;
   }
@@ -710,111 +670,29 @@ export class SubscriptionService implements OnModuleInit {
       ).exec();
     }
 
+    // Trigger real-time Socket.IO Admin & User Notifications without refresh
+    try {
+      await Promise.all([
+        this.notificationsService.notifyAdmin({
+          title: '💳 New Subscription Purchased',
+          message: `User ${existingUser.email} subscribed to ${subscriptionTier} (${billingCycle}).`,
+          type: 'success',
+          metadata: { userId, planCode: code, amountPaid },
+        }),
+        this.notificationsService.notifyUser({
+          userId,
+          title: '💎 Subscription Plan Activated!',
+          message: `Welcome to ${subscriptionTier}! ${creditsToGrant} monthly generation credits have been added to your account.`,
+          type: 'success',
+          metadata: { planCode: code, credits: creditsToGrant },
+        }),
+      ]);
+    } catch (e) {
+      console.warn('Subscription notifications error:', e);
+    }
+
     // Return fresh user doc
     return (await this.userModel.findById(userId).exec())!;
-  }
-
-  /**
-   * Provision one-time credit pack after verified Stripe payment (Return-Sync + Webhook)
-   */
-  async grantCreditPack(
-    userId: string,
-    packCodeOrId: string,
-    stripeSessionId: string,
-    amountPaid?: number,
-    invoicePdfUrl: string = '',
-  ): Promise<UserDocument> {
-    // Idempotency check FIRST — before loading user doc
-    const existingInvoice = await this.invoiceModel.findOne({ stripeSessionId }).exec();
-    const existingLedger = await this.creditLedgerModel.findOne({ referenceId: stripeSessionId }).exec();
-    if (existingInvoice || existingLedger) {
-      console.log(`ℹ️ Credit pack payment [${stripeSessionId}] already provisioned. Skipping idempotently.`);
-      return (await this.userModel.findById(userId).exec())!;
-    }
-
-    const existingUser = await this.userModel.findById(userId).exec();
-    if (!existingUser) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
-    // Resolve CreditPack from database
-    const cleanCode = (packCodeOrId || '').toLowerCase().trim();
-    let pack = await this.packModel.findOne({
-      $or: [
-        { code: cleanCode },
-        { _id: packCodeOrId && packCodeOrId.length === 24 ? packCodeOrId : undefined },
-      ],
-    }).exec();
-
-    if (!pack) {
-      pack = await this.packModel.findOne({ isActive: true }).sort({ sortOrder: 1 }).exec();
-    }
-
-    if (!pack) {
-      throw new NotFoundException(`Credit pack "${packCodeOrId}" not found`);
-    }
-
-    const today = new Date();
-    const expiry = new Date(today.getTime() + pack.validityDays * 24 * 60 * 60 * 1000);
-
-    const newLot = {
-      lotId: `lot-pack-${Date.now()}`,
-      source: `BOOSTER: ${pack.name.toUpperCase()} (+${pack.credits} CR)`,
-      initialCredits: pack.credits,
-      remainingCredits: pack.credits,
-      startDate: today,
-      expiryDate: expiry,
-      stripeSessionId,
-      packId: pack._id.toString(),
-    };
-
-    const currentCredits = (existingUser.credits || 0);
-    const newBalance = currentCredits + pack.credits;
-
-    // Atomic update — avoids Mongoose VersionError race with concurrent webhook + return-sync
-    await this.userModel.findByIdAndUpdate(
-      userId,
-      {
-        $set: { credits: newBalance },
-        $push: { creditLots: { $each: [newLot], $position: 0 } },
-      },
-      { new: true },
-    ).exec();
-
-    // Create CreditLedger GRANT entry
-    await this.creditLedgerModel.create({
-      userId: existingUser._id,
-      amount: pack.credits,
-      balanceAfter: newBalance,
-      type: CreditTransactionType.BOOSTER_GRANT,
-      description: `Credit Booster Purchased: ${pack.name} (+${pack.credits} Credits)`,
-      lotId: newLot.lotId,
-      referenceId: stripeSessionId,
-      referenceType: 'stripe_credit_pack',
-      metadata: {
-        stripeSessionId,
-        packCode: pack.code,
-        validityDays: pack.validityDays,
-        expiryDate: expiry.toISOString(),
-      },
-    });
-
-    // Create Invoice record
-    await this.invoiceModel.create({
-      userId: existingUser._id,
-      stripeInvoiceId: stripeSessionId,
-      stripeSessionId,
-      amountPaid: amountPaid !== undefined ? amountPaid : pack.price,
-      currency: pack.currency || 'usd',
-      status: 'paid',
-      planCode: pack.code,
-      billingCycle: 'one-time',
-      paymentMethod: 'Stripe Credit Pack',
-      invoicePdfUrl,
-      paidAt: new Date(),
-    }).catch((err) => console.warn(`Duplicate pack invoice ignored (${stripeSessionId}): ${err.message}`));
-
-    return this.userModel.findById(userId).exec();
   }
 
   /**
@@ -858,21 +736,8 @@ export class SubscriptionService implements OnModuleInit {
       throw new ForbiddenException('Checkout session does not belong to the authenticated user.');
     }
 
-    const purchaseType = session.metadata?.purchaseType;
-    if (purchaseType === 'credit_pack' || session.mode === 'payment') {
-      const packCode = session.metadata?.packCode || session.metadata?.packId || '';
-      const amountPaid = (session.amount_total || 0) / 100;
-      return this.grantCreditPack(
-        authenticatedUserId,
-        packCode,
-        session.id,
-        amountPaid,
-        session.url || '',
-      );
-    }
-
     if (session.mode !== 'subscription') {
-      throw new BadRequestException(`Stripe Checkout session mode is "${session.mode}". Expected "subscription" or "payment".`);
+      throw new BadRequestException(`Stripe Checkout session mode is "${session.mode}". Expected "subscription".`);
     }
 
     const subObj = typeof session.subscription === 'object' ? (session.subscription as Stripe.Subscription) : null;
@@ -1050,14 +915,50 @@ export class SubscriptionService implements OnModuleInit {
   }
 
   /**
-   * Fetch credit ledger for a given user
+   * Fetch credit ledger for a given user (Reconciles running balanceAfter to live user.credits)
    */
   async getCreditLedger(userId: string) {
-    return this.creditLedgerModel
+    // Purge test offer / stale generation reconciliation records from DB
+    try {
+      await this.creditLedgerModel.deleteMany({
+        userId,
+        description: { $regex: /stale generation|roomai offer|\+25 bonus|reconciliation timeout|auto-refund: generation failed/i },
+      });
+    } catch (e) {}
+
+    const user = await this.userModel.findById(userId).select('credits').exec();
+    const rawLedger = await this.creditLedgerModel
       .find({ userId })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1 }) // Fetch newest first
       .limit(100)
       .exec();
+
+    // Filter out any remaining test/stale entries
+    const ledger = rawLedger.filter((item) => {
+      const desc = item.description || '';
+      return !/stale generation|roomai offer|\+25 bonus|reconciliation timeout|auto-refund: generation failed/i.test(desc);
+    });
+
+    if (user && ledger && ledger.length > 0) {
+      const currentCredits = user.credits ?? 0;
+      let runningBalance = currentCredits;
+
+      const reconciledLedger = ledger.map((item, idx) => {
+        const itemObj = (item as any).toObject ? (item as any).toObject() : { ...item };
+        if (idx === 0) {
+          itemObj.balanceAfter = currentCredits;
+        } else {
+          const prevTxAmount = ledger[idx - 1].amount;
+          runningBalance = runningBalance - prevTxAmount;
+          itemObj.balanceAfter = Math.max(0, runningBalance);
+        }
+        return itemObj;
+      });
+
+      return reconciledLedger;
+    }
+
+    return ledger;
   }
 
   /**
@@ -1196,242 +1097,5 @@ export class SubscriptionService implements OnModuleInit {
     if (!result) {
       throw new NotFoundException('Plan not found');
     }
-  }
-
-  /* -------------------------------------------------------------------------- */
-  /*                           CREDIT PACK BOOSTER METHODS                      */
-  /* -------------------------------------------------------------------------- */
-
-  /**
-   * Customer: Fetch active credit packs eligible for user's currently active paid plan
-   */
-  async getEligibleCreditPacks(userId: string) {
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const now = new Date();
-    const isExpired = user.subscriptionPeriodEnd && now > new Date(user.subscriptionPeriodEnd);
-    const userPlanCode = (user.plan || 'free').toLowerCase().trim();
-    const status = (user.subscriptionStatus || 'active').toLowerCase().trim();
-
-    // Business Rules:
-    // - Free users must not see or buy credit packs
-    // - Expired, past_due, unpaid, or canceled (expired) users cannot buy credit packs
-    // - Users with active Starter/Pro or cancel-at-period-end before expiry may buy packs
-    const isPaidPlan = ['starter', 'pro'].includes(userPlanCode);
-    const isValidStatus = ['active', 'canceling', 'cancel_at_period_end'].includes(status);
-    const isEligible = isPaidPlan && isValidStatus && !isExpired;
-
-    if (!isEligible) {
-      return {
-        isEligible: false,
-        activePlan: userPlanCode,
-        message: 'One-time credit booster packs are exclusively available to active Starter and Pro subscribers.',
-        packs: [],
-      };
-    }
-
-    const packs = await this.packModel
-      .find({
-        isActive: true,
-        eligiblePlans: userPlanCode,
-      })
-      .sort({ sortOrder: 1, price: 1 })
-      .exec();
-
-    return {
-      isEligible: true,
-      activePlan: userPlanCode,
-      message: 'Active credit booster packs available for purchase.',
-      packs,
-    };
-  }
-
-  /**
-   * Customer: Create Stripe Checkout session for one-time credit booster pack
-   */
-  async createCreditPackCheckoutSession(
-    userId: string,
-    packCodeOrId: string,
-    successUrl?: string,
-    cancelUrl?: string,
-  ) {
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const now = new Date();
-    const isExpired = user.subscriptionPeriodEnd && now > new Date(user.subscriptionPeriodEnd);
-    const userPlanCode = (user.plan || 'free').toLowerCase().trim();
-    const status = (user.subscriptionStatus || 'active').toLowerCase().trim();
-
-    const isPaidPlan = ['starter', 'pro'].includes(userPlanCode);
-    const isValidStatus = ['active', 'canceling', 'cancel_at_period_end'].includes(status);
-    const isEligible = isPaidPlan && isValidStatus && !isExpired;
-
-    if (!isEligible) {
-      throw new ForbiddenException(
-        'One-time credit booster packs are exclusively available to active Starter and Pro subscribers. Please subscribe to a paid plan first.',
-      );
-    }
-
-    const cleanCode = (packCodeOrId || '').toLowerCase().trim();
-    const pack = await this.packModel.findOne({
-      $or: [
-        { code: cleanCode },
-        { _id: packCodeOrId && packCodeOrId.length === 24 ? packCodeOrId : undefined },
-      ],
-      isActive: true,
-    }).exec();
-
-    if (!pack) {
-      throw new NotFoundException(`Credit booster pack "${packCodeOrId}" is invalid or inactive.`);
-    }
-
-    if (!pack.eligiblePlans.includes(userPlanCode)) {
-      throw new ForbiddenException(
-        `Credit pack "${pack.name}" is not eligible for your current ${userPlanCode.toUpperCase()} subscription tier.`,
-      );
-    }
-
-    const settings = await this.settingModel.findOne().exec();
-    const stripeSecretKey = settings?.stripeSecretKey || process.env.STRIPE_SECRET_KEY;
-
-    if (!stripeSecretKey) {
-      throw new BadRequestException(
-        'Stripe Secret Key is not configured in server settings or environment variables.',
-      );
-    }
-
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: '2025-02-24.acacia' as any });
-
-    const defaultSuccess = 'http://localhost:3000/billing?checkout=success&purchase_type=credit_pack&session_id={CHECKOUT_SESSION_ID}';
-    let finalSuccessUrl = successUrl || defaultSuccess;
-    if (!finalSuccessUrl.includes('{CHECKOUT_SESSION_ID}')) {
-      const joinChar = finalSuccessUrl.includes('?') ? '&' : '?';
-      finalSuccessUrl = `${finalSuccessUrl}${joinChar}session_id={CHECKOUT_SESSION_ID}`;
-    }
-
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      payment_method_types: ['card'],
-      mode: 'payment',
-      customer_email: user.email,
-      client_reference_id: userId,
-      metadata: {
-        purchaseType: 'credit_pack',
-        userId,
-        packId: pack._id.toString(),
-        packCode: pack.code,
-        credits: pack.credits.toString(),
-        validityDays: pack.validityDays.toString(),
-      },
-      success_url: finalSuccessUrl,
-      cancel_url: cancelUrl || 'http://localhost:3000/billing?checkout=cancel',
-    };
-
-    if (pack.stripePriceId && pack.stripePriceId.startsWith('price_') && !pack.stripePriceId.includes('mock')) {
-      sessionParams.line_items = [{ price: pack.stripePriceId, quantity: 1 }];
-    } else {
-      sessionParams.line_items = [
-        {
-          price_data: {
-            currency: pack.currency || 'usd',
-            product_data: {
-              name: `RoomAI Booster: ${pack.name}`,
-              description: `${pack.credits} AI Generation Credits (${pack.validityDays}-Day Validity)`,
-            },
-            unit_amount: Math.round(pack.price * 100),
-          },
-          quantity: 1,
-        },
-      ];
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionParams);
-    return { url: session.url, sessionId: session.id };
-  }
-
-  /**
-   * Admin: Fetch all credit packs
-   */
-  async getAllCreditPacksAdmin(): Promise<CreditPack[]> {
-    return this.packModel.find().sort({ sortOrder: 1, createdAt: -1 }).exec();
-  }
-
-  /**
-   * Admin: Create new credit pack
-   */
-  async createCreditPack(packData: Partial<CreditPack>): Promise<CreditPack> {
-    if (!packData.name || !packData.code) {
-      throw new BadRequestException('Credit pack name and unique code are required.');
-    }
-    if ((packData.credits || 0) <= 0) {
-      throw new BadRequestException('Credit amount must be greater than 0.');
-    }
-    if ((packData.price || 0) <= 0) {
-      throw new BadRequestException('Price must be greater than 0.');
-    }
-    if ((packData.validityDays || 0) <= 0) {
-      throw new BadRequestException('Validity days must be greater than 0.');
-    }
-
-    const code = packData.code.toLowerCase().trim();
-    const existing = await this.packModel.findOne({ code }).exec();
-    if (existing) {
-      throw new BadRequestException(`Credit pack with code "${code}" already exists.`);
-    }
-
-    const newPack = new this.packModel({
-      ...packData,
-      code,
-      eligiblePlans: packData.eligiblePlans || ['starter', 'pro'],
-    });
-    return newPack.save();
-  }
-
-  /**
-   * Admin: Update credit pack
-   */
-  async updateCreditPack(id: string, packData: Partial<CreditPack>): Promise<CreditPack> {
-    const pack = await this.packModel.findById(id).exec();
-    if (!pack) {
-      throw new NotFoundException(`Credit pack with ID ${id} not found.`);
-    }
-
-    if (packData.credits !== undefined && packData.credits <= 0) {
-      throw new BadRequestException('Credit amount must be greater than 0.');
-    }
-    if (packData.price !== undefined && packData.price <= 0) {
-      throw new BadRequestException('Price must be greater than 0.');
-    }
-    if (packData.validityDays !== undefined && packData.validityDays <= 0) {
-      throw new BadRequestException('Validity days must be greater than 0.');
-    }
-
-    if (packData.code && packData.code.toLowerCase().trim() !== pack.code) {
-      const newCode = packData.code.toLowerCase().trim();
-      const duplicate = await this.packModel.findOne({ code: newCode }).exec();
-      if (duplicate) {
-        throw new BadRequestException(`Credit pack with code "${newCode}" already exists.`);
-      }
-      pack.code = newCode;
-    }
-
-    Object.assign(pack, packData);
-    return pack.save();
-  }
-
-  /**
-   * Admin: Delete credit pack
-   */
-  async deleteCreditPack(id: string): Promise<{ success: boolean }> {
-    const res = await this.packModel.findByIdAndDelete(id).exec();
-    if (!res) {
-      throw new NotFoundException(`Credit pack with ID ${id} not found.`);
-    }
-    return { success: true };
   }
 }

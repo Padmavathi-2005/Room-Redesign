@@ -18,7 +18,9 @@ import {
   Search,
   RefreshCw,
 } from 'lucide-react';
+import { DataTable, Column } from '@/components/ui/DataTable';
 import AdminModal from '@/components/admin/AdminModal';
+import { useAdminSearch } from '@/context/AdminSearchContext';
 import { adminService, AdminUser } from '@/services/admin.service';
 
 interface AdminMember {
@@ -32,6 +34,7 @@ interface AdminMember {
 }
 
 export default function AdminTeamPage() {
+  const { searchQuery } = useAdminSearch();
   const [admins, setAdmins] = useState<AdminMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -169,100 +172,120 @@ export default function AdminTeamPage() {
     }
   };
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 p-6 rounded-2xl border border-slate-200/80 shadow-xs backdrop-blur-xl">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-              <Users className="w-5 h-5" />
-            </span>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Admin Team & Roles</h1>
+  const columns: Column<AdminMember>[] = [
+    {
+      key: 'name',
+      header: 'Admin Name',
+      sortable: true,
+      accessor: (admin) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-[10px] bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 font-extrabold flex items-center justify-center text-xs border border-purple-200 dark:border-purple-800 shrink-0 font-heading">
+            {admin.firstName?.[0] || 'A'}{admin.lastName?.[0] || 'D'}
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Manage administrator accounts stored in the Admin table, assign roles, and control access permissions.
-          </p>
+          <span className="font-extrabold text-slate-900 dark:text-white font-heading text-xs">
+            {admin.firstName} {admin.lastName}
+          </span>
         </div>
-
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-600 text-white text-xs font-bold shadow-md shadow-indigo-600/20 hover:bg-indigo-700 transition-all cursor-pointer"
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Email Address',
+      sortable: true,
+      accessor: (admin) => <span className="font-mono text-slate-600 dark:text-slate-400 text-xs">{admin.email}</span>,
+    },
+    {
+      key: 'role',
+      header: 'Role Tier',
+      sortable: true,
+      accessor: (admin) => (
+        <span
+          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-[6px] text-[10px] font-bold uppercase tracking-wider ${
+            admin.role === 'main_admin'
+              ? 'bg-purple-50 text-purple-700 border border-purple-200'
+              : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+          }`}
         >
-          <Plus className="w-4 h-4" />
-          <span>Add Admin Member</span>
+          <Shield className="w-3 h-3 text-purple-600" />
+          {admin.role === 'main_admin' ? 'Main Admin' : 'Sub Admin'}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      accessor: (admin) => (
+        <button
+          type="button"
+          onClick={() => handleToggleStatus(admin)}
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors cursor-pointer ${
+            admin.isActive
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+              : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+          }`}
+        >
+          {admin.isActive ? <CheckCircle2 className="w-3 h-3 text-emerald-600" /> : <XCircle className="w-3 h-3 text-slate-400" />}
+          {admin.isActive ? 'Active' : 'Disabled'}
         </button>
-      </div>
-
-      {/* Admin Team Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                <th className="py-3.5 px-6">Admin Name</th>
-                <th className="py-3.5 px-6">Email Address</th>
-                <th className="py-3.5 px-6">Role Tier</th>
-                <th className="py-3.5 px-6">Status</th>
-                <th className="py-3.5 px-6">Last Active</th>
-                <th className="py-3.5 px-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {admins.map((admin) => (
-                <tr key={admin._id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="py-4 px-6 font-bold text-slate-900">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center font-bold text-indigo-600">
-                        {admin.firstName[0]}{admin.lastName[0]}
-                      </div>
-                      <span>{admin.firstName} {admin.lastName}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-slate-600 font-medium">{admin.email}</td>
-                  <td className="py-4 px-6">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-2xl text-[11px] font-extrabold ${
-                      admin.role === 'main_admin'
-                        ? 'bg-purple-50 text-purple-700 border border-purple-100'
-                        : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
-                    }`}>
-                      <Shield className="w-3 h-3" />
-                      {admin.role === 'main_admin' ? 'Main Admin' : 'Sub Admin'}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6">
-                    <button
-                      onClick={() => handleToggleStatus(admin)}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors cursor-pointer ${
-                        admin.isActive
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100'
-                          : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
-                      }`}
-                    >
-                      {admin.isActive ? <CheckCircle2 className="w-3 h-3 text-emerald-600" /> : <XCircle className="w-3 h-3 text-slate-400" />}
-                      {admin.isActive ? 'Active' : 'Disabled'}
-                    </button>
-                  </td>
-                  <td className="py-4 px-6 text-slate-500 font-medium">
-                    {admin.lastLogin ? new Date(admin.lastLogin).toLocaleDateString() : 'Never'}
-                  </td>
-                  <td className="py-4 px-6 text-right">
-                    {admin.email !== 'admin@gmail.com' && (
-                      <button
-                        onClick={() => handleDeleteAdmin(admin._id)}
-                        className="p-1.5 rounded-2xl text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors"
-                        title="Delete Admin"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      ),
+    },
+    {
+      key: 'lastLogin',
+      header: 'Last Active',
+      sortable: true,
+      accessor: (admin) => (
+        <span className="text-xs text-slate-500 font-medium">
+          {admin.lastLogin ? new Date(admin.lastLogin).toLocaleDateString() : 'Never'}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      accessor: (admin) => (
+        <div className="flex items-center gap-2">
+          {admin.email !== 'admin@gmail.com' && admin.role !== 'main_admin' ? (
+            <button
+              type="button"
+              onClick={() => handleDeleteAdmin(admin._id)}
+              className="p-1.5 rounded-[10px] bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer"
+              title="Delete Admin Member"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          ) : (
+            <span className="text-slate-400 font-mono font-bold text-xs pl-2">-</span>
+          )}
         </div>
-      </div>
+      ),
+    },
+  ];
+
+  const adminToolbar = (
+    <button
+      type="button"
+      onClick={() => setIsAddModalOpen(true)}
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-[10px] bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold shadow-2xs transition-all cursor-pointer font-heading"
+    >
+      <Plus className="w-4 h-4" />
+      <span>Add Admin Member</span>
+    </button>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* REUSABLE DATA TABLE INTEGRATED WITH GLOBAL HEADER SEARCH */}
+      <DataTable
+        columns={columns}
+        data={admins}
+        actions={adminToolbar}
+        externalSearchQuery={searchQuery}
+        hideSearchInput={true}
+        isLoading={isLoading}
+        emptyMessage="No admin team members found matching search query."
+        initialPageSize={10}
+      />
 
       {/* Add Admin Modal */}
       <AdminModal

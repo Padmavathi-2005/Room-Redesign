@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   CheckCircle2,
 } from 'lucide-react';
+import { useCurrency } from '@/context/CurrencyContext';
 
 export interface SubscriptionPlan {
   id: string;
@@ -82,6 +83,7 @@ const PRICING_TIERS: SubscriptionPlan[] = [
 
 export default function PricingPage() {
   const router = useRouter();
+  const { formatPrice, selectedCurrency } = useCurrency();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   const handleSelectPlan = (tier: SubscriptionPlan) => {
@@ -93,39 +95,54 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-transparent py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-10">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-extrabold uppercase tracking-wider border border-primary/20">
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
-            Flexible AI Credit Tiers
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Transparent Global Pricing • Currency: {selectedCurrency.code}</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-heading">
-            Simple, Transparent Pricing
+
+          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white font-heading tracking-tight">
+            Flexible Plans for Every Space
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-            Choose the ideal credit package for your architectural & interior redesign project load.
+
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium max-w-xl mx-auto">
+            Choose the perfect plan to redesign rooms with AI. Upgrade, downgrade, or cancel anytime.
           </p>
 
-          {/* Billing Cycle Toggle */}
+          {/* Monthly / Annual Toggle */}
           <div className="pt-4 flex items-center justify-center gap-3">
-            <span className={`text-xs font-bold ${billingCycle === 'monthly' ? 'text-primary' : 'text-slate-400'}`}>
+            <span
+              className={`text-xs font-extrabold cursor-pointer transition-colors ${
+                billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-400'
+              }`}
+              onClick={() => setBillingCycle('monthly')}
+            >
               Monthly Billing
             </span>
+
             <button
+              type="button"
               onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-              className="w-12 h-6 rounded-full bg-slate-200 dark:bg-slate-800 p-0.5 transition-colors relative cursor-pointer"
+              className="relative w-12 h-6 rounded-full bg-slate-200 dark:bg-slate-700 transition-colors p-0.5 cursor-pointer focus:outline-none"
             >
               <div
-                className={`w-5 h-5 rounded-full bg-primary transition-transform ${
+                className={`w-5 h-5 rounded-full bg-primary shadow-md transform transition-transform ${
                   billingCycle === 'annual' ? 'translate-x-6' : 'translate-x-0'
                 }`}
               />
             </button>
-            <span className={`text-xs font-bold flex items-center gap-1 ${billingCycle === 'annual' ? 'text-primary' : 'text-slate-400'}`}>
+
+            <span
+              className={`text-xs font-extrabold cursor-pointer transition-colors flex items-center gap-1.5 ${
+                billingCycle === 'annual' ? 'text-slate-900 dark:text-white' : 'text-slate-400'
+              }`}
+              onClick={() => setBillingCycle('annual')}
+            >
               <span>Annual Billing</span>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[9px] font-extrabold">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 text-[10px] font-black uppercase tracking-wider">
                 Save 20%
               </span>
             </span>
@@ -166,13 +183,15 @@ export default function PricingPage() {
                   <div className="pt-2">
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-black text-slate-900 dark:text-white font-heading">
-                        ${price}
+                        {tier.id === 'free' ? formatPrice(0) : formatPrice(price)}
                       </span>
-                      <span className="text-xs font-semibold text-slate-400">/ month</span>
+                      {tier.id !== 'free' && (
+                        <span className="text-xs text-slate-400 font-bold">/month</span>
+                      )}
                     </div>
-                    {billingCycle === 'annual' && price > 0 && (
-                      <p className="text-[11px] font-bold text-emerald-600 mt-1">
-                        Billed as ${annualTotal}/year
+                    {billingCycle === 'annual' && tier.id !== 'free' && (
+                      <p className="text-[11px] text-emerald-600 font-bold mt-1">
+                        Billed annually ({formatPrice(annualTotal)}/year)
                       </p>
                     )}
                   </div>

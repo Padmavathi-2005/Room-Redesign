@@ -14,9 +14,6 @@ import {
   Star,
   StarHalf,
   X,
-  Coins,
-  Eye,
-  SlidersHorizontal,
 } from 'lucide-react';
 import { marketplaceService, PublishedProjectData } from '@/services/marketplace.service';
 import { projectService } from '@/services/project.service';
@@ -25,16 +22,17 @@ import { useSettings } from '@/context/SettingsContext';
 import { triggerImageDownload } from '@/utils/download';
 import PremiumAppLoader from '@/components/ui/PremiumAppLoader';
 import CommonPagination from '@/components/ui/CommonPagination';
+import { useTranslation } from '@/context/LanguageContext';
 
-const CATEGORY_FILTERS = [
-  'All',
-  'Living Room',
-  'Bedroom',
-  'Kitchen',
-  'Office',
-  'Villa',
-  'Industrial',
-  'Commercial',
+const CATEGORY_ITEMS = [
+  { id: 'All', key: 'designs.categories.all' },
+  { id: 'Living Room', key: 'designs.categories.livingRoom' },
+  { id: 'Bedroom', key: 'designs.categories.bedroom' },
+  { id: 'Kitchen', key: 'designs.categories.kitchen' },
+  { id: 'Office', key: 'designs.categories.office' },
+  { id: 'Villa', key: 'designs.categories.villa' },
+  { id: 'Industrial', key: 'designs.categories.industrial' },
+  { id: 'Commercial', key: 'designs.categories.commercial' },
 ];
 
 const formatRenderUrl = (url?: string | null): string => {
@@ -49,6 +47,7 @@ const formatRenderUrl = (url?: string | null): string => {
 };
 
 export default function WishlistPage() {
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { toast } = useToast();
 
@@ -76,6 +75,54 @@ export default function WishlistPage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const getLocalizedRoomType = (roomType?: string) => {
+    if (!roomType) return '';
+    const norm = roomType.toLowerCase().replace(/[\s_-]/g, '');
+    const map: Record<string, string> = {
+      all: t('designs.categories.all'),
+      livingroom: t('designs.categories.livingRoom'),
+      bedroom: t('designs.categories.bedroom'),
+      kitchen: t('designs.categories.kitchen'),
+      office: t('designs.categories.office'),
+      villa: t('designs.categories.villa'),
+      industrial: t('designs.categories.industrial'),
+      commercial: t('designs.categories.commercial'),
+    };
+    return map[norm] || map[roomType] || roomType;
+  };
+
+  const getLocalizedStyle = (style?: string) => {
+    if (!style) return '';
+    const styleKey = style.toLowerCase().replace(/[\s_-]/g, '');
+    const directName = t(`styles.${style.toLowerCase()}.name` as any);
+    if (directName && !directName.startsWith('styles.')) {
+      return directName;
+    }
+    const normName = t(`styles.${styleKey}.name` as any);
+    if (normName && !normName.startsWith('styles.')) {
+      return normName;
+    }
+    return style;
+  };
+
+  const getLocalizedTitle = (design?: PublishedProjectData | null) => {
+    if (!design) return '';
+    const localizedRoom = getLocalizedRoomType(design.roomType);
+    const localizedStyle = getLocalizedStyle(design.style);
+    const isAutoTitle =
+      !design.title ||
+      design.title.toLowerCase().includes('redesign') ||
+      (design.roomType && design.title.toLowerCase().includes(design.roomType.toLowerCase()));
+
+    if (isAutoTitle && (localizedRoom || localizedStyle)) {
+      return t('designs.modal.redesignTitle', {
+        roomType: localizedRoom || design.roomType || '',
+        style: localizedStyle || design.style || '',
+      });
+    }
+    return design.title;
+  };
 
   const loadWishlist = async () => {
     setLoading(true);
@@ -306,80 +353,30 @@ export default function WishlistPage() {
     })
     .sort((a, b) => {
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
-      if (sortBy === 'title') return a.title.localeCompare(b.title);
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
 
-  const pageSize = settings.tablePaginationLimit || 9;
+  const pageSize = settings.tablePaginationLimit || 10;
   const paginatedWishlist = filteredWishlist.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  const uniqueStylesCount = new Set(wishlistItems.map((i) => i.style).filter(Boolean)).size;
-
   return (
     <div className="space-y-6">
-      {/* Top Banner Header */}
-      <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 border border-slate-800 p-6 sm:p-8 text-white shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1.5 shadow-xs">
-              <Heart className="w-3 h-3 fill-rose-500 text-rose-500" /> Saved Collection
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-slate-300 border border-white/15">
-              {wishlistItems.length} {wishlistItems.length === 1 ? 'Design' : 'Designs'}
-            </span>
-            {uniqueStylesCount > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-200 border border-purple-400/30">
-                {uniqueStylesCount} Unique Styles
-              </span>
-            )}
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-heading">
-            Your Saved Wishlist
-          </h1>
-          <p className="text-slate-300 text-xs sm:text-sm max-w-xl leading-relaxed">
-            Keep track of your favorite room designs, architectural palettes, and AI transformation blueprints in one place.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {wishlistItems.length > 0 && (
-            <button
-              type="button"
-              onClick={handleClearWishlist}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-[10px] bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 text-xs font-bold transition-all shadow-xs cursor-pointer font-heading"
-              title="Clear All Wishlist Items"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear All</span>
-            </button>
-          )}
-
-          <Link
-            href="/designs"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-white text-slate-900 font-extrabold text-xs hover:bg-slate-100 transition-all shadow-sm font-heading cursor-pointer"
-          >
-            <span>Explore Designs</span>
-            <ArrowRight className="w-4 h-4 text-purple-600" />
-          </Link>
-        </div>
-      </div>
-
-      {/* Filter, Search & Sort Bar */}
+      {/* Showcase Controls & View Toggles */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center">
+        {/* Top Bar: Search Input & Sort Dropdown */}
+        <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
           {/* Search Input */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search saved designs, room types, or styles..."
+              placeholder={t('designs.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40 shadow-xs"
+              className="w-full pl-11 pr-4 py-2.5 rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40 shadow-2xs"
             />
             {searchQuery && (
               <button
@@ -391,168 +388,160 @@ export default function WishlistPage() {
             )}
           </div>
 
-          {/* Sort Dropdown */}
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-3 self-end lg:self-auto">
+            {/* Sort Dropdown */}
             <select
               value={sortBy}
               onChange={(e: any) => setSortBy(e.target.value)}
-              className="px-3 py-2.5 rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40 shadow-xs"
+              className="px-3.5 py-2.5 rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40 shadow-2xs"
             >
-              <option value="newest">Recently Saved</option>
-              <option value="rating">Highest Rated ★</option>
-              <option value="title">Title A-Z</option>
+              <option value="newest">{t('designs.newestFirst')}</option>
+              <option value="rating">{t('designs.highestRated')}</option>
             </select>
+
+            {wishlistItems.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearWishlist}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-[10px] bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-200 dark:border-rose-800 transition-colors shadow-2xs cursor-pointer font-heading"
+                title={t('designs.clearAll')}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t('designs.clearAll')}</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Category Pills */}
+        {/* Category Filter Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {CATEGORY_FILTERS.map((cat) => (
+          {CATEGORY_ITEMS.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-[10px] text-xs font-bold whitespace-nowrap transition-all cursor-pointer font-heading ${
-                selectedCategory === cat
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20 border border-purple-400/30'
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`px-4 py-2 rounded-[10px] text-xs font-bold whitespace-nowrap transition-all ${
+                selectedCategory === cat.id
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25 font-extrabold border border-blue-400/30'
                   : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800'
               }`}
             >
-              {cat}
+              {t(cat.key)}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Main Grid / Empty State */}
-      {loading ? (
-        <div className="py-16">
-          <PremiumAppLoader size="md" />
-        </div>
-      ) : filteredWishlist.length === 0 ? (
-        <div className="rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-12 text-center space-y-4 shadow-sm">
-          <div className="w-16 h-16 rounded-[10px] bg-rose-50 dark:bg-rose-950/50 text-rose-500 flex items-center justify-center mx-auto shadow-inner">
-            <Heart className="w-8 h-8 fill-rose-500" />
+        {/* MASONRY CARDS GRID / EMPTY STATE */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-12">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-64 rounded-[10px] bg-slate-100 dark:bg-slate-800 animate-pulse" />
+            ))}
           </div>
-          <div className="space-y-1">
+        ) : filteredWishlist.length === 0 ? (
+          <div className="p-12 text-center rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 space-y-4 shadow-sm">
+            <div className="p-3 w-12 h-12 rounded-[10px] bg-rose-50 dark:bg-rose-950/60 text-rose-500 mx-auto flex items-center justify-center">
+              <Heart className="w-6 h-6 fill-rose-500" />
+            </div>
             <h3 className="text-xl font-extrabold text-slate-900 dark:text-white font-heading">
-              {wishlistItems.length === 0 ? 'Your wishlist is currently empty' : 'No matching saved designs found'}
+              {wishlistItems.length === 0 ? 'Your Wishlist is Empty' : 'No Matching Saved Designs Found'}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
               {wishlistItems.length === 0
                 ? 'Explore community room designs, tap the heart icon on any design card, and collect your favorite inspirations here.'
                 : 'Try adjusting your search query or category filter to view your saved designs.'}
             </p>
+            <Link
+              href="/designs"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-[10px] text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-md font-heading"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
+              <span>Explore Room Designs</span>
+            </Link>
           </div>
-          <Link
-            href="/designs"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-[10px] bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md transition-all font-heading"
-          >
-            <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
-            <span>Explore Room Designs</span>
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {paginatedWishlist.map((item) => (
-              <div
-                key={item._id}
-                onClick={() => handleOpenDetailModal(item)}
-                className="group rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col justify-between cursor-pointer"
-              >
-                {/* Image Container */}
-                <div className="relative h-52 w-full bg-slate-950 overflow-hidden rounded-t-[10px]">
-                  <img
-                    src={item.sampleImageUrl}
-                    alt={item.title}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200&auto=format&fit=crop';
-                    }}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-
-                  {/* Top Left Room Badge */}
-                  <div className="absolute top-3 left-3 z-10">
-                    <span className="px-3 py-1 rounded-full bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider border border-white/30 shadow-md">
-                      {item.roomType || 'Room'}
-                    </span>
-                  </div>
-
-                  {/* Top Right Actions: Heart Remove & Download */}
-                  <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveItem(item._id, item.title);
+        ) : (
+          <div className="space-y-6">
+            <div className="columns-1 md:columns-2 gap-6 space-y-6">
+              {paginatedWishlist.map((proj) => (
+                <div
+                  key={proj._id}
+                  onClick={() => handleOpenDetailModal(proj)}
+                  className="break-inside-avoid relative rounded-[10px] overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-2xl transition-all duration-300 group cursor-pointer"
+                >
+                  {/* NATURAL ASPECT RATIO IMAGE */}
+                  <div className="relative w-full min-h-[220px] overflow-hidden bg-slate-200 dark:bg-slate-800/80 rounded-[10px]">
+                    <img
+                      src={proj.sampleImageUrl}
+                      alt={proj.title}
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200&auto=format&fit=crop';
                       }}
-                      className="p-2 rounded-full bg-rose-500 text-white shadow-md hover:scale-110 transition-transform cursor-pointer border border-rose-400"
-                      title="Remove from Wishlist"
-                    >
-                      <Heart className="w-3.5 h-3.5 fill-white" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        triggerImageDownload(item.sampleImageUrl, `${item.title || 'design'}.png`);
-                      }}
-                      className="p-2 rounded-full bg-slate-950/80 hover:bg-purple-600 text-white shadow-md transition-colors cursor-pointer border border-white/20"
-                      title="Download HD Render"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500 rounded-[10px] relative z-10"
+                    />
 
-                  {/* Bottom Gradient Title Overlay */}
-                  <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-950/95 via-slate-950/50 to-transparent text-white space-y-1">
-                    <h4 className="font-extrabold text-sm font-heading line-clamp-1 text-white">
-                      {item.title}
-                    </h4>
-                    <span className="text-[11px] font-bold text-purple-300">
-                      {item.style || 'Modern'}
-                    </span>
+                    {/* TOP FLOATING OVERLAY: Room Type Badge */}
+                    <div className="absolute top-3 left-3 z-10">
+                      <span className="px-3 py-1 rounded-full bg-gradient-to-r from-blue-600/90 to-indigo-600/90 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider border border-white/30 shadow-md">
+                        {proj.roomType || 'Room'}
+                      </span>
+                    </div>
+
+                    {/* TOP RIGHT QUICK ACTIONS: Wishlist Remove & Download */}
+                    <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveItem(proj._id, proj.title);
+                        }}
+                        className="p-2 rounded-full backdrop-blur-md transition-all shadow-md cursor-pointer border bg-rose-500 text-white border-rose-400 opacity-100 hover:scale-110"
+                        title="Remove from Wishlist"
+                      >
+                        <Heart className="w-3.5 h-3.5 fill-white" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          triggerImageDownload(proj.sampleImageUrl, `${proj.title || 'design'}.png`);
+                        }}
+                        className="p-2 rounded-full bg-blue-950/80 backdrop-blur-md text-white hover:bg-purple-600 transition-colors shadow-md cursor-pointer border border-white/20"
+                        title="Download HD Render"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* BOTTOM HOVER GRADIENT OVERLAY WITH TITLE & STYLE */}
+                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent text-white space-y-1.5 opacity-90 group-hover:opacity-100 transition-opacity rounded-b-[10px]">
+                      <h4 className="font-extrabold text-sm font-heading line-clamp-1 leading-snug text-white">
+                        {proj.title}
+                      </h4>
+                      <div className="flex items-center justify-between text-[11px] text-slate-300 font-medium">
+                        <span className="text-purple-300 font-bold">{proj.style || 'Modern'}</span>
+                        <span className="inline-flex items-center gap-1 text-white font-bold group-hover:text-purple-300 transition-colors">
+                          <span>{t('designs.viewRender')}</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
 
-                {/* Card Content & Action Bar */}
-                <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                    {item.description && !item.description.toLowerCase().includes('8k uhd')
-                      ? item.description
-                      : `${item.style || 'Modern'} room transformation for ${item.roomType || 'space'}`}
-                  </p>
-
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-400 flex items-center gap-1 font-heading">
-                      <Eye className="w-3.5 h-3.5 text-purple-600" /> Details
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={() => handleOpenDetailModal(item)}
-                      className="px-3.5 py-1.5 rounded-[10px] bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 font-extrabold text-xs hover:bg-purple-600 hover:text-white transition-all font-heading"
-                    >
-                      View Design
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {/* Pagination Component */}
+            <CommonPagination
+              currentPage={currentPage}
+              totalItems={filteredWishlist.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              className="bg-transparent border-0 shadow-none px-0 py-2"
+            />
           </div>
-
-          {/* Pagination */}
-          <CommonPagination
-            currentPage={currentPage}
-            totalItems={filteredWishlist.length}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            className="bg-transparent border-0 shadow-none px-0 py-2"
-          />
-        </div>
-      )}
+        )}
+      </div>
 
       {/* DESIGN LIGHTBOX POPUP MODAL (PORTALED DIRECTLY TO BODY) */}
       {isMounted && isDetailModalOpen && selectedDetailDesign && createPortal(
@@ -584,10 +573,10 @@ export default function WishlistPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="px-3 py-1 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-xs font-extrabold border border-purple-200 dark:border-purple-800 font-heading">
-                      {selectedDetailDesign.roomType}
+                      {getLocalizedRoomType(selectedDetailDesign.roomType)}
                     </span>
                     <span className="px-3 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-extrabold border border-slate-200 dark:border-slate-700 font-heading">
-                      {selectedDetailDesign.style}
+                      {getLocalizedStyle(selectedDetailDesign.style)}
                     </span>
                   </div>
 
@@ -597,24 +586,29 @@ export default function WishlistPage() {
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[10px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 text-xs font-extrabold border border-rose-200 dark:border-rose-800 hover:bg-rose-600 hover:text-white transition-all font-heading cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    <span>Remove from Wishlist</span>
+                    <span>{t('designs.modal.removeFromWishlist')}</span>
                   </button>
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white font-heading">
-                  {selectedDetailDesign.title}
+                  {getLocalizedTitle(selectedDetailDesign)}
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   {selectedDetailDesign.description && !selectedDetailDesign.description.toLowerCase().includes('8k uhd')
                     ? selectedDetailDesign.description
-                    : `${selectedDetailDesign.style || 'Modern'} architectural transformation for ${selectedDetailDesign.roomType || 'space'}`}
+                    : t('designs.modal.transformationSubtitle', {
+                        style: getLocalizedStyle(selectedDetailDesign.style) || 'Modern',
+                        roomType: getLocalizedRoomType(selectedDetailDesign.roomType) || 'space',
+                      })}
                 </p>
               </div>
 
               {/* Before/After Comparison Slider */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2 text-xs font-bold">
-                  <span className="text-slate-500 dark:text-slate-400 font-heading">Interactive Before/After Comparison</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-heading">
+                    {t('designs.modal.comparisonTitle')}
+                  </span>
                   <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
                     <button
                       type="button"
@@ -625,7 +619,7 @@ export default function WishlistPage() {
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      Uncropped (Auto Height)
+                      {t('designs.modal.uncroppedAuto')}
                     </button>
                     <button
                       type="button"
@@ -636,7 +630,7 @@ export default function WishlistPage() {
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      Fill Area (Fixed Height)
+                      {t('designs.modal.fillAreaFixed')}
                     </button>
                   </div>
                 </div>
@@ -655,7 +649,7 @@ export default function WishlistPage() {
                 >
                   <img
                     src={selectedDetailDesign.sampleImageUrl}
-                    alt="After Redesign"
+                    alt={t('designs.modal.afterRedesign')}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
                         'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200&auto=format&fit=crop';
@@ -670,7 +664,7 @@ export default function WishlistPage() {
                     >
                       <img
                         src={selectedDetailDesign.beforeImageUrl}
-                        alt="Before Photo"
+                        alt={t('designs.modal.beforePhoto')}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
                             'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200&auto=format&fit=crop';
@@ -678,17 +672,17 @@ export default function WishlistPage() {
                         className="absolute inset-0 w-full h-full rounded-[10px] transition-all duration-200 object-cover"
                       />
                       <span className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-lg bg-purple-950/85 backdrop-blur-md text-xs font-extrabold text-purple-200 border border-purple-400/40 uppercase tracking-wider font-heading shadow-md">
-                        Before Photo
+                        {t('designs.modal.beforePhoto')}
                       </span>
                     </div>
                   ) : (
                     <span className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-lg bg-purple-950/85 backdrop-blur-md text-xs font-extrabold text-purple-200 border border-purple-400/40 uppercase tracking-wider font-heading shadow-md">
-                      Original Source Render
+                      {t('designs.modal.originalSource')}
                     </span>
                   )}
 
                   <span className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold text-xs shadow-md border border-purple-400/30 uppercase tracking-wider font-heading">
-                    After Redesign
+                    {t('designs.modal.afterRedesign')}
                   </span>
 
                   {selectedDetailDesign.beforeImageUrl && (
@@ -719,10 +713,10 @@ export default function WishlistPage() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
                 <div>
                   <p className="text-[11px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider font-heading">
-                    Saved Blueprint
+                    {t('designs.modal.savedBlueprintBadge')}
                   </p>
                   <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 font-heading">
-                    Curated Design Style & Architectural Render
+                    {t('designs.modal.actionTitle')}
                   </p>
                 </div>
 
@@ -733,7 +727,7 @@ export default function WishlistPage() {
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-[10px] border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all font-heading cursor-pointer"
                   >
                     <Download className="w-4 h-4 text-purple-600" />
-                    <span>Download</span>
+                    <span>{t('designs.modal.download')}</span>
                   </button>
                   <Link
                     href={`/generate?roomType=${encodeURIComponent(selectedDetailDesign.roomType || '')}&style=${encodeURIComponent(selectedDetailDesign.style || '')}&presetImage=${encodeURIComponent(selectedDetailDesign.beforeImageUrl || selectedDetailDesign.sampleImageUrl || '')}&desc=${encodeURIComponent(selectedDetailDesign.description || '')}`}
@@ -742,7 +736,7 @@ export default function WishlistPage() {
                     className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[10px] bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold transition-colors shadow-md shadow-purple-600/30 font-heading cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
-                    <span>Try This Style in Studio</span>
+                    <span>{t('designs.modal.tryThisStyle')}</span>
                   </Link>
                 </div>
               </div>
@@ -753,10 +747,13 @@ export default function WishlistPage() {
                   <div>
                     <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider font-heading flex items-center gap-2">
                       <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                      <span>Rate & Review This AI Render</span>
+                      <span>{t('designs.modal.rateReviewTitle')}</span>
                     </h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                      How accurate and high-quality is this {selectedDetailDesign.style} {selectedDetailDesign.roomType} transformation?
+                      {t('designs.modal.rateReviewDesc', {
+                        style: getLocalizedStyle(selectedDetailDesign.style) || '',
+                        roomType: getLocalizedRoomType(selectedDetailDesign.roomType) || '',
+                      })}
                     </p>
                   </div>
 
@@ -801,7 +798,7 @@ export default function WishlistPage() {
                     rows={2}
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="Write a review message or feedback for this generated image..."
+                    placeholder={t('designs.modal.reviewPlaceholder')}
                     className="w-full px-3.5 py-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                   />
                   <div className="flex items-center justify-between">
@@ -811,7 +808,7 @@ export default function WishlistPage() {
                       </span>
                     ) : (
                       <span className="text-[11px] text-slate-400">
-                        Your rating & review helps improve site AI design quality.
+                        {t('designs.modal.reviewHelps')}
                       </span>
                     )}
 
@@ -820,7 +817,7 @@ export default function WishlistPage() {
                       disabled={isSubmittingReview || !reviewComment.trim()}
                       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[10px] bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-extrabold transition-all shadow-sm font-heading cursor-pointer"
                     >
-                      <span>Submit Review</span>
+                      <span>{isSubmittingReview ? t('designs.modal.submitting') : t('designs.modal.submitReview')}</span>
                     </button>
                   </div>
                 </form>

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { PanelLeftOpen, Maximize2, Minimize2 } from 'lucide-react';
 import SidebarNav from '@/components/layout/SidebarNav';
 import PremiumAppLoader from '@/components/ui/PremiumAppLoader';
+import PreferencesSwitcher from '@/components/ui/PreferencesSwitcher';
 
 /**
  * Dashboard Layout Wrapper
@@ -17,7 +18,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
+  let rawPathname = '';
+  try {
+    rawPathname = usePathname() || '';
+  } catch {
+    rawPathname = '';
+  }
+  const pathname = rawPathname;
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
@@ -34,6 +41,14 @@ export default function DashboardLayout({
       setIsSidebarCollapsed(true);
     }
   }, []);
+
+  // Scroll to top on every dashboard route change / redirect
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, [pathname]);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed((prev) => {
@@ -108,6 +123,14 @@ export default function DashboardLayout({
         {/* Dynamic Workspace Content Area */}
         <main className="flex-1 min-w-0 space-y-6">
           {children}
+
+          {/* Minimal Clean Dashboard Workspace Footer */}
+          <footer className="pt-8 pb-4 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 font-medium">
+            <p>© 2026 RoomAI Inc. All rights reserved.</p>
+            <div className="flex items-center gap-4">
+              <PreferencesSwitcher placement="top" />
+            </div>
+          </footer>
         </main>
       </div>
     </div>

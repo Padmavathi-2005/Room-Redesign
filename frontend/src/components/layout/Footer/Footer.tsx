@@ -1,12 +1,13 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Send, Mail, Phone, MapPin, Twitter, Linkedin, Github, MessageSquare } from 'lucide-react';
+import PreferencesSwitcher from '@/components/ui/PreferencesSwitcher';
 
 export default function Footer() {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = rawPathname || '';
   const [isModalActive, setIsModalActive] = useState(false);
 
   // Observe modal status on body & DOM
@@ -36,6 +37,7 @@ export default function Footer() {
   // Hide global landing footer on Auth, Dashboard, Checkout, Billing, and Admin pages or when Modal is open
   if (
     isModalActive ||
+    !pathname ||
     pathname === '/login' ||
     pathname === '/signup' ||
     pathname === '/forgot-password' ||
@@ -43,8 +45,10 @@ export default function Footer() {
     pathname.startsWith('/checkout') ||
     pathname.startsWith('/billing') ||
     pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/generate') ||
     pathname.startsWith('/designs') ||
     pathname.startsWith('/projects') ||
+    pathname.startsWith('/pricing') ||
     pathname.startsWith('/settings')
   ) {
     return null;
@@ -157,10 +161,11 @@ export default function Footer() {
         {/* Bottom Copyright & Legal Row */}
         <div className="pt-10 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-400 font-medium">
           <p>© 2026 RoomAI Inc. All rights reserved.</p>
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6 sm:gap-8 flex-wrap">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             <Link href="/security" className="hover:text-white transition-colors">Security</Link>
+            <PreferencesSwitcher placement="top" />
           </div>
         </div>
 

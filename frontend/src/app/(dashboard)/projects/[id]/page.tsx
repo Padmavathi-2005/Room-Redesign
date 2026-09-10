@@ -30,8 +30,10 @@ import {
 } from 'lucide-react';
 import { projectService, ProjectData } from '@/services/project.service';
 import { ROOM_TYPES } from '@/constants';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function ProjectDetailPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
@@ -44,8 +46,51 @@ export default function ProjectDetailPage() {
     setMounted(true);
   }, []);
 
+  const getLocalizedRoomType = (roomType?: string) => {
+    if (!roomType) return '';
+    const norm = roomType.toLowerCase().replace(/[\s_-]/g, '');
+    const map: Record<string, string> = {
+      all: t('designs.categories.all'),
+      livingroom: t('designs.categories.livingRoom'),
+      living: t('designs.categories.livingRoom'),
+      bedroom: t('designs.categories.bedroom'),
+      masterbedroom: t('projects.roomTypes.masterBedroom'),
+      kitchen: t('designs.categories.kitchen'),
+      openkitchenlivingroom: `${t('designs.categories.kitchen')} & ${t('designs.categories.livingRoom')}`,
+      bathroom: t('projects.roomTypes.bathroom'),
+      diningroom: t('projects.roomTypes.diningRoom'),
+      office: t('designs.categories.office'),
+      homeoffice: t('projects.roomTypes.homeOffice'),
+      kidsbedroom: t('projects.roomTypes.kidsBedroom'),
+      kidsroom: t('projects.roomTypes.kidsBedroom'),
+      balcony: t('projects.roomTypes.balcony'),
+      outdoorpatio: t('projects.roomTypes.outdoorPatio'),
+      patio: t('projects.roomTypes.outdoorPatio'),
+      villa: t('designs.categories.villa'),
+      industrial: t('designs.categories.industrial'),
+      commercial: t('designs.categories.commercial'),
+    };
+    return map[norm] || map[roomType] || roomType;
+  };
+
+  const getLocalizedStyle = (style?: string) => {
+    if (!style) return '';
+    const styleKey = style.toLowerCase().replace(/[\s_-]/g, '');
+    const directName = t(`styles.${style.toLowerCase()}.name` as any);
+    if (directName && !directName.startsWith('styles.')) {
+      return directName;
+    }
+    const normName = t(`styles.${styleKey}.name` as any);
+    if (normName && !normName.startsWith('styles.')) {
+      return normName;
+    }
+    return style;
+  };
+
   // Add Room Modal State
   const [isRoomModalOpen, setIsRoomModalOpen] = useState<boolean>(false);
+  const [selectedRoomForDrawer, setSelectedRoomForDrawer] = useState<any | null>(null);
+  const [selectedDrawerImage, setSelectedDrawerImage] = useState<string | null>(null);
   const [domainScope, setDomainScope] = useState<'interior' | 'exterior' | 'floorplan'>('interior');
   const [roomName, setRoomName] = useState<string>('');
   const [roomType, setRoomType] = useState<string>('Living Room');
@@ -134,7 +179,7 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (isRoomModalOpen) {
+    if (isRoomModalOpen || selectedRoomForDrawer) {
       document.body.setAttribute('data-modal-open', 'true');
       document.documentElement.setAttribute('data-modal-open', 'true');
       document.body.style.overflow = 'hidden';
@@ -148,7 +193,7 @@ export default function ProjectDetailPage() {
       document.documentElement.removeAttribute('data-modal-open');
       document.body.style.overflow = 'unset';
     };
-  }, [isRoomModalOpen]);
+  }, [isRoomModalOpen, selectedRoomForDrawer]);
 
   const fetchProject = async () => {
     setIsLoading(true);
@@ -266,7 +311,7 @@ export default function ProjectDetailPage() {
   }
 
   const rooms = project.rooms || [];
-  const totalImages = project.totalGeneratedImages ?? (rooms.length * 4);
+  const totalImages = project.totalGeneratedImages ?? rooms.reduce((acc: number, r: any) => acc + (r.generatedImages?.length || (r.coverImage || r.originalImage ? 1 : 0)), 0);
   const designTheme = project.designTheme || {};
   const themeColors = getProjectExactThemeColors(project);
 
@@ -285,21 +330,21 @@ export default function ProjectDetailPage() {
           </Link>
         </div>
 
-        {/* UNIFIED HERO HEADER & STUDIO STATS */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+        {/* UNIFIED HERO HEADER (CLEAN & TRANSPARENT WITHOUT HEAVY BACKGROUND BOX) */}
+        <div className="py-2 space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             {/* LEFT: PROJECT TITLE & DESCRIPTION */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <span
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold font-heading"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold font-heading shadow-xs"
                   style={themeColors.primaryBadgeStyle}
                 >
                   <Lock className="w-3.5 h-3.5" />
                   <span>{project.theme} Theme</span>
                 </span>
 
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-extrabold font-mono">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-extrabold font-mono">
                   Active Workspace
                 </span>
               </div>
@@ -324,26 +369,26 @@ export default function ProjectDetailPage() {
                 style={themeColors.primaryStyle}
               >
                 <Plus className="w-4 h-4 text-white" />
-                <span className="text-white font-extrabold">Add Room</span>
+                <span className="text-white font-extrabold">{t('projects.addRoom')}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => alert('Project Settings Console')}
-                className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-all font-heading cursor-pointer border border-slate-200"
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-extrabold text-xs transition-all font-heading cursor-pointer border border-slate-200/80 dark:border-slate-700"
               >
                 <Settings className="w-4 h-4 text-slate-500" />
-                <span>Settings</span>
+                <span>{t('projects.settings')}</span>
               </button>
             </div>
           </div>
 
-          {/* INTEGRATED INLINE STATS BAR (NO NESTED BOXES) */}
-          <div className="flex items-center gap-3 sm:gap-6 pt-4 border-t border-slate-100 text-xs flex-wrap">
+          {/* INTEGRATED INLINE STATS BAR */}
+          <div className="flex items-center gap-3 sm:gap-6 pt-3 border-t border-slate-200/60 dark:border-slate-800 text-xs flex-wrap">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }} />
               <span className="font-extrabold text-slate-900 font-heading">
-                🏠 {rooms.length} {rooms.length === 1 ? 'Room' : 'Rooms'}
+                🏠 {rooms.length} {rooms.length === 1 ? t('projects.room') : t('projects.rooms')}
               </span>
             </div>
 
@@ -351,7 +396,7 @@ export default function ProjectDetailPage() {
 
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-slate-900 font-heading">
-                🖼️ {totalImages} Generated Renders
+                🖼️ {totalImages} {t('projects.generatedRenders')}
               </span>
             </div>
 
@@ -359,7 +404,7 @@ export default function ProjectDetailPage() {
 
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-slate-700 font-heading">
-                🎨 Palette: {project.colorPalette || 'Warm White & Brass'}
+                🎨 {t('projects.palette')}: {project.colorPalette || 'Warm White & Brass'}
               </span>
             </div>
 
@@ -367,40 +412,31 @@ export default function ProjectDetailPage() {
 
             <div className="flex items-center gap-2">
               <span className="font-bold text-slate-500">
-                🕒 Updated Today
+                🕒 {t('projects.updatedToday')}
               </span>
             </div>
           </div>
         </div>
 
-        {/* COMPACT ARCHITECTURAL THEME SPECIFICATION TOOLBAR */}
-        <div
-          className="rounded-2xl p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs"
-          style={themeColors.primaryLightBgStyle}
-        >
+        {/* COMPACT DESIGN STYLE BAR (MINIMAL TRANSPARENT BAR) */}
+        <div className="p-3.5 rounded-2xl border border-slate-200/70 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 shrink-0" style={themeColors.primaryTextStyle} />
+            <Sparkles className="w-4 h-4 shrink-0 text-purple-600" style={themeColors.primaryTextStyle} />
             <div className="space-y-0.5">
               <span className="text-xs font-extrabold font-heading text-slate-900 block">
-                Locked Project Design Style: <strong style={themeColors.primaryTextStyle}>{designTheme.style || project.theme || 'Modern Minimalist'}</strong>
+                {t('projects.lockedProjectStyle')}: <strong style={themeColors.primaryTextStyle}>{getLocalizedStyle(designTheme.style) || designTheme.style || getLocalizedStyle(project.theme) || project.theme || 'Modern Minimalist'}</strong>
               </span>
-              <span className="text-[11px] font-semibold text-slate-600 block">
-                Applied automatically across all rooms in this project for 100% visual consistency.
+              <span className="text-[11px] font-semibold text-slate-500 block">
+                {t('projects.styleConsistencyNote')}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap shrink-0">
-            <span
-              className="px-3 py-1 rounded-2xl text-[11px] font-extrabold font-heading border bg-white/90 shadow-2xs"
-              style={themeColors.primaryBorderStyle}
-            >
+            <span className="px-3 py-1 rounded-2xl text-[11px] font-extrabold font-heading border border-slate-200 bg-white/90 shadow-2xs text-slate-700">
               🪵 {(designTheme.materials || ['Light Oak', 'Linen']).join(', ')}
             </span>
-            <span
-              className="px-3 py-1 rounded-2xl text-[11px] font-extrabold font-heading border bg-white/90 shadow-2xs"
-              style={themeColors.primaryBorderStyle}
-            >
+            <span className="px-3 py-1 rounded-2xl text-[11px] font-extrabold font-heading border border-slate-200 bg-white/90 shadow-2xs text-slate-700">
               💡 {designTheme.lighting || 'Warm Ambient 3000K'}
             </span>
           </div>
@@ -411,13 +447,13 @@ export default function ProjectDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-extrabold text-slate-900 font-heading">
-                Project Rooms Studio
+                {t('projects.roomsStudio')}
               </h2>
               <span
                 className="px-2.5 py-0.5 rounded-full text-xs font-extrabold font-mono"
                 style={themeColors.primaryBadgeStyle}
               >
-                {rooms.length} {rooms.length === 1 ? 'room' : 'rooms'}
+                {rooms.length} {rooms.length === 1 ? t('projects.room') : t('projects.rooms')}
               </span>
             </div>
 
@@ -428,7 +464,7 @@ export default function ProjectDetailPage() {
               style={themeColors.primaryTextStyle}
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add Room</span>
+              <span>{t('projects.addRoom')}</span>
             </button>
           </div>
 
@@ -438,60 +474,77 @@ export default function ProjectDetailPage() {
                 <ImageIcon className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-extrabold text-slate-900 font-heading">No Rooms Created Yet</h3>
+                <h3 className="text-base font-extrabold text-slate-900 font-heading">{t('projects.noRoomsCreatedYet')}</h3>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                  Add rooms like Living Room, Master Bedroom, or Kitchen. All rooms will share the <strong>{project.theme}</strong> theme!
+                  {t('projects.generateFirstRoomDesc', { theme: getLocalizedStyle(project.theme) || project.theme })}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsRoomModalOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-purple-600 text-white font-extrabold text-xs shadow-md font-heading"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-purple-600 text-white font-extrabold text-xs shadow-md font-heading cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>Add First Room</span>
+                <span>{t('projects.addFirstRoom')}</span>
               </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {rooms.map((room: any, idx: number) => {
                 const roomId = room._id || room.id || `room-${idx}`;
-                const roomImg = room.coverImage || room.originalImage || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800&auto=format&fit=crop';
-                const imageCount = room.imageCount ?? 4;
+                const roomImg = room.coverImage || room.originalImage || (room.generatedImages && room.generatedImages[0]) || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800&auto=format&fit=crop';
+                const imageCount = room.generatedImages?.length || (room.coverImage || room.originalImage ? 1 : 0);
 
                 return (
-                  <Link
+                  <div
                     key={roomId}
-                    href={`/projects/${projectId}/rooms/${roomId}`}
-                    className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
+                    onClick={() => {
+                      setSelectedRoomForDrawer(room);
+                      const initialImg = room.coverImage || room.originalImage || (room.generatedImages && room.generatedImages[0]) || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800&auto=format&fit=crop';
+                      setSelectedDrawerImage(initialImg);
+                    }}
+                    className="relative rounded-[14px] overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer flex flex-col justify-between"
                   >
                     <div>
-                      <div className="relative h-44 bg-slate-900 overflow-hidden">
+                      {/* CARD IMAGE CONTAINER WITH SKELETON BACKDROP */}
+                      <div className="relative w-full h-52 sm:h-56 overflow-hidden bg-slate-100 dark:bg-slate-800">
                         <img
                           src={roomImg}
                           alt={room.name || room.roomType}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute top-3 left-3 px-3 py-1 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-extrabold rounded-2xl">
-                          {room.roomType || 'Room'}
+
+                        {/* TOP LEFT: FLOATING ROOM TYPE BADGE */}
+                        <div className="absolute top-3 left-3 z-10">
+                          <span className="px-3 py-1 rounded-full bg-gradient-to-r from-blue-600/90 to-indigo-600/90 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider border border-white/30 shadow-md">
+                            {getLocalizedRoomType(room.roomType || room.name) || t('projects.room')}
+                          </span>
+                        </div>
+
+                        {/* TOP RIGHT: ACCURATE IMAGE COUNT BADGE */}
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className="px-2.5 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-extrabold border border-white/20 shadow-md flex items-center gap-1">
+                            <ImageIcon className="w-3 h-3 text-purple-300" />
+                            <span>{imageCount} {imageCount === 1 ? t('projects.image') : t('projects.images')}</span>
+                          </span>
+                        </div>
+
+                        {/* BOTTOM GRADIENT OVERLAY */}
+                        <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent text-white transition-opacity">
+                          <h3 className="font-extrabold text-base font-heading text-white line-clamp-1">
+                            {room.name || getLocalizedRoomType(room.roomType)}
+                          </h3>
+                          <div className="flex items-center justify-between text-[11px] text-slate-300 mt-1 font-medium">
+                            <span className="text-purple-300 font-bold">{getLocalizedStyle(project.theme) || project.theme}</span>
+                            <span className="inline-flex items-center gap-1 text-white font-bold group-hover:text-purple-300 transition-colors">
+                              <span>{t('projects.openRoom')}</span>
+                              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                            </span>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="p-5 space-y-2">
-                        <h3 className="text-base font-extrabold text-slate-900 font-heading group-hover:text-purple-600 transition-colors">
-                          {room.name || room.roomType}
-                        </h3>
-                        <p className="text-xs font-semibold text-slate-500">
-                          🖼️ {imageCount} {imageCount === 1 ? 'image' : 'images'}
-                        </p>
-                      </div>
                     </div>
-
-                    <div className="px-5 pb-5 pt-0 flex items-center justify-between text-xs font-extrabold text-purple-600 font-heading">
-                      <span>Open Room</span>
-                      <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                  </Link>
+                  </div>
                 );
               })}
             </div>
@@ -518,19 +571,19 @@ export default function ProjectDetailPage() {
                     style={themeColors.primaryBadgeStyle}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Project Room Studio</span>
+                    <span>{t('projects.roomsStudio')}</span>
                   </div>
                   <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 font-heading">
-                    Add Room to {project?.name || 'Project'}
+                    {t('projects.addRoomToProject', { name: project?.name || 'Project' })}
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Upload room photo and configure options under locked theme: <strong>{project?.theme || 'Project Theme'}</strong>
+                    {t('projects.uploadRoomPhotoDesc', { theme: getLocalizedStyle(project?.theme) || project?.theme || '' })}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsRoomModalOpen(false)}
-                  aria-label="Close Modal"
+                  aria-label={t('common.close')}
                   className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 >
                   <X className="w-5 h-5" />
@@ -549,24 +602,24 @@ export default function ProjectDetailPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-extrabold font-heading flex items-center gap-1" style={themeColors.primaryTextStyle}>
                         <Lock className="w-3 h-3" />
-                        <span>Project Style Defaults</span>
+                        <span>{t('projects.projectStyleDefaults')}</span>
                       </span>
                       <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full font-heading" style={themeColors.primaryBadgeStyle}>
-                        🔒 Locked Theme
+                        🔒 {t('projects.lockedTheme')}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Design Style</label>
+                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">{t('projects.themeStyleLabel')}</label>
                         <div className="px-2.5 py-1.5 bg-white/90 border rounded-2xl font-bold text-slate-800 text-[11px] flex items-center justify-between shadow-2xs" style={themeColors.primaryBorderStyle}>
-                          <span className="truncate">{project?.theme || 'Modern Minimalist'}</span>
+                          <span className="truncate">{getLocalizedStyle(project?.theme) || project?.theme || 'Modern Minimalist'}</span>
                           <Lock className="w-3 h-3 shrink-0 ml-1" style={themeColors.primaryTextStyle} />
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Color Palette</label>
+                        <label className="text-[10px] font-bold text-slate-600 block mb-0.5">{t('projects.colorPalette')}</label>
                         <div className="px-2.5 py-1.5 bg-white/90 border rounded-2xl font-bold text-slate-800 text-[11px] flex items-center justify-between shadow-2xs" style={themeColors.primaryBorderStyle}>
                           <span className="truncate">{project?.colorPalette || 'Warm White & Brass'}</span>
                           <Lock className="w-3 h-3 shrink-0 ml-1" style={themeColors.primaryTextStyle} />
@@ -578,13 +631,13 @@ export default function ProjectDetailPage() {
                   {/* DESIGN SCOPE SELECTOR */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-800 font-heading block">
-                      Redesign Scope <span className="text-rose-500">*</span>
+                      {t('projects.redesignScope')} <span className="text-rose-500">*</span>
                     </label>
                     <div className="grid grid-cols-3 gap-1.5">
                       {[
-                        { id: 'interior', label: 'Interior', icon: '🛋️' },
-                        { id: 'exterior', label: 'Exterior', icon: '🏡' },
-                        { id: 'floorplan', label: 'Floor Plan', icon: '📐' },
+                        { id: 'interior', label: t('projects.interior'), icon: '🛋️' },
+                        { id: 'exterior', label: t('projects.exterior'), icon: '🏡' },
+                        { id: 'floorplan', label: t('projects.floorPlan'), icon: '📐' },
                       ].map((scope) => (
                         <button
                           key={scope.id}
@@ -777,7 +830,7 @@ export default function ProjectDetailPage() {
                   {/* CUSTOM INSTRUCTIONS / NOTES */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-800 font-heading">
-                      Custom Instructions / Notes <span className="text-slate-400 font-normal">(Optional)</span>
+                      {t('projects.customInstructions')} <span className="text-slate-400 font-normal">({t('common.cancel') ? 'Optional' : ''})</span>
                     </label>
                     <textarea
                       rows={2}
@@ -799,9 +852,9 @@ export default function ProjectDetailPage() {
                     <button
                       type="button"
                       onClick={() => setIsRoomModalOpen(false)}
-                      className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900"
+                      className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                     <button
                       type="submit"
@@ -810,7 +863,7 @@ export default function ProjectDetailPage() {
                       style={themeColors.primaryStyle}
                     >
                       <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
-                      <span>{isAddingRoom ? 'Creating Room...' : 'Create & Generate Room'}</span>
+                      <span>{isAddingRoom ? t('projects.creatingRoom') : t('projects.createAndGenerateRoom')}</span>
                     </button>
                   </div>
                 </div>
@@ -822,7 +875,7 @@ export default function ProjectDetailPage() {
                       <div className="flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5" style={themeColors.primaryTextStyle} />
                         <span className="text-xs font-extrabold text-slate-800 font-heading">
-                          Room Showcase Preview
+                          {t('projects.roomShowcasePreview')}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -831,7 +884,7 @@ export default function ProjectDetailPage() {
                         </span>
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 text-[10px] font-extrabold">
                           <Lock className="w-3 h-3" />
-                          <span>{project?.theme || 'Theme'}</span>
+                          <span>{getLocalizedStyle(project?.theme) || project?.theme || 'Theme'}</span>
                         </span>
                       </div>
                     </div>
@@ -848,7 +901,7 @@ export default function ProjectDetailPage() {
 
                         <div className="space-y-1">
                           <h3 className="text-sm font-extrabold font-heading text-white tracking-wide">
-                            AI Redesign in Progress
+                            {t('projects.aiRedesign')}
                           </h3>
                           <p className="text-xs font-semibold text-purple-200 animate-pulse transition-all">
                             {generationStage}
@@ -864,7 +917,7 @@ export default function ProjectDetailPage() {
                         </div>
 
                         <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-mono pt-1">
-                          <span>Locked Theme: {project?.theme || 'Theme'}</span>
+                          <span>{t('projects.lockedTheme')}: {getLocalizedStyle(project?.theme) || project?.theme || 'Theme'}</span>
                           <span>•</span>
                           <span>{selectedMaterials.length} Materials Active</span>
                         </div>
@@ -874,7 +927,7 @@ export default function ProjectDetailPage() {
                         {/* TOGGLE MODES */}
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="font-bold text-slate-700 font-heading">
-                            {showcaseMode === 'slider' ? '↔ Drag Line to Compare' : 'Side-by-Side View'}
+                            {showcaseMode === 'slider' ? t('projects.dragLineToCompare') : t('projects.sideBySideView')}
                           </span>
                           <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-2xl text-[10px] font-bold font-heading">
                             <button
@@ -884,7 +937,7 @@ export default function ProjectDetailPage() {
                                 showcaseMode === 'slider' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600'
                               }`}
                             >
-                              Interactive Slider
+                              {t('projects.interactiveSlider')}
                             </button>
                             <button
                               type="button"
@@ -893,7 +946,7 @@ export default function ProjectDetailPage() {
                                 showcaseMode === 'sideBySide' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600'
                               }`}
                             >
-                              Side-by-Side
+                              {t('projects.sideBySide')}
                             </button>
                           </div>
                         </div>
@@ -929,10 +982,10 @@ export default function ProjectDetailPage() {
                                 <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
                               </div>
                               <span className="text-xs font-extrabold text-white font-heading tracking-wide">
-                                AI Redesign Canvas
+                                {t('projects.aiRedesignCanvas')}
                               </span>
                               <span className="text-[10px] text-purple-200 mt-0.5 max-w-[180px] leading-tight font-semibold">
-                                Ready to generate in <strong>{project?.theme || 'Project Theme'}</strong>
+                                {t('projects.readyToGenerateIn', { theme: getLocalizedStyle(project?.theme) || project?.theme || 'Project Theme' })}
                               </span>
                               <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-purple-600/90 text-white text-[9px] font-extrabold shadow-sm backdrop-blur-xs font-heading z-10">
                                 ✨ AI Canvas
@@ -950,7 +1003,7 @@ export default function ProjectDetailPage() {
                                 className="w-full h-full object-cover"
                               />
                               <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-slate-900/90 text-white text-[9px] font-extrabold shadow-sm backdrop-blur-xs font-heading whitespace-nowrap z-10">
-                                📷 Original
+                                📷 {t('projects.originalImage')}
                               </div>
                             </div>
 
@@ -968,17 +1021,17 @@ export default function ProjectDetailPage() {
                           /* SIDE BY SIDE VIEW */
                           <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-slate-600 block">Original</span>
+                              <span className="text-[10px] font-bold text-slate-600 block">{t('projects.originalImage')}</span>
                               <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 aspect-square">
                                 <img src={uploadedRoomImage} alt="Original" className="w-full h-full object-cover" />
                               </div>
                             </div>
                             <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-purple-700 block">AI Redesign Canvas</span>
+                              <span className="text-[10px] font-bold text-purple-700 block">{t('projects.aiRedesignCanvas')}</span>
                               <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950/90 to-slate-900 border border-purple-300 aspect-square flex flex-col items-center justify-center p-3 text-center">
                                 <Sparkles className="w-6 h-6 text-amber-300 mb-1 animate-pulse" />
-                                <span className="text-xs font-extrabold text-white font-heading">AI Canvas</span>
-                                <span className="text-[9px] text-purple-200 mt-0.5">Ready to Generate</span>
+                                <span className="text-xs font-extrabold text-white font-heading">{t('projects.aiRedesign')}</span>
+                                <span className="text-[9px] text-purple-200 mt-0.5">{t('projects.readyToGenerateIn', { theme: '' })}</span>
                               </div>
                             </div>
                           </div>
@@ -997,7 +1050,7 @@ export default function ProjectDetailPage() {
                   </div>
 
                   <div className="p-2.5 rounded-2xl bg-purple-50/90 border border-purple-200 text-[10px] font-semibold text-purple-900 font-heading leading-relaxed">
-                    ⚡ <strong>Same Aspect Ratio Guarantee:</strong> Generated redesign images dynamically match the exact square/rectangle dimensions of your uploaded photo.
+                    ⚡ {t('projects.aspectRatioGuarantee')}
                   </div>
                 </div>
               </form>
@@ -1005,6 +1058,163 @@ export default function ProjectDetailPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* RIGHT SIDE SLIDE-OVER CANVAS DRAWER (50% DARK BACKDROP, SHOWS ALL IMAGES) */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {selectedRoomForDrawer && (
+            <>
+              {/* 50% DARKNESS BACKDROP OVERLAY */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedRoomForDrawer(null)}
+                className="fixed inset-0 z-[99998] bg-slate-950/50 backdrop-blur-xs"
+              />
+
+              {/* RIGHT SIDE SLIDE-OVER SHEET */}
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+                className="fixed top-0 right-0 bottom-0 z-[99999] w-full max-w-2xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 p-6 sm:p-8 flex flex-col justify-between shadow-2xl overflow-y-auto"
+              >
+                {/* DRAWER HEADER */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-extrabold uppercase tracking-wider">
+                          {getLocalizedRoomType(selectedRoomForDrawer.roomType || selectedRoomForDrawer.name) || t('projects.room')}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400">
+                          {project.name}
+                        </span>
+                      </div>
+                      <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white font-heading mt-1">
+                        {selectedRoomForDrawer.name || getLocalizedRoomType(selectedRoomForDrawer.roomType)}
+                      </h2>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/projects/${projectId}/rooms/${selectedRoomForDrawer._id || selectedRoomForDrawer.id}`}
+                        className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 text-purple-700 dark:text-purple-300 text-xs font-extrabold transition-colors font-heading flex items-center gap-1"
+                      >
+                        <span>{t('projects.fullWorkspace')}</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRoomForDrawer(null)}
+                        aria-label={t('projects.closeDrawer')}
+                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MAIN SELECTED IMAGE VIEW */}
+                  <div className="space-y-4">
+                    <div className="relative w-full h-80 sm:h-96 rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-md group">
+                      <img
+                        src={selectedDrawerImage || selectedRoomForDrawer.coverImage || selectedRoomForDrawer.originalImage || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800&auto=format&fit=crop'}
+                        alt="Room Render Preview"
+                        className="w-full h-full object-cover"
+                      />
+
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        <a
+                          href={selectedDrawerImage || selectedRoomForDrawer.coverImage || selectedRoomForDrawer.originalImage}
+                          download={`${selectedRoomForDrawer.name || 'room'}-render.jpg`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-2 rounded-xl bg-slate-950/80 backdrop-blur-md text-white hover:bg-purple-600 transition-colors shadow-md border border-white/20 flex items-center gap-1 text-xs font-bold cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>{t('common.download')}</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* ROOM IMAGES GALLERY GRID */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white font-heading">
+                        <span>{t('projects.allRoomRendersAndPhotos')}</span>
+                        <span className="text-slate-400 font-normal text-[11px]">
+                          {t('projects.selectImageToPreview')}
+                        </span>
+                      </div>
+
+                      {/* LIST OF ALL IMAGES ONLY */}
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                        {(() => {
+                          const allImgs: { url: string; label: string }[] = [];
+                          if (selectedRoomForDrawer.originalImage) {
+                            allImgs.push({ url: selectedRoomForDrawer.originalImage, label: t('projects.originalPhoto') });
+                          }
+                          if (selectedRoomForDrawer.coverImage && !allImgs.some((i) => i.url === selectedRoomForDrawer.coverImage)) {
+                            allImgs.push({ url: selectedRoomForDrawer.coverImage, label: t('projects.renderNum', { num: 1 }) });
+                          }
+                          if (Array.isArray(selectedRoomForDrawer.generatedImages)) {
+                            selectedRoomForDrawer.generatedImages.forEach((imgUrl: string, idx: number) => {
+                              if (!allImgs.some((i) => i.url === imgUrl)) {
+                                allImgs.push({ url: imgUrl, label: t('projects.renderNum', { num: idx + 1 }) });
+                              }
+                            });
+                          }
+                          if (allImgs.length === 0) {
+                            allImgs.push({
+                              url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=800&auto=format&fit=crop',
+                              label: t('projects.renderNum', { num: 1 }),
+                            });
+                          }
+
+                          return allImgs.map((imgObj, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setSelectedDrawerImage(imgObj.url)}
+                              className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer group ${
+                                selectedDrawerImage === imgObj.url
+                                  ? 'border-purple-600 shadow-md ring-2 ring-purple-600/30'
+                                  : 'border-slate-200 dark:border-slate-800 opacity-75 hover:opacity-100'
+                              }`}
+                            >
+                              <img src={imgObj.url} alt={imgObj.label} className="w-full h-full object-cover" />
+                              <div className="absolute inset-x-0 bottom-0 p-1 bg-slate-950/80 backdrop-blur-xs text-[9px] font-bold text-white text-center truncate">
+                                {imgObj.label}
+                              </div>
+                            </button>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* DRAWER FOOTER ACTION */}
+                <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                  <div className="text-xs text-slate-500 font-medium">
+                    {t('projects.themeStyleLabel')}: <strong className="text-slate-800 dark:text-slate-200">{getLocalizedStyle(project.theme) || project.theme}</strong>
+                  </div>
+                  <Link
+                    href={`/generate?roomType=${encodeURIComponent(selectedRoomForDrawer.roomType || '')}&style=${encodeURIComponent(project.theme || '')}&presetImage=${encodeURIComponent(selectedDrawerImage || selectedRoomForDrawer.originalImage || '')}`}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md transition-all font-heading"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
+                    <span>{t('projects.generateNewRender')}</span>
+                  </Link>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
     </div>
   );

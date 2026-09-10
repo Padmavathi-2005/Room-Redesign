@@ -122,22 +122,32 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   // Fetch initial settings from DB API on startup
   useEffect(() => {
     async function fetchSettings() {
-      try {
-        let local: Partial<AppSettings> = {};
-        if (typeof window !== 'undefined') {
-          const stored = localStorage.getItem('app_settings');
-          if (stored) {
-            try {
-              local = JSON.parse(stored);
-            } catch (e) {}
-          }
+      // Read locally saved theme FIRST — user's personal preference takes priority
+      let localTheme: 'light' | 'dark' | null = null;
+      let local: Partial<AppSettings> = {};
+      if (typeof window !== 'undefined') {
+        // Per-user theme stored separately from global DB settings
+        const savedTheme = localStorage.getItem('user_theme_preference');
+        if (savedTheme === 'light' || savedTheme === 'dark') {
+          localTheme = savedTheme;
         }
+        const stored = localStorage.getItem('app_settings');
+        if (stored) {
+          try { local = JSON.parse(stored); } catch (e) {}
+        }
+      }
 
+      try {
         const res = await fetch(`${API_BASE_URL}/settings`, { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
-            const fetched = { ...DEFAULT_SETTINGS, ...json.data } as AppSettings;
+            // Merge: user's local theme preference wins over global DB default
+            const fetched = {
+              ...DEFAULT_SETTINGS,
+              ...json.data,
+              ...(localTheme ? { theme: localTheme } : {}),
+            } as AppSettings;
             setSettings(fetched);
             applyThemeToDOM(fetched);
             if (typeof window !== 'undefined') {
@@ -146,12 +156,19 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             return;
           }
         }
-        const merged = { ...DEFAULT_SETTINGS, ...local };
+        // Fallback: local cache + user theme preference
+        const merged = {
+          ...DEFAULT_SETTINGS,
+          ...local,
+          ...(localTheme ? { theme: localTheme } : {}),
+        };
         setSettings(merged);
         applyThemeToDOM(merged);
       } catch (err) {
         console.warn('Failed to fetch DB settings, using defaults:', err);
-        applyThemeToDOM(DEFAULT_SETTINGS);
+        const fallback = { ...DEFAULT_SETTINGS, ...(localTheme ? { theme: localTheme } : {}) };
+        setSettings(fallback);
+        applyThemeToDOM(fallback);
       } finally {
         setIsLoading(false);
       }
@@ -159,7 +176,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     fetchSettings();
   }, [applyThemeToDOM]);
 
-  // Update Settings API call
+  // Update Settings API call (for admin settings panel — does NOT touch user theme)
   const updateSettings = async (newSettings: Partial<AppSettings>) => {
     const updated = { ...settings, ...newSettings };
     setSettings(updated);
@@ -186,8 +203,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          const fresh = { ...DEFAULT_SETTINGS, ...json.data } as AppSettings;
+          // Preserve user's locally chosen theme — don't let DB overwrite it
+          const userTheme = typeof window !== 'undefined'
+            ? (localStorage.getItem('user_theme_preference') as 'light' | 'dark' | null)
+            : null;
+          const fresh = {
+            ...DEFAULT_SETTINGS,
+            ...json.data,
+            ...(userTheme ? { theme: userTheme } : {}),
+          } as AppSettings;
           setSettings(fresh);
+          applyThemeToDOM(fresh);
           if (typeof window !== 'undefined') {
             localStorage.setItem('app_settings', JSON.stringify(fresh));
           }
@@ -207,12 +233,20 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Toggle Theme (Light <-> Dark)
+  // LOCAL-FIRST: Instantly updates state + DOM + localStorage.
+  // Saved in a dedicated 'user_theme_preference' key so it is NEVER overwritten by DB sync.
   const toggleTheme = async () => {
-    try {
-      const nextTheme = settings.theme === 'light' ? 'dark' : 'light';
-      await updateSettings({ theme: nextTheme });
-    } catch (err) {
-      console.warn('Failed to toggle theme on server:', err);
+    const nextTheme: 'light' | 'dark' = settings.theme === 'light' ? 'dark' : 'light';
+
+    // 1. Update local state & DOM immediately — no API wait
+    const updated: AppSettings = { ...settings, theme: nextTheme };
+    setSettings(updated);
+    applyThemeToDOM(updated);
+
+    // 2. Persist user's theme preference separately so fetchSettings can restore it
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user_theme_preference', nextTheme);
+      localStorage.setItem('app_settings', JSON.stringify(updated));
     }
   };
 

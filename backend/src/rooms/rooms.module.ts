@@ -11,6 +11,7 @@ import { UsersModule } from '../modules/users/users.module';
 import { QueueModule } from '../queue/queue.module';
 
 import { SubscriptionModule } from '../modules/subscription/subscription.module';
+import { SettingsModule } from '../modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SubscriptionModule } from '../modules/subscription/subscription.module'
     UsersModule,
     QueueModule,
     SubscriptionModule,
+    SettingsModule,
   ],
   controllers: [RoomsController],
   providers: [RoomsService],

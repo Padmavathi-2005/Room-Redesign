@@ -3,8 +3,11 @@ import './globals.css';
 import Header from '@/components/layout/Header/Header';
 import Footer from '@/components/layout/Footer/Footer';
 import { SettingsProvider } from '@/context/SettingsContext';
+import { CurrencyProvider } from '@/context/CurrencyContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import { ToastProvider } from '@/context/ToastContext';
 import ChunkErrorListener from '@/components/layout/ChunkErrorListener';
+import ScrollToTop from '@/components/layout/ScrollToTop';
 
 export const metadata: Metadata = {
   title: 'RoomAI - Digital Craftsmanship & Construction ERP',
@@ -18,28 +21,33 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
-      <body className="h-full antialiased selection:bg-purple-600 selection:text-white relative bg-[#FCFCFD] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-300">
+      <body className="h-full antialiased selection:bg-purple-600 selection:text-white relative bg-[#FCFCFD] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-300" suppressHydrationWarning>
         <SettingsProvider>
-          <ToastProvider>
-            <ChunkErrorListener />
-            {/* Faint Blueprint Grid */}
-            <div className="fixed inset-0 blueprint-grid pointer-events-none z-0" />
+          <LanguageProvider>
+            <CurrencyProvider>
+              <ToastProvider>
+                <ChunkErrorListener />
+                <ScrollToTop />
+                {/* Faint Blueprint Grid */}
+                <div className="fixed inset-0 blueprint-grid pointer-events-none z-0" />
 
-            {/* Fixed Floating White Navbar */}
-            <Header />
+                {/* Fixed Floating White Navbar */}
+                <Header />
 
-            {/* Main Page Content */}
-            <div className="relative">{children}</div>
+                {/* Main Page Content */}
+                <div className="relative">{children}</div>
 
-            {/* Light/Dark Theme Footer */}
-            <Footer />
-          </ToastProvider>
+                {/* Light/Dark Theme Footer */}
+                <Footer />
+              </ToastProvider>
+            </CurrencyProvider>
+          </LanguageProvider>
         </SettingsProvider>
       </body>
     </html>

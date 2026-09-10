@@ -12,9 +12,9 @@
   --font-ibm: 'IBM Plex Serif', serif;
 
   /* Dynamic DB Theme Variables */
-  --primary: #1D4ED8;
+  --primary: #8B5CF6;
   --secondary: var(--primary);
-  --accent: #06B6D4;
+  --accent: #A855F7;
   --background: #FFFFFF;
   --text: #111827;
   --radius: 16px;
@@ -302,6 +302,9 @@ html[data-modal-open="true"] header,
 body[data-modal-open="true"] header,
 body.modal-open header,
 [data-modal-open="true"] header,
+[data-modal-open="true"] nav,
+[data-modal-open="true"] .fixed.top-0,
+[data-modal-open="true"] .sticky.top-0,
 html[data-modal-open="true"] footer,
 body[data-modal-open="true"] footer,
 body.modal-open footer,

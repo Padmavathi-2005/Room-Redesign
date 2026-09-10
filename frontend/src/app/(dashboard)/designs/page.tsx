@@ -32,19 +32,20 @@ import CommonPagination from '@/components/ui/CommonPagination';
 
 import { projectService } from '@/services/project.service';
 import { triggerImageDownload } from '@/utils/download';
+import { useTranslation } from '@/context/LanguageContext';
 
 // Curated initial published designs fallback (empty so hardcoded sample images never show up)
 const INITIAL_CURATED_DESIGNS: PublishedProjectData[] = [];
 
-const CATEGORY_FILTERS = [
-  'All',
-  'Living Room',
-  'Bedroom',
-  'Kitchen',
-  'Office',
-  'Villa',
-  'Industrial',
-  'Commercial',
+const CATEGORY_ITEMS = [
+  { id: 'All', key: 'designs.categories.all' },
+  { id: 'Living Room', key: 'designs.categories.livingRoom' },
+  { id: 'Bedroom', key: 'designs.categories.bedroom' },
+  { id: 'Kitchen', key: 'designs.categories.kitchen' },
+  { id: 'Office', key: 'designs.categories.office' },
+  { id: 'Villa', key: 'designs.categories.villa' },
+  { id: 'Industrial', key: 'designs.categories.industrial' },
+  { id: 'Commercial', key: 'designs.categories.commercial' },
 ];
 
 const formatRenderUrl = (url?: string | null): string => {
@@ -59,6 +60,7 @@ const formatRenderUrl = (url?: string | null): string => {
 };
 
 export default function DesignsPage() {
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { toast } = useToast();
 
@@ -108,6 +110,54 @@ export default function DesignsPage() {
       setWishlistedIds(stored);
     } catch (e) {}
   }, []);
+
+  const getLocalizedRoomType = (roomType?: string) => {
+    if (!roomType) return '';
+    const norm = roomType.toLowerCase().replace(/[\s_-]/g, '');
+    const map: Record<string, string> = {
+      all: t('designs.categories.all'),
+      livingroom: t('designs.categories.livingRoom'),
+      bedroom: t('designs.categories.bedroom'),
+      kitchen: t('designs.categories.kitchen'),
+      office: t('designs.categories.office'),
+      villa: t('designs.categories.villa'),
+      industrial: t('designs.categories.industrial'),
+      commercial: t('designs.categories.commercial'),
+    };
+    return map[norm] || map[roomType] || roomType;
+  };
+
+  const getLocalizedStyle = (style?: string) => {
+    if (!style) return '';
+    const styleKey = style.toLowerCase().replace(/[\s_-]/g, '');
+    const directName = t(`styles.${style.toLowerCase()}.name` as any);
+    if (directName && !directName.startsWith('styles.')) {
+      return directName;
+    }
+    const normName = t(`styles.${styleKey}.name` as any);
+    if (normName && !normName.startsWith('styles.')) {
+      return normName;
+    }
+    return style;
+  };
+
+  const getLocalizedTitle = (design?: PublishedProjectData | null) => {
+    if (!design) return '';
+    const localizedRoom = getLocalizedRoomType(design.roomType);
+    const localizedStyle = getLocalizedStyle(design.style);
+    const isAutoTitle =
+      !design.title ||
+      design.title.toLowerCase().includes('redesign') ||
+      (design.roomType && design.title.toLowerCase().includes(design.roomType.toLowerCase()));
+
+    if (isAutoTitle && (localizedRoom || localizedStyle)) {
+      return t('designs.modal.redesignTitle', {
+        roomType: localizedRoom || design.roomType || '',
+        style: localizedStyle || design.style || '',
+      });
+    }
+    return design.title;
+  };
 
   // Load user's REAL generated designs showcase
   const loadPublishedShowcase = async () => {
@@ -366,10 +416,10 @@ export default function DesignsPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search designs, room styles, tags..."
+              placeholder={t('designs.searchPlaceholder')}
               value={showcaseSearch}
               onChange={(e) => setShowcaseSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40 shadow-2xs"
+              className="w-full pl-11 pr-4 py-2.5 rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40 shadow-2xs"
             />
             {showcaseSearch && (
               <button
@@ -386,21 +436,21 @@ export default function DesignsPage() {
             <select
               value={sortBy}
               onChange={(e: any) => setSortBy(e.target.value)}
-              className="px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40 shadow-2xs"
+              className="px-3.5 py-2.5 rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40 shadow-2xs"
             >
-              <option value="rating">Highest Rated ★</option>
-              <option value="newest">Newest First</option>
+              <option value="newest">{t('designs.newestFirst')}</option>
+              <option value="rating">{t('designs.highestRated')}</option>
             </select>
 
             {publishedDesigns.length > 0 && (
               <button
                 type="button"
                 onClick={handleClearAllDesigns}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-200 dark:border-rose-800 transition-colors shadow-2xs cursor-pointer font-heading"
-                title="Clear All Designs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-[10px] bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-200 dark:border-rose-800 transition-colors shadow-2xs cursor-pointer font-heading"
+                title={t('designs.clearAll')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Clear All</span>
+                <span className="hidden sm:inline">{t('designs.clearAll')}</span>
               </button>
             )}
           </div>
@@ -408,17 +458,17 @@ export default function DesignsPage() {
 
         {/* Category Filter Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {CATEGORY_FILTERS.map((cat) => (
+          {CATEGORY_ITEMS.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
               className={`px-4 py-2 rounded-[10px] text-xs font-bold whitespace-nowrap transition-all ${
-                selectedCategory === cat
+                selectedCategory === cat.id
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25 font-extrabold border border-blue-400/30'
                   : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800'
               }`}
             >
-              {cat}
+              {t(cat.key)}
             </button>
           ))}
         </div>
@@ -436,16 +486,16 @@ export default function DesignsPage() {
               <Sparkles className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-extrabold text-slate-900 dark:text-white font-heading">
-              No Generated Designs Yet
+              {t('designs.noDesignsTitle')}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              You haven't generated any AI room redesigns yet. Upload a room photo and generate your first transformed space!
+              {t('designs.noDesignsDesc')}
             </p>
             <Link
               href="/generate"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-[10px] text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-md font-heading"
             >
-              <Sparkles className="w-4 h-4" /> Start Generating Designs
+              <Sparkles className="w-4 h-4" /> {t('designs.startGenerating')}
             </Link>
           </div>
         ) : (
@@ -487,7 +537,7 @@ export default function DesignsPage() {
                             ? 'bg-rose-500 text-white border-rose-400 opacity-100'
                             : 'bg-blue-950/80 text-white hover:bg-rose-500 border-white/20'
                         }`}
-                        title={wishlistedIds.includes(proj._id) ? 'Remove from Wishlist' : 'Save to Wishlist'}
+                        title={wishlistedIds.includes(proj._id) ? t('designs.removeFromWishlist') : t('designs.saveToWishlist')}
                       >
                         <Heart className={`w-3.5 h-3.5 ${wishlistedIds.includes(proj._id) ? 'fill-white' : ''}`} />
                       </button>
@@ -498,7 +548,7 @@ export default function DesignsPage() {
                           handleDeleteDesign(proj._id);
                         }}
                         className="p-2 rounded-full bg-blue-950/80 backdrop-blur-md text-white hover:bg-rose-600 transition-colors shadow-md cursor-pointer border border-white/20"
-                        title="Delete Design"
+                        title={t('designs.deleteDesign')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -509,7 +559,7 @@ export default function DesignsPage() {
                           triggerImageDownload(proj.sampleImageUrl, `${proj.title || 'redesign'}.png`);
                         }}
                         className="p-2 rounded-full bg-blue-950/80 backdrop-blur-md text-white hover:bg-purple-600 transition-colors shadow-md cursor-pointer border border-white/20"
-                        title="Download HD Render"
+                        title={t('designs.downloadRender')}
                       >
                         <Download className="w-3.5 h-3.5" />
                       </button>
@@ -523,7 +573,7 @@ export default function DesignsPage() {
                       <div className="flex items-center justify-between text-[11px] text-slate-300 font-medium">
                         <span className="text-purple-300 font-bold">{proj.style}</span>
                         <span className="inline-flex items-center gap-1 text-white font-bold group-hover:text-purple-300 transition-colors">
-                          <span>View Render</span>
+                          <span>{t('designs.viewRender')}</span>
                           <ArrowRight className="w-3 h-3" />
                         </span>
                       </div>
@@ -575,14 +625,14 @@ export default function DesignsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="px-3 py-1 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-xs font-extrabold border border-purple-200 dark:border-purple-800 font-heading">
-                      {selectedDetailDesign.roomType}
+                      {getLocalizedRoomType(selectedDetailDesign.roomType)}
                     </span>
                     <span className="px-3 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-extrabold border border-slate-200 dark:border-slate-700 font-heading">
-                      {selectedDetailDesign.style}
+                      {getLocalizedStyle(selectedDetailDesign.style)}
                     </span>
                     <span className="px-3 py-1 rounded-md bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-xs font-extrabold border border-amber-200 dark:border-amber-800 font-heading flex items-center gap-1.5 shadow-2xs">
                       <Coins className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                      <span>Debited: {selectedDetailDesign.creditsCost || 4} Credits</span>
+                      <span>{t('designs.modal.debited', { amount: selectedDetailDesign.creditsCost || 4 })}</span>
                     </span>
                   </div>
 
@@ -591,26 +641,31 @@ export default function DesignsPage() {
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-purple-600/30 transition-all font-heading cursor-pointer"
-                    title="Open Full Studio Generation View in New Tab"
+                    title={t('designs.modal.viewGenerationDetails')}
                   >
-                    <span>View Generation Details</span>
+                    <span>{t('designs.modal.viewGenerationDetails')}</span>
                   </Link>
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white font-heading">
-                  {selectedDetailDesign.title}
+                  {getLocalizedTitle(selectedDetailDesign)}
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   {selectedDetailDesign.description && !selectedDetailDesign.description.toLowerCase().includes('8k uhd') && !selectedDetailDesign.description.toLowerCase().includes('consistency')
                     ? selectedDetailDesign.description
-                    : `${selectedDetailDesign.style || 'Modern'} architectural transformation for ${selectedDetailDesign.roomType || 'space'}`}
+                    : t('designs.modal.transformationSubtitle', {
+                        style: getLocalizedStyle(selectedDetailDesign.style) || 'Modern',
+                        roomType: getLocalizedRoomType(selectedDetailDesign.roomType) || 'space',
+                      })}
                 </p>
               </div>
 
               {/* Before/After Interactive Comparison Slider */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2 text-xs font-bold">
-                  <span className="text-slate-500 dark:text-slate-400 font-heading">Interactive Before/After Comparison</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-heading">
+                    {t('designs.modal.comparisonTitle')}
+                  </span>
                   <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
                     <button
                       type="button"
@@ -621,7 +676,7 @@ export default function DesignsPage() {
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      Uncropped (Auto Height)
+                      {t('designs.modal.uncroppedAuto')}
                     </button>
                     <button
                       type="button"
@@ -632,7 +687,7 @@ export default function DesignsPage() {
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      Fill Area (Fixed Height)
+                      {t('designs.modal.fillAreaFixed')}
                     </button>
                   </div>
                 </div>
@@ -653,7 +708,7 @@ export default function DesignsPage() {
                 >
                   <img
                     src={selectedDetailDesign.sampleImageUrl}
-                    alt="After Redesign"
+                    alt={t('designs.modal.afterRedesign')}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
                         'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1200&auto=format&fit=crop';
@@ -668,7 +723,7 @@ export default function DesignsPage() {
                     >
                       <img
                         src={selectedDetailDesign.beforeImageUrl}
-                        alt="Before Photo"
+                        alt={t('designs.modal.beforePhoto')}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
                             'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200&auto=format&fit=crop';
@@ -676,17 +731,17 @@ export default function DesignsPage() {
                         className="absolute inset-0 w-full h-full rounded-[10px] transition-all duration-200 object-cover"
                       />
                       <span className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-lg bg-purple-950/85 backdrop-blur-md text-xs font-extrabold text-purple-200 border border-purple-400/40 uppercase tracking-wider font-heading shadow-md">
-                        Before Photo
+                        {t('designs.modal.beforePhoto')}
                       </span>
                     </div>
                   ) : (
                     <span className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-lg bg-purple-950/85 backdrop-blur-md text-xs font-extrabold text-purple-200 border border-purple-400/40 uppercase tracking-wider font-heading shadow-md">
-                      Original Source Render
+                      {t('designs.modal.originalSource')}
                     </span>
                   )}
 
                   <span className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold text-xs shadow-md border border-purple-400/30 uppercase tracking-wider font-heading">
-                    After Redesign
+                    {t('designs.modal.afterRedesign')}
                   </span>
 
                   {/* Slider Handle */}
@@ -719,10 +774,10 @@ export default function DesignsPage() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
                 <div>
                   <p className="text-[11px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider font-heading">
-                    AI Architectural Transformation
+                    {t('designs.modal.actionBadge')}
                   </p>
                   <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 font-heading">
-                    Curated Design Style & Architectural Render
+                    {t('designs.modal.actionTitle')}
                   </p>
                 </div>
 
@@ -733,7 +788,7 @@ export default function DesignsPage() {
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all font-heading cursor-pointer"
                   >
                     <Download className="w-4 h-4 text-purple-600" />
-                    <span>Download</span>
+                    <span>{t('designs.modal.download')}</span>
                   </button>
                   <Link
                     href={`/generate?roomType=${encodeURIComponent(selectedDetailDesign.roomType || '')}&style=${encodeURIComponent(selectedDetailDesign.style || '')}&presetImage=${encodeURIComponent(selectedDetailDesign.beforeImageUrl || selectedDetailDesign.sampleImageUrl || '')}&desc=${encodeURIComponent(selectedDetailDesign.description || '')}`}
@@ -742,7 +797,7 @@ export default function DesignsPage() {
                     className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold transition-colors shadow-md shadow-purple-600/30 font-heading cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
-                    <span>Try This Style in Studio</span>
+                    <span>{t('designs.modal.tryThisStyle')}</span>
                   </Link>
                 </div>
               </div>
@@ -753,10 +808,13 @@ export default function DesignsPage() {
                   <div>
                     <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider font-heading flex items-center gap-2">
                       <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                      <span>Rate & Review This AI Render</span>
+                      <span>{t('designs.modal.rateReviewTitle')}</span>
                     </h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                      How accurate and high-quality is this {selectedDetailDesign.style} {selectedDetailDesign.roomType} transformation?
+                      {t('designs.modal.rateReviewDesc', {
+                        style: getLocalizedStyle(selectedDetailDesign.style) || '',
+                        roomType: getLocalizedRoomType(selectedDetailDesign.roomType) || '',
+                      })}
                     </p>
                   </div>
 
@@ -807,7 +865,7 @@ export default function DesignsPage() {
                     rows={2}
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="Write a review message or feedback for this generated image..."
+                    placeholder={t('designs.modal.reviewPlaceholder')}
                     className="w-full px-3.5 py-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                   />
                   <div className="flex items-center justify-between">
@@ -817,7 +875,7 @@ export default function DesignsPage() {
                       </span>
                     ) : (
                       <span className="text-[11px] text-slate-400">
-                        Your rating & review helps improve site AI design quality.
+                        {t('designs.modal.reviewHelps')}
                       </span>
                     )}
 
@@ -827,7 +885,7 @@ export default function DesignsPage() {
                       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-extrabold transition-all shadow-sm font-heading cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
-                      <span>{isSubmittingReview ? 'Submitting...' : 'Submit Review'}</span>
+                      <span>{isSubmittingReview ? t('designs.modal.submitting') : t('designs.modal.submitReview')}</span>
                     </button>
                   </div>
                 </form>

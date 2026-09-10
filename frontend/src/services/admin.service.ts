@@ -36,9 +36,14 @@ export interface AdminProject {
   _id: string;
   id?: string;
   name: string;
+  title?: string;
   theme: string;
+  roomType?: string;
   description?: string;
   colorPalette?: string;
+  status?: string;
+  ownerName?: string;
+  ownerEmail?: string;
   userId?: {
     _id: string;
     email: string;
@@ -63,6 +68,8 @@ export interface AdminImage {
   materials?: string[];
   lighting?: string;
   customInstructions?: string;
+  customRequirements?: string;
+  userPrompt?: string;
   toolSlug?: string;
   userId?: {
     _id: string;
@@ -153,6 +160,15 @@ export const adminService = {
     return handleApiResponse(res, 'Failed to update user');
   },
 
+  addCreditsToUser: async (userId: string, amount: number, reason?: string): Promise<AdminUser> => {
+    const res = await fetch(`${getApiBaseUrl()}/admin/users/${userId}/add-credits`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ amount, reason }),
+    });
+    return handleApiResponse(res, 'Failed to top-up user credits');
+  },
+
   deleteUser: async (userId: string): Promise<{ success: boolean }> => {
     const res = await fetch(`${getApiBaseUrl()}/admin/users/${userId}`, {
       method: 'DELETE',
@@ -215,5 +231,47 @@ export const adminService = {
       body: formData,
     });
     return handleApiResponse(res, 'Failed to upload image file');
+  },
+
+  // Currency Management APIs
+  getAdminCurrencies: async () => {
+    const res = await fetch(`${getApiBaseUrl()}/currencies/admin`, {
+      headers: getAuthHeaders(),
+    });
+    return handleApiResponse(res, 'Failed to fetch currencies');
+  },
+
+  createCurrency: async (data: any) => {
+    const res = await fetch(`${getApiBaseUrl()}/currencies`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleApiResponse(res, 'Failed to create currency');
+  },
+
+  updateCurrency: async (id: string, data: any) => {
+    const res = await fetch(`${getApiBaseUrl()}/currencies/${id}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleApiResponse(res, 'Failed to update currency');
+  },
+
+  setDefaultCurrency: async (id: string) => {
+    const res = await fetch(`${getApiBaseUrl()}/currencies/${id}/set-default`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+    });
+    return handleApiResponse(res, 'Failed to set default currency');
+  },
+
+  deleteCurrency: async (id: string) => {
+    const res = await fetch(`${getApiBaseUrl()}/currencies/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return handleApiResponse(res, 'Failed to delete currency');
   },
 };

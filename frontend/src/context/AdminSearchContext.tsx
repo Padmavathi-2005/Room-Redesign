@@ -15,7 +15,12 @@ const AdminSearchContext = createContext<AdminSearchContextType>({
 
 export function AdminSearchProvider({ children }: { children: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const pathname = usePathname();
+  let pathname = '';
+  try {
+    pathname = usePathname() || '';
+  } catch {
+    pathname = '';
+  }
 
   // Reset search query when navigating between admin routes
   useEffect(() => {

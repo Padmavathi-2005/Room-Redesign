@@ -15,8 +15,10 @@ import {
   X,
   FileText,
   DollarSign,
+  ArrowUpRight,
 } from 'lucide-react';
 import { useAdminSearch } from '@/context/AdminSearchContext';
+import { useCurrency } from '@/context/CurrencyContext';
 
 interface Transaction {
   id: string;
@@ -32,6 +34,7 @@ interface Transaction {
 
 export default function AdminTransactionsPage() {
   const { searchQuery } = useAdminSearch();
+  const { formatPrice } = useCurrency();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [gatewayFilter, setGatewayFilter] = useState<string>('ALL');
@@ -110,15 +113,28 @@ export default function AdminTransactionsPage() {
   };
 
   const filteredTransactions = transactions.filter((txn) => {
-    const matchesSearch =
-      !searchQuery ||
-      txn.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      txn.userEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      txn.userName.toLowerCase().includes(searchQuery.toLowerCase());
-
     const matchesGateway = gatewayFilter === 'ALL' || txn.gateway.toUpperCase() === gatewayFilter.toUpperCase();
+    if (!matchesGateway) return false;
 
-    return matchesSearch && matchesGateway;
+    if (!searchQuery || !searchQuery.trim()) return true;
+
+    // Tokenized multi-word search (supports queries like "sarah professional" or "free")
+    const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    const formattedDate = txn.date ? new Date(txn.date).toLocaleDateString() : '';
+    
+    const fullSearchableText = [
+      txn.id,
+      txn.userEmail,
+      txn.userName,
+      txn.planName,
+      txn.gateway,
+      txn.amount,
+      txn.status,
+      formattedDate,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    // Match if every word in search query is present in any field
+    return searchTerms.every((term) => fullSearchableText.includes(term));
   });
 
   const handleExportCSV = () => {
@@ -135,10 +151,15 @@ export default function AdminTransactionsPage() {
     document.body.removeChild(link);
   };
 
-  const totalVolume = filteredTransactions.reduce((acc, t) => {
-    const val = parseFloat(t.amount.replace(/[^0-9.]/g, '')) || 0;
-    return acc + val;
-  }, 0);
+  const parseNumericAmount = (val: string | number) => {
+    if (typeof val === 'number') return val;
+    const cleaned = String(val).replace(/[^0-9.-]+/g, '');
+    return parseFloat(cleaned) || 0;
+  };
+
+  const totalVolume = filteredTransactions
+    .filter((t) => t.status === 'SUCCEEDED')
+    .reduce((acc, curr) => acc + parseNumericAmount(curr.amount), 0);
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -171,36 +192,60 @@ export default function AdminTransactionsPage() {
 
       {/* Summary KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Processed Total Volume</span>
-            <p className="text-xl font-black text-slate-900 font-mono mt-0.5">${totalVolume.toFixed(2)}</p>
+        <div className="p-5 rounded-[12px] bg-white border border-slate-200/90 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <div className="p-2.5 rounded-[10px] bg-emerald-50 text-emerald-600 border border-emerald-100/80">
+              <DollarSign className="w-4.5 h-4.5" />
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-[10px] font-black uppercase tracking-wider font-heading">
+              Volume
+            </span>
           </div>
-          <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-            <DollarSign className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Total Ledger Transactions</span>
-            <p className="text-xl font-black text-slate-900 font-mono mt-0.5">{filteredTransactions.length}</p>
-          </div>
-          <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-            <Receipt className="w-5 h-5" />
+          <div className="mt-4 space-y-1">
+            <span className="text-2xl sm:text-3xl font-black font-heading text-slate-950 tracking-tight block">
+              {formatPrice(totalVolume)}
+            </span>
+            <p className="text-xs font-bold text-slate-800 font-heading">Processed Total Volume</p>
+            <p className="text-[11px] font-medium text-slate-500">All Stripe & PayPal Invoices</p>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Gateway Status</span>
-            <p className="text-xs font-bold text-emerald-600 mt-1 flex items-center gap-1">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              Stripe & PayPal Active
+        <div className="p-5 rounded-[12px] bg-white border border-slate-200/90 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <div className="p-2.5 rounded-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100/80">
+              <Receipt className="w-4.5 h-4.5" />
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 text-[10px] font-black uppercase tracking-wider font-heading">
+              Ledger Events
+            </span>
+          </div>
+          <div className="mt-4 space-y-1">
+            <span className="text-2xl sm:text-3xl font-black font-heading text-slate-950 tracking-tight block">
+              {filteredTransactions.length}
+            </span>
+            <p className="text-xs font-bold text-slate-800 font-heading">Total Ledger Transactions</p>
+            <p className="text-[11px] font-medium text-slate-500">Total Recorded Billing Events</p>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-[12px] bg-white border border-slate-200/90 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <div className="p-2.5 rounded-[10px] bg-purple-50 text-purple-600 border border-purple-100/80">
+              <CreditCard className="w-4.5 h-4.5" />
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-[10px] font-black font-heading">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Active
+            </span>
+          </div>
+          <div className="mt-4 space-y-1">
+            <span className="text-2xl sm:text-3xl font-black font-heading text-slate-950 tracking-tight block">
+              100% Up
+            </span>
+            <p className="text-xs font-bold text-slate-800 font-heading">Gateway Status</p>
+            <p className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Stripe & PayPal Connected
             </p>
-          </div>
-          <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600 border border-purple-100">
-            <CreditCard className="w-5 h-5" />
           </div>
         </div>
       </div>
@@ -210,7 +255,7 @@ export default function AdminTransactionsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+              <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-extrabold text-slate-800 font-sans">
                 <th className="py-3.5 px-6">Transaction ID</th>
                 <th className="py-3.5 px-6">Customer</th>
                 <th className="py-3.5 px-6">Plan / Item</th>
@@ -247,7 +292,7 @@ export default function AdminTransactionsPage() {
                         {txn.gateway}
                       </span>
                     </td>
-                    <td className="py-4 px-6 font-extrabold text-slate-900">{txn.amount}</td>
+                    <td className="py-4 px-6 font-extrabold text-slate-900">{formatPrice(parseNumericAmount(txn.amount))}</td>
                     <td className="py-4 px-6">
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" />
@@ -320,7 +365,7 @@ export default function AdminTransactionsPage() {
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">Amount Paid</span>
-                  <span className="font-black text-slate-900 text-sm">{selectedTxn.amount}</span>
+                  <span className="font-black text-slate-900 text-sm">{formatPrice(parseNumericAmount(selectedTxn.amount))}</span>
                 </div>
               </div>
 

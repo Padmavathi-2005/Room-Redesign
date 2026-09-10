@@ -3,6 +3,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface CommonPaginationProps {
   currentPage: number;
@@ -23,6 +24,7 @@ export default function CommonPagination({
   pageSizeOptions = [5, 10, 15, 25, 50],
   className = '',
 }: CommonPaginationProps) {
+  const { t } = useTranslation();
   const { settings, updateSettings } = useSettings();
   const limit = pageSize || settings.tablePaginationLimit || 10;
   const totalPages = Math.max(1, Math.ceil(totalItems / limit));
@@ -53,13 +55,17 @@ export default function CommonPagination({
       {/* Left: Range Info & Items Per Page Selector */}
       <div className="flex items-center gap-3">
         <span className="font-medium">
-          Showing <span className="font-extrabold text-slate-900 dark:text-white">{startItem}</span> to{' '}
-          <span className="font-extrabold text-slate-900 dark:text-white">{endItem}</span> of{' '}
-          <span className="font-extrabold text-slate-900 dark:text-white">{totalItems}</span> entries
+          {t('pagination.showing')}{' '}
+          <span className="font-extrabold text-slate-900 dark:text-white">{startItem}</span>{' '}
+          {t('pagination.to')}{' '}
+          <span className="font-extrabold text-slate-900 dark:text-white">{endItem}</span>{' '}
+          {t('pagination.of')}{' '}
+          <span className="font-extrabold text-slate-900 dark:text-white">{totalItems}</span>{' '}
+          {t('pagination.entries')}
         </span>
 
         <div className="flex items-center gap-1.5 ml-2 border-l border-slate-200 dark:border-slate-700 pl-3">
-          <span className="text-[11px] font-semibold text-slate-400">Rows per page:</span>
+          <span className="text-[11px] font-semibold text-slate-400">{t('pagination.rowsPerPage')}</span>
           <select
             value={limit}
             onChange={handlePageSizeSelect}
@@ -81,7 +87,7 @@ export default function CommonPagination({
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
           className="p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          title="Previous Page"
+          title={t('pagination.previousPage')}
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -117,7 +123,7 @@ export default function CommonPagination({
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
           className="p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          title="Next Page"
+          title={t('pagination.nextPage')}
         >
           <ChevronRight className="w-4 h-4" />
         </button>

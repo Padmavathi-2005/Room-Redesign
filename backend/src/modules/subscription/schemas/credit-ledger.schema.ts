@@ -10,6 +10,7 @@ export enum CreditTransactionType {
   ADMIN_GRANT = 'ADMIN_GRANT',
   GRANT = 'GRANT',
   DEDUCTION = 'DEDUCTION',
+  USAGE = 'GENERATION_DEDUCTION',
   GENERATION_DEDUCTION = 'GENERATION_DEDUCTION',
   REFUND = 'REFUND',
   GENERATION_REFUND = 'GENERATION_REFUND',
@@ -31,8 +32,17 @@ export class CreditLedger {
   @Prop({ required: true })
   amount: number; // Positive for grant/refund, negative for deduction/expiry
 
+  @Prop({ default: 0 })
+  balanceBefore?: number;
+
   @Prop({ required: true })
   balanceAfter: number;
+
+  @Prop({ type: String, unique: true, sparse: true, index: true, default: null })
+  idempotencyKey?: string;
+
+  @Prop({ type: String, default: null })
+  createdBy?: string;
 
   @Prop({ type: String, enum: CreditTransactionType, required: true, index: true })
   type: CreditTransactionType;

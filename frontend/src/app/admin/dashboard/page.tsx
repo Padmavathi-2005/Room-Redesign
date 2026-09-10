@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ShieldAlert, Users, DollarSign, Activity, FileText, CheckCircle2, TrendingUp, Sparkles, RefreshCw } from 'lucide-react';
+import { ShieldAlert, Users, DollarSign, Activity, FileText, CheckCircle2, TrendingUp, Sparkles, RefreshCw, ArrowUpRight } from 'lucide-react';
 import { useAdminSearch } from '@/context/AdminSearchContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface DatabasePlan {
   _id?: string;
@@ -16,6 +17,7 @@ interface DatabasePlan {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { searchQuery } = useAdminSearch();
+  const { t } = useLanguage();
 
   const [token, setToken] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -107,7 +109,7 @@ export default function AdminDashboardPage() {
         // Build live activity log feed from real recent users
         const logsFeed = usersList.slice(0, 5).map((u) => ({
           log: `User ${u.firstName || ''} ${u.lastName || ''} (${u.email}) active on ${u.subscriptionTier || 'FREE'} Tier`,
-          time: u.createdAt ? new Date(u.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+          time: u.createdAt ? `${new Date(u.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} • ${new Date(u.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Recently',
           status: 'success' as const,
         }));
         setLiveLogs(logsFeed.length > 0 ? logsFeed : [
@@ -147,7 +149,7 @@ export default function AdminDashboardPage() {
   if (isAdmin === false) {
     return (
       <div className="min-h-[50vh] bg-transparent text-slate-900 flex flex-col items-center justify-center p-6 text-center">
-        <div className="p-6 rounded-2xl bg-red-50 border border-red-200 max-w-md space-y-6">
+        <div className="p-6 rounded-[10px] bg-red-50 border border-red-200 max-w-md space-y-6">
           <ShieldAlert className="w-16 h-16 text-red-650 mx-auto" />
           <div className="space-y-2">
             <h1 className="text-xl font-black text-slate-900">Access Denied</h1>
@@ -165,33 +167,37 @@ export default function AdminDashboardPage() {
       title: 'Active / Total Plans',
       value: `${activePlansCount} / ${plansCount}`,
       subtitle: 'Configured tiers in database',
-      icon: <FileText className="w-5 h-5 text-indigo-600" />,
-      badge: 'Live Sync',
-      badgeColor: 'bg-indigo-50 border-indigo-100 text-indigo-700',
+      icon: FileText,
+      href: '/admin/plans',
+      gradient: 'from-blue-500/10 via-blue-500/5 to-transparent',
+      badgeBg: 'bg-blue-100 text-blue-600 border-blue-200',
     },
     {
       title: 'Total Active Subscribers',
       value: `${totalUsersCount}`,
       subtitle: 'Registered accounts in MongoDB',
-      icon: <Users className="w-5 h-5 text-emerald-650" />,
-      badge: 'Real-time',
-      badgeColor: 'bg-emerald-50 border-emerald-100 text-emerald-700',
+      icon: Users,
+      href: '/admin/users',
+      gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
+      badgeBg: 'bg-emerald-100 text-emerald-600 border-emerald-200',
     },
     {
       title: 'Monthly Recurring Revenue',
       value: `$${mrrAmount.toFixed(2)}`,
       subtitle: 'Active tier subscriptions MRR',
-      icon: <DollarSign className="w-5 h-5 text-cyan-600" />,
-      badge: 'Calculated',
-      badgeColor: 'bg-cyan-50 border-cyan-100 text-cyan-700',
+      icon: DollarSign,
+      href: '/admin/analytics',
+      gradient: 'from-amber-500/10 via-amber-500/5 to-transparent',
+      badgeBg: 'bg-amber-100 text-amber-600 border-amber-200',
     },
     {
       title: 'System Integrations',
       value: 'Operational',
       subtitle: 'Database & Manus AI connected',
-      icon: <Activity className="w-5 h-5 text-purple-650" />,
-      badge: '100% Up',
-      badgeColor: 'bg-purple-50 border-purple-100 text-purple-700',
+      icon: Activity,
+      href: '/admin/logs',
+      gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent',
+      badgeBg: 'bg-emerald-100 text-emerald-600 border-emerald-200',
     },
   ];
 
@@ -237,16 +243,16 @@ export default function AdminDashboardPage() {
       
       {/* Search Filter Active Banner */}
       {queryLower && (
-        <div className="p-5 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 shadow-2xs space-y-3">
+        <div className="p-5 rounded-[10px] bg-indigo-50/80 border border-indigo-200/80 shadow-2xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
               <span className="text-xs font-black text-indigo-900">
-                Global Admin Search Results for &quot;<span className="text-indigo-600 font-extrabold">{searchQuery.trim()}</span>&quot;
+                {t('admin.dashboard.globalSearch') || 'Global Admin Search Results for'} &quot;<span className="text-indigo-600 font-extrabold">{searchQuery.trim()}</span>&quot;
               </span>
             </div>
-            <span className="text-[11px] font-bold text-indigo-700 bg-white px-2.5 py-1 rounded-xl border border-indigo-100">
-              {matchedModules.length} module shortcuts found
+            <span className="text-[11px] font-bold text-indigo-700 bg-white px-2.5 py-1 rounded-[10px] border border-indigo-100">
+              {matchedModules.length} {t('admin.dashboard.moduleShortcuts') || 'module shortcuts found'}
             </span>
           </div>
 
@@ -256,7 +262,7 @@ export default function AdminDashboardPage() {
                 <Link
                   key={m.href}
                   href={m.href}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-indigo-200/90 hover:border-indigo-500 text-slate-800 hover:text-indigo-600 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 group cursor-pointer"
+                  className="px-3 py-1.5 rounded-[10px] bg-white border border-indigo-200/90 hover:border-indigo-500 text-slate-800 hover:text-indigo-600 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 group cursor-pointer"
                 >
                   <span>{m.name}</span>
                   <TrendingUp className="w-3.5 h-3.5 text-indigo-500 group-hover:translate-x-0.5 transition-transform" />
@@ -268,29 +274,41 @@ export default function AdminDashboardPage() {
       )}
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {filteredKPIs.length === 0 ? (
-          <div className="col-span-full p-8 rounded-2xl bg-white border border-slate-200 text-center text-slate-400 text-xs font-bold">
+          <div className="col-span-full p-8 rounded-[10px] bg-white border border-slate-200 text-center text-slate-400 text-xs font-bold">
             No KPI metrics match "{searchQuery}".
           </div>
         ) : (
-          filteredKPIs.map((kpi) => (
-            <div key={kpi.title} className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition-all">
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 bg-slate-50 border border-slate-200/60 rounded-2xl">
-                  {kpi.icon}
+          filteredKPIs.map((kpi) => {
+            const Icon = kpi.icon;
+            return (
+              <Link
+                key={kpi.title}
+                href={kpi.href}
+                className="group relative p-5 rounded-[10px] bg-white border border-slate-200/90 shadow-2xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between"
+              >
+                <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${kpi.gradient} rounded-bl-full pointer-events-none transition-opacity group-hover:opacity-100`} />
+
+                <div className="flex items-center justify-between z-10">
+                  <div className={`p-3 rounded-[10px] border ${kpi.badgeBg} shadow-2xs`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className="p-1.5 rounded-[10px] bg-slate-100/80 text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">
+                    <ArrowUpRight className="w-4 h-4" />
+                  </span>
                 </div>
-                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${kpi.badgeColor}`}>
-                  {kpi.badge}
-                </span>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">{kpi.title}</span>
-                <h3 className="text-2xl font-black text-slate-900">{kpi.value}</h3>
-                <p className="text-[10px] text-slate-500 font-semibold">{kpi.subtitle}</p>
-              </div>
-            </div>
-          ))
+
+                <div className="mt-4 space-y-1 z-10">
+                  <span className="text-3xl font-black font-heading text-slate-900 tracking-tight">
+                    {kpi.value}
+                  </span>
+                  <p className="text-xs font-bold text-slate-800">{kpi.title}</p>
+                  <p className="text-[11px] font-medium text-slate-400">{kpi.subtitle}</p>
+                </div>
+              </Link>
+            );
+          })
         )}
       </div>
 
@@ -298,10 +316,10 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Tier Distribution Graph */}
-        <div className="lg:col-span-2 p-8 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-6">
+        <div className="lg:col-span-2 p-8 rounded-[10px] bg-white border border-slate-200/80 shadow-sm space-y-6">
           <div>
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Subscribers Tier Distribution</h3>
-            <p className="text-[10px] font-semibold text-slate-500 mt-1">Breakdown of active subscription memberships per pricing plan.</p>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">{t('admin.dashboard.tierDistribution') || 'Subscribers Tier Distribution'}</h3>
+            <p className="text-[10px] font-semibold text-slate-500 mt-1">{t('admin.dashboard.tierDistributionDesc') || 'Breakdown of active subscription memberships per pricing plan.'}</p>
           </div>
 
           <div className="space-y-5">
@@ -323,7 +341,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Integration Status Panel */}
-        <div className="p-8 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-6">
+        <div className="p-8 rounded-[10px] bg-white border border-slate-200/80 shadow-sm space-y-6">
           <div>
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-indigo-600" />
@@ -333,7 +351,7 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="space-y-4 font-black text-xs text-slate-750">
-            <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-2xl border border-slate-150">
+            <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-[10px] border border-slate-150">
               <span>Database Server</span>
               <span className="flex items-center gap-1.5 text-emerald-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -341,7 +359,7 @@ export default function AdminDashboardPage() {
               </span>
             </div>
 
-            <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-2xl border border-slate-150">
+            <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-[10px] border border-slate-150">
               <span>Payments API</span>
               <span className="flex items-center gap-1.5 text-emerald-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -349,7 +367,7 @@ export default function AdminDashboardPage() {
               </span>
             </div>
 
-            <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-2xl border border-slate-150">
+            <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-[10px] border border-slate-150">
               <span>AI Redesign Engine</span>
               <span className="flex items-center gap-1.5 text-emerald-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -362,7 +380,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Recent Activity Log Feed */}
-      <div className="p-8 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-6">
+      <div className="p-8 rounded-[10px] bg-white border border-slate-200/80 shadow-sm space-y-6">
         <div>
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Recent Workspace logs</h3>
           <p className="text-[10px] font-semibold text-slate-500 mt-1">Real-time audit log of system tasks and administrator changes.</p>

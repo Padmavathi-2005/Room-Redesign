@@ -6,7 +6,10 @@ import { VertexAiProvider } from './providers/vertex-ai.provider';
 import { FallbackStudioProvider } from './providers/fallback-studio.provider';
 import { OpenAiProvider } from './providers/openai.provider';
 
+import { NotificationsModule } from '../notifications/notifications.module';
+
 @Module({
+  imports: [NotificationsModule],
   providers: [
     ProviderManagerService,
     VertexAiProvider,

@@ -14,6 +14,7 @@ import {
   Inbox,
   Filter,
 } from 'lucide-react';
+import CustomSelect from './CustomSelect';
 
 export interface Column<T> {
   key: string;
@@ -67,26 +68,35 @@ export function DataTable<T extends Record<string, any>>({
 
   // Filter data based on global search query
   const filteredData = useMemo(() => {
-    if (!searchQuery.trim()) return data;
+    if (!searchQuery || !searchQuery.trim()) return data;
 
-    const query = searchQuery.toLowerCase().trim();
+    const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean);
+
     return data.filter((item) => {
-      // If searchKeys provided, search specified keys
+      let fullText = '';
+
       if (searchKeys && searchKeys.length > 0) {
-        return searchKeys.some((key) => {
-          const val = item[key as string];
-          return val !== undefined && val !== null && String(val).toLowerCase().includes(query);
-        });
+        fullText = searchKeys
+          .map((key) => {
+            const val = item[key as string];
+            if (val === undefined || val === null) return '';
+            if (typeof val === 'object') return JSON.stringify(val);
+            return String(val);
+          })
+          .join(' ')
+          .toLowerCase();
+      } else {
+        fullText = Object.values(item)
+          .map((val) => {
+            if (val === undefined || val === null) return '';
+            if (typeof val === 'object') return JSON.stringify(val);
+            return String(val);
+          })
+          .join(' ')
+          .toLowerCase();
       }
 
-      // Default: search all string/number primitive values in item
-      return Object.values(item).some((val) => {
-        if (val === undefined || val === null) return false;
-        if (typeof val === 'object') {
-          return JSON.stringify(val).toLowerCase().includes(query);
-        }
-        return String(val).toLowerCase().includes(query);
-      });
+      return searchTerms.every((term) => fullText.includes(term));
     });
   }, [data, searchQuery, searchKeys]);
 
@@ -139,90 +149,110 @@ export function DataTable<T extends Record<string, any>>({
     <div className="space-y-4">
       {/* HEADER CONTROLS (TITLE, SEARCH & ROW LIMIT) */}
       {title || subtitle || actions || !hideSearchInput ? (
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
-          {(title || subtitle || actions) && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              {(title || subtitle) && (
-                <div>
-                  {title && <h3 className="text-base font-extrabold text-slate-900 font-heading">{title}</h3>}
-                  {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
-                </div>
-              )}
+        !title && !subtitle && hideSearchInput ? (
+          /* Clean row control without background card box */
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+            {actions ? <div>{actions}</div> : <div />}
 
-              {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+            {/* PAGE SIZE SELECTOR */}
+            <div className="flex items-center gap-2 text-xs text-slate-600 font-medium ml-auto">
+              <CustomSelect
+                value={String(pageSize)}
+                onChange={(val) => {
+                  setPageSize(Number(val));
+                  setCurrentPage(1);
+                }}
+                labelPrefix="Show:"
+                size="sm"
+                options={pageSizeOptions.map((opt) => ({
+                  value: String(opt),
+                  label: `${opt} rows`,
+                }))}
+              />
             </div>
-          )}
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-[10px] p-5 shadow-xs space-y-4">
+            {(title || subtitle || actions) && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {(title || subtitle) && (
+                  <div>
+                    {title && <h3 className="text-base font-extrabold text-slate-900 font-heading">{title}</h3>}
+                    {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+                  </div>
+                )}
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-            {/* SEARCH INPUT */}
-            {!hideSearchInput && (
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder={searchPlaceholder}
-                  value={internalSearchQuery}
-                  onChange={(e) => {
-                    setInternalSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all font-medium"
-                />
+                {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
               </div>
             )}
 
-            {/* PAGE SIZE SELECTOR */}
-            <div className="flex items-center gap-2 self-end sm:self-auto text-xs text-slate-600 font-medium ml-auto">
-              <span>Show</span>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
-              >
-                {pageSizeOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt} rows
-                  </option>
-                ))}
-              </select>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+              {/* SEARCH INPUT */}
+              {!hideSearchInput && (
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder={searchPlaceholder}
+                    value={internalSearchQuery}
+                    onChange={(e) => {
+                      setInternalSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-[10px] text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 transition-all font-medium"
+                  />
+                </div>
+              )}
+
+              {/* PAGE SIZE SELECTOR */}
+              <div className="flex items-center gap-2 self-end sm:self-auto text-xs text-slate-600 font-medium ml-auto">
+                <CustomSelect
+                  value={String(pageSize)}
+                  onChange={(val) => {
+                    setPageSize(Number(val));
+                    setCurrentPage(1);
+                  }}
+                  labelPrefix="Show:"
+                  size="sm"
+                  options={pageSizeOptions.map((opt) => ({
+                    value: String(opt),
+                    label: `${opt} rows`,
+                  }))}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )
       ) : (
         /* Standalone right-aligned Page Size selector when top search card is suppressed */
         <div className="flex items-center justify-end gap-2 text-xs text-slate-600 font-medium pb-1">
-          <span>Show</span>
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
+          <CustomSelect
+            value={String(pageSize)}
+            onChange={(val) => {
+              setPageSize(Number(val));
               setCurrentPage(1);
             }}
-            className="px-3 py-1.5 bg-white border border-slate-200/90 rounded-2xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer shadow-2xs"
-          >
-            {pageSizeOptions.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt} rows
-              </option>
-            ))}
-          </select>
+            labelPrefix="Show:"
+            size="sm"
+            options={pageSizeOptions.map((opt) => ({
+              value: String(opt),
+              label: `${opt} rows`,
+            }))}
+          />
         </div>
       )}
 
       {/* TABLE DATA CONTAINER */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200/90 text-[11px] font-extrabold text-slate-600 font-heading uppercase tracking-wider">
+              <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-extrabold text-slate-800 font-sans">
                 {columns.map((col) => (
                   <th
                     key={col.key}
                     onClick={() => handleSort(col.key, col.sortable)}
-                    className={`px-5 py-4 select-none ${col.sortable ? 'cursor-pointer hover:bg-slate-100/80 transition-colors' : ''} ${col.headerClassName || ''}`}
+                    className={`px-5 py-3.5 select-none ${col.sortable ? 'cursor-pointer hover:bg-slate-100/80 transition-colors' : ''} ${col.headerClassName || ''}`}
                   >
                     <div className="flex items-center gap-1.5">
                       <span>{col.header}</span>
@@ -250,8 +280,8 @@ export function DataTable<T extends Record<string, any>>({
                 Array.from({ length: pageSize > 5 ? 5 : pageSize }).map((_, idx) => (
                   <tr key={idx} className="animate-pulse">
                     {columns.map((col, cIdx) => (
-                      <td key={cIdx} className="px-5 py-4">
-                        <div className="h-4 bg-slate-100 rounded-2xl w-3/4" />
+                      <td key={cIdx} className="px-5 py-3.5 first:rounded-l-lg last:rounded-r-lg">
+                        <div className="h-4 bg-slate-100 rounded-md w-3/4" />
                       </td>
                     ))}
                   </tr>
@@ -282,7 +312,7 @@ export function DataTable<T extends Record<string, any>>({
                       className="hover:bg-purple-50/40 transition-colors"
                     >
                       {columns.map((col) => (
-                        <td key={col.key} className={`px-5 py-4 ${col.className || ''}`}>
+                        <td key={col.key} className={`px-5 py-3.5 first:rounded-l-lg last:rounded-r-lg ${col.className || ''}`}>
                           {col.accessor ? col.accessor(row) : row[col.key]}
                         </td>
                       ))}

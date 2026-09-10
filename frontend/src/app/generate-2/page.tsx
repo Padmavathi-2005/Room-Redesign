@@ -144,7 +144,7 @@ export default function Generate2Page() {
             <button
               type="submit"
               disabled={isGenerating}
-              className={`w-full py-4.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 active:scale-95 transition-all ${
+              className={`w-full py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 active:scale-95 transition-all ${
                 isGenerating
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                   : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white hover:opacity-90'

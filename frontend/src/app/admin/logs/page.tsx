@@ -177,7 +177,7 @@ export default function AdminAuditLogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse font-mono text-xs">
             <thead>
-              <tr className="border-b border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-900/50">
+              <tr className="border-b border-slate-800 text-xs font-extrabold text-slate-300 font-sans bg-slate-900/50">
                 <th className="py-3 px-5">Level</th>
                 <th className="py-3 px-5">Timestamp</th>
                 <th className="py-3 px-5">Service</th>
@@ -209,7 +209,7 @@ export default function AdminAuditLogsPage() {
                       </span>
                     </td>
                     <td className="py-3 px-5 text-slate-400 text-[11px]">
-                      {new Date(log.timestamp).toLocaleTimeString()}
+                      {new Date(log.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="py-3 px-5 font-bold text-indigo-400">{log.service}</td>
                     <td className="py-3 px-5 text-slate-300">{log.event}</td>

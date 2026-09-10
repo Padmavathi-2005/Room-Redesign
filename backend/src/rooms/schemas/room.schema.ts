@@ -81,6 +81,12 @@ export class RoomGeneration {
   customInstructions?: string;
 
   @Prop({ required: false, default: '' })
+  customRequirements?: string;
+
+  @Prop({ required: false, default: '' })
+  userPrompt?: string;
+
+  @Prop({ required: false, default: '' })
   prompt: string; // Final Compiled Prompt
 
   @Prop({ required: false, default: '' })

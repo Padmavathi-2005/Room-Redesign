@@ -6,6 +6,8 @@ export interface NotificationItem {
   type?: 'info' | 'success' | 'warning' | 'alert' | 'credit' | 'lead';
   isRead?: boolean;
   createdAt?: string;
+  timestamp?: string;
+  link?: string;
   metadata?: Record<string, any>;
 }
 

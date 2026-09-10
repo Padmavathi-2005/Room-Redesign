@@ -1512,7 +1512,7 @@ export default function AdminSettingsPage() {
                   <p className="text-xs text-slate-500 font-medium mt-0.5">Control signup reward credits, credit cost per render, project limits, and emergency maintenance mode.</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-slate-800 font-bold block">Signup Bonus Free Credits</label>
                     <input
@@ -1520,17 +1520,6 @@ export default function AdminSettingsPage() {
                       min={0}
                       value={defaultUserCredits}
                       onChange={(e) => setDefaultUserCredits(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono font-bold"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-slate-800 font-bold block">Credits Per Generation</label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={creditsPerGeneration}
-                      onChange={(e) => setCreditsPerGeneration(Number(e.target.value))}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white text-slate-900 rounded-2xl font-mono font-bold"
                     />
                   </div>

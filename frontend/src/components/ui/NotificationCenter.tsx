@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, Sparkles, Zap, ShieldAlert, User, X, CheckCheck, ArrowRight } from 'lucide-react';
 import { useSocketNotifications, AppNotification } from '@/hooks/useSocketNotifications';
@@ -12,10 +13,44 @@ interface NotificationCenterProps {
 }
 
 export default function NotificationCenter({ userId, isAdmin = false }: NotificationCenterProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { notifications, unreadCount, activeToast, dismissToast, markAllAsRead, markSingleAsRead } =
+  const { notifications, unreadCount, activeToast, activeCenterCreditToast, dismissToast, markAllAsRead, markSingleAsRead } =
     useSocketNotifications(userId, isAdmin);
+
+  const handleNotificationClick = (n: AppNotification) => {
+    const notifId = n._id || n.id || '';
+    if (notifId && !n.isRead) {
+      markSingleAsRead(notifId);
+    }
+    setIsOpen(false);
+
+    // 1. Target link/URL if present in metadata
+    const targetUrl = n.metadata?.link || n.metadata?.url || (n as any).link;
+    if (targetUrl) {
+      router.push(targetUrl);
+      return;
+    }
+
+    // 3. Smart redirects based on notification type/content
+    const titleLower = n.title?.toLowerCase() || '';
+    const msgLower = n.message?.toLowerCase() || '';
+
+    if (n.type === 'credit' || titleLower.includes('credit') || msgLower.includes('credit')) {
+      router.push('/billing');
+    } else if (titleLower.includes('project') || msgLower.includes('project')) {
+      router.push('/projects');
+    } else if (titleLower.includes('design') || titleLower.includes('render') || msgLower.includes('render')) {
+      router.push('/designs');
+    } else if (n.type === 'lead' && isAdmin) {
+      router.push('/admin/leads');
+    } else if (isAdmin) {
+      router.push('/admin/notifications');
+    } else {
+      router.push('/dashboard');
+    }
+  };
 
   // Close dropdown on outside click or page scroll
   useEffect(() => {
@@ -72,6 +107,52 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
         )}
       </button>
 
+      {/* Centered Auto-Dismiss Credit Celebration Pop-Up Toast (NO CLOSE BUTTON, AUTO TIME END) */}
+      <AnimatePresence>
+        {activeCenterCreditToast && (
+          <div className="fixed inset-0 z-[9999999] pointer-events-none flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="pointer-events-auto bg-gradient-to-br from-slate-950 via-purple-950/95 to-slate-950 border border-purple-500/40 text-white rounded-3xl p-7 max-w-md w-full text-center space-y-4 shadow-[0_0_60px_rgba(139,92,246,0.35)] relative overflow-hidden font-sans"
+            >
+              {/* Radial Purple Glow Aura */}
+              <div className="absolute -top-12 -right-12 w-40 h-40 bg-purple-500/30 blur-3xl rounded-full pointer-events-none" />
+              <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-indigo-500/20 blur-3xl rounded-full pointer-events-none" />
+
+              {/* Gold Zap Token Icon */}
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/25 ring-8 ring-amber-500/10">
+                <Zap className="w-8 h-8 fill-slate-950 text-slate-950" />
+              </div>
+
+              <div className="space-y-1.5 relative z-10">
+                <span className="text-[11px] font-black uppercase tracking-widest text-amber-300 font-heading">
+                  🎉 CREDITS ADDED AUTOMATICALLY!
+                </span>
+                <h3 className="text-2xl sm:text-3xl font-black font-heading text-white tracking-tight">
+                  {activeCenterCreditToast.title || 'AI Credits Added!'}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed max-w-xs mx-auto">
+                  {activeCenterCreditToast.message || 'Admin added credits directly to your balance!'}
+                </p>
+              </div>
+
+              {/* Auto-Dismiss 4-Second Timer Countdown Bar */}
+              <div className="w-full bg-purple-950/80 rounded-full h-1.5 overflow-hidden relative z-10">
+                <motion.div
+                  initial={{ width: '100%' }}
+                  animate={{ width: '0%' }}
+                  transition={{ duration: 4, ease: 'linear' }}
+                  className="bg-gradient-to-r from-amber-400 via-purple-400 to-indigo-400 h-full rounded-full"
+                />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Floating Toast Banner for Instant Incoming Notifications */}
       <AnimatePresence>
         {activeToast && (
@@ -79,7 +160,11 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-5 right-5 z-[999999] max-w-sm w-full p-4 rounded-[10px] bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 shadow-2xl flex items-start gap-3 font-sans"
+            onClick={() => {
+              dismissToast();
+              handleNotificationClick(activeToast);
+            }}
+            className="fixed top-5 right-5 z-[999999] max-w-sm w-full p-4 rounded-[10px] bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 shadow-2xl flex items-start gap-3 font-sans cursor-pointer hover:border-indigo-400 transition-colors"
           >
             <div className="p-2 rounded-[8px] bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900">
               {getIcon(activeToast.type)}
@@ -90,7 +175,10 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
                   {activeToast.title}
                 </h4>
                 <button
-                  onClick={dismissToast}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    dismissToast();
+                  }}
                   className="text-slate-400 hover:text-slate-600 p-0.5"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -147,7 +235,7 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
                   return (
                     <div
                       key={notifId}
-                      onClick={() => markSingleAsRead(notifId)}
+                      onClick={() => handleNotificationClick(n)}
                       className={`p-4 transition-colors cursor-pointer flex items-start gap-3 ${
                         n.isRead
                           ? 'opacity-70 bg-transparent'
