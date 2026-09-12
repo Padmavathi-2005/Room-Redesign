@@ -1,9 +1,7 @@
 import { en, Translations } from './en';
-import { es } from './es';
 import { fr } from './fr';
-import { de } from './de';
-import { hi } from './hi';
 import { ar } from './ar';
+import { hi } from './hi';
 
 export interface LanguageInfo {
   code: string;
@@ -16,10 +14,11 @@ export interface LanguageInfo {
 }
 
 /**
- * 3 Primary Global Languages configured as requested:
+ * 4 Primary Languages:
  * 1. English (LTR)
- * 2. Français (LTR)
- * 3. العربية (RTL with explicit Right-to-Left field)
+ * 2. العربية / Arabic (RTL)
+ * 3. Français / French (LTR)
+ * 4. हिन्दी / Hindi (LTR)
  */
 export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
   {
@@ -27,15 +26,6 @@ export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
     name: 'English',
     nativeName: 'English',
     flag: '🇺🇸',
-    dir: 'ltr',
-    direction: 'Left-to-Right',
-    isRtl: false,
-  },
-  {
-    code: 'fr',
-    name: 'Français',
-    nativeName: 'Français',
-    flag: '🇫🇷',
     dir: 'ltr',
     direction: 'Left-to-Right',
     isRtl: false,
@@ -49,16 +39,32 @@ export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
     direction: 'Right-to-Left',
     isRtl: true,
   },
+  {
+    code: 'fr',
+    name: 'Français',
+    nativeName: 'Français',
+    flag: '🇫🇷',
+    dir: 'ltr',
+    direction: 'Left-to-Right',
+    isRtl: false,
+  },
+  {
+    code: 'hi',
+    name: 'हिन्दी',
+    nativeName: 'हिन्दी',
+    flag: '🇮🇳',
+    dir: 'ltr',
+    direction: 'Left-to-Right',
+    isRtl: false,
+  },
 ];
 
 export const TRANSLATIONS: Record<string, Translations> = {
   en,
-  fr,
   ar,
-  es,
-  de,
+  fr,
   hi,
 };
 
-export { en, es, fr, de, hi, ar };
+export { en, ar, fr, hi };
 export type { Translations };

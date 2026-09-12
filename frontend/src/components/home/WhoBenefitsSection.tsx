@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   Sparkles,
 } from 'lucide-react';
+import { useSettings, getHomepageText } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface BenefitCard {
   id: string;
@@ -87,8 +89,21 @@ const BENEFIT_CARDS: BenefitCard[] = [
 ];
 
 export default function WhoBenefitsSection() {
+  const { settings } = useSettings();
+  const { language } = useLanguage();
+
+  const badgeText = getHomepageText(settings, 'whoBenefits', 'badge', language, 'RoomAI Users');
+  const titleText = getHomepageText(settings, 'whoBenefits', 'title', language, 'Who Benefits from RoomAI?');
+  const subtitleText = getHomepageText(
+    settings,
+    'whoBenefits',
+    'subtitle',
+    language,
+    'Perfect for anyone involved in home design and real estate, from professionals to homeowners.'
+  );
+
   return (
-    <section className="relative w-full py-20 bg-[#4f46e5]/10 dark:bg-[#4f46e5]/20 border-y border-[#4f46e5]/15 dark:border-[#4f46e5]/30 text-slate-900 dark:text-white selection:bg-indigo-600 selection:text-white">
+    <section className="who-benefits-section relative w-full py-20 bg-[#4f46e5]/10 dark:bg-[#4f46e5]/20 border-y border-[#4f46e5]/15 dark:border-[#4f46e5]/30 text-slate-900 dark:text-white selection:bg-indigo-600 selection:text-white">
       <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
 
         {/* Section Header */}
@@ -100,16 +115,16 @@ export default function WhoBenefitsSection() {
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold text-indigo-800 dark:text-indigo-300 shadow-xs"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>RoomAI Users</span>
+            <span>{badgeText}</span>
           </motion.div>
 
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-heading"
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-heading whitespace-pre-line"
           >
-            Who Benefits from RoomAI?
+            {titleText}
           </motion.h2>
 
           <motion.p
@@ -118,7 +133,7 @@ export default function WhoBenefitsSection() {
             viewport={{ once: true }}
             className="text-sm sm:text-base text-slate-600 font-medium"
           >
-            Perfect for anyone involved in home design and real estate, from professionals to homeowners.
+            {subtitleText}
           </motion.p>
         </div>
 
@@ -129,36 +144,37 @@ export default function WhoBenefitsSection() {
             return (
               <motion.div
                 key={card.id}
+                data-benefit={card.id}
                 initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.08 }}
-                className="relative bg-white border border-blue-100 rounded-2xl p-7 shadow-lg shadow-blue-500/5 hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
+                className="who-benefits-card relative bg-white border border-blue-100 rounded-2xl p-7 shadow-lg shadow-blue-500/5 hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
               >
                 <div className="space-y-4">
                   {/* Icon Badge */}
                   <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${card.iconBg}`}
+                    className={`benefit-icon-box w-12 h-12 rounded-2xl flex items-center justify-center border ${card.iconBg}`}
                   >
-                    <IconComponent className={`w-6 h-6 ${card.iconColor}`} />
+                    <IconComponent className={`benefit-icon w-6 h-6 ${card.iconColor}`} />
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-xl font-bold text-slate-900 font-heading">
+                  <h3 className="benefit-title text-xl font-bold text-slate-900 font-heading">
                     {card.title}
                   </h3>
 
                   {/* Description Body */}
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                  <p className="benefit-description text-xs text-slate-600 leading-relaxed">
                     {card.description}
                   </p>
                 </div>
 
                 {/* Checklist Bullet Points */}
-                <div className="pt-6 border-t border-slate-100 mt-6 space-y-2">
+                <div className="benefit-divider pt-6 border-t border-slate-100 mt-6 space-y-2">
                   {card.checklist.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div key={i} className="benefit-checklist-item flex items-center gap-2 text-xs font-semibold text-slate-700">
+                      <CheckCircle2 className="benefit-check-icon w-4 h-4 text-emerald-600 shrink-0" />
                       <span>{item}</span>
                     </div>
                   ))}

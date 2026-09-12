@@ -35,7 +35,129 @@ export interface AppSettings {
   paypalClientId: string;
   paypalSecretKey: string;
   taxes: TaxSetting[];
+  homepageSections?: Record<string, any>;
 }
+
+export const DEFAULT_HOMEPAGE_SECTIONS: Record<string, any> = {
+  hero: {
+    translations: {
+      en: {
+        badge: 'Trusted Construction ERP',
+        title: 'Build Better. Manage Smarter. Deliver Faster.',
+        subtitle: 'The only digital craftsmanship platform designed to unite your field and office. Seamlessly manage budgets, logistics, and labor in one high-performance interface.',
+        primaryCta: 'Start Free Trial',
+        secondaryCta: 'Book a Demo',
+      },
+      ar: {
+        badge: 'نظام معتمد لإدارة وتصميم الإنشاءات',
+        title: 'ابنِ بشكل أفضل. أدر بذكاء أكبر. سلّم بشكل أسرع.',
+        subtitle: 'المنصة الحرفية الرقمية الوحيدة المصممة لتوحيد موقع العمل والمكتب. أدر الميزانيات والخدمات اللوجستية والعمالة بسلاسة في واجهة واحدة عالية الأداء.',
+        primaryCta: 'ابدأ التجربة المجانية',
+        secondaryCta: 'احجز عرضاً توضيحياً',
+      },
+      fr: {
+        badge: 'ERP de Construction de Confiance',
+        title: 'Construisez Mieux. Gérez Plus Intelligemment. Livrez Plus Vite.',
+        subtitle: 'La seule plateforme artisanale numérique conçue pour unifier votre chantier et vos bureaux.',
+        primaryCta: 'Essai Gratuit',
+        secondaryCta: 'Réserver une Démo',
+      },
+      hi: {
+        badge: 'भरोसेमंद निर्माण ईआरपी',
+        title: 'बेहतर निर्माण करें। स्मार्ट प्रबंधन करें। तेज़ी से पूरा करें।',
+        subtitle: 'फील्ड और ऑफिस को जोड़ने वाला संपूर्ण डिजिटल आर्किटेक्चरल प्लेटफॉर्म।',
+        primaryCta: 'मुफ़्त परीक्षण शुरू करें',
+        secondaryCta: 'डेमो बुक करें',
+      },
+    },
+  },
+  video: {
+    translations: {
+      en: {
+        badge: 'Platform Demonstration',
+        title: 'Experience the Power of RoomAI',
+        subtitle: 'Watch how our AI-driven design studio transforms ordinary spatial concepts into high-end architectural reality in seconds.',
+      },
+      ar: {
+        badge: 'عرض توضيحي للمنصة',
+        title: 'اختبر قوة منصة RoomAI',
+        subtitle: 'شاهد كيف يحول استوديو التصميم المدعوم بالذكاء الاصطناعي المفاهيم المكانية العادية إلى واقع معماري راقٍ في ثوانٍ.',
+      },
+    },
+  },
+  whyChoose: {
+    translations: {
+      en: {
+        badge: 'Core Advantages',
+        title: 'Why Choose RoomAI for Your Spaces',
+        subtitle: 'Architectural precision meets cutting-edge generative AI, delivering professional render fidelity in seconds.',
+      },
+      ar: {
+        badge: 'المزايا الجوهرية',
+        title: 'لماذا تختار RoomAI لتصميم مساحاتك',
+        subtitle: 'الدقة المعمارية تلتقي بأحدث تقنيات الذكاء الاصطناعي التوليدي لتقديم تصاميم فائقة الجودة في ثوانٍ.',
+      },
+    },
+  },
+  whoBenefits: {
+    translations: {
+      en: {
+        badge: 'Target Audiences',
+        title: 'Who Benefits From Our Digital Platform',
+        subtitle: 'Empowering interior designers, architects, real estate developers, and homeowners with photorealistic visualization tools.',
+      },
+      ar: {
+        badge: 'لمن صُممت المنصة',
+        title: 'من يستفيد من منصتنا الرقمية',
+        subtitle: 'تمكين مصممي الديكور الداخلي والمهندسين المعماريين والمطورين العقاريين وأصحاب المنازل بأدوات تصوير واقعية مذهلة.',
+      },
+    },
+  },
+  exploreTools: {
+    translations: {
+      en: {
+        badge: 'AI Studio Suite',
+        title: 'Explore Powerful Architectural Redesign Tools',
+        subtitle: 'From interior revamps to exterior transformations, explore our suite of intelligent redesign tools tailored to your spatial needs.',
+      },
+      ar: {
+        badge: 'مجموعة أدوات استوديو الذكاء الاصطناعي',
+        title: 'استكشف أدوات إعادة التصميم المعماري القوية',
+        subtitle: 'من التجديدات الداخلية إلى التحولات الخارجية، استكشف أدوات إعادة التصميم الذكية المصممة خصيصاً لاحتياجاتك المكانية.',
+      },
+    },
+  },
+  howItWorks: {
+    translations: {
+      en: {
+        badge: 'Workflow',
+        title: 'How It Works in 3 Simple Steps',
+        subtitle: 'Transform any space with photorealistic precision effortlessly.',
+      },
+      ar: {
+        badge: 'طريقة العمل',
+        title: 'كيف يعمل في 3 خطوات بسيطة',
+        subtitle: 'حوّل أي مساحة بدقة واقعية فائقة بكل سهولة.',
+      },
+    },
+  },
+  ctaBanner: {
+    translations: {
+      en: {
+        badge: 'Start Your Journey',
+        title: 'Start Smarter Home Design with RoomAI Today',
+        subtitle: 'Join thousands of designers, architects, and homeowners elevating spatial concepts into photorealistic reality.',
+        primaryCta: 'Get Started Free',
+      },
+      ar: {
+        badge: 'ابدأ رحلتك الآن',
+        title: 'ابدأ تصميماً أذكى لمنزلك مع RoomAI اليوم',
+        subtitle: 'انضم إلى آلاف المصممين والمهندسين وأصحاب المنازل الذين يحولون الأفكار المكانية إلى واقع ملموس بدقة فائقة.',
+        primaryCta: 'ابدأ مجاناً الآن',
+      },
+    },
+  },
+};
 
 const DEFAULT_SETTINGS: AppSettings = {
   applicationName: 'RoomAI',
@@ -62,6 +184,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   taxes: [
     { id: 'tax-vat', name: 'VAT (Sales Tax)', rate: 0, enabled: false },
   ],
+  homepageSections: DEFAULT_HOMEPAGE_SECTIONS,
 };
 
 interface SettingsContextType {
@@ -102,9 +225,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       root.classList.remove('dark');
     }
 
+    // In dark theme, secondary color becomes primary color, and primary color shifts to secondary
+    const effectivePrimary = isDark ? currentSettings.secondaryColor : currentSettings.primaryColor;
+    const effectiveSecondary = isDark ? currentSettings.primaryColor : currentSettings.secondaryColor;
+
     // Dynamic CSS variables injected from Database
-    root.style.setProperty('--primary', currentSettings.primaryColor);
-    root.style.setProperty('--secondary', currentSettings.secondaryColor);
+    root.style.setProperty('--primary', effectivePrimary);
+    root.style.setProperty('--secondary', effectiveSecondary);
+    root.style.setProperty(
+      '--secondary-lite',
+      `color-mix(in srgb, ${effectiveSecondary} 14%, transparent)`
+    );
     root.style.setProperty('--accent', currentSettings.accentColor);
     root.style.setProperty(
       '--background',
@@ -259,4 +390,37 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
 export function useSettings() {
   return useContext(SettingsContext);
+}
+
+/**
+ * Helper to retrieve dynamic homepage section content with graceful multi-tier fallbacks:
+ * 1. Current language translation in DB
+ * 2. English translation in DB
+ * 3. Hardcoded fallback passed by the component
+ */
+export function getHomepageText(
+  settings: AppSettings | undefined | null,
+  sectionKey: string,
+  fieldKey: string,
+  currentLanguage: string,
+  fallback: string
+): string {
+  if (!settings?.homepageSections) return fallback;
+  const section = settings.homepageSections[sectionKey];
+  if (!section?.translations) return fallback;
+
+  // 1. Check current language
+  const langVal = section.translations[currentLanguage]?.[fieldKey];
+  if (langVal && typeof langVal === 'string' && langVal.trim().length > 0) {
+    return langVal;
+  }
+
+  // 2. Check English fallback in DB
+  const enVal = section.translations['en']?.[fieldKey];
+  if (enVal && typeof enVal === 'string' && enVal.trim().length > 0) {
+    return enVal;
+  }
+
+  // 3. Built-in hardcoded fallback
+  return fallback;
 }

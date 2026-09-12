@@ -94,12 +94,14 @@ export default function ContactPage() {
         {/* Left Side: Text and Contact Info */}
         <div className="w-full lg:w-1/2 space-y-8">
           <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-xs font-bold shadow-2xs mb-4">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-purple-950/60 border border-blue-200 dark:border-purple-500/40 text-blue-600 dark:text-purple-300 text-xs font-bold shadow-2xs mb-4">
               <Sparkles className="w-3.5 h-3.5" /> Request a Live Demo
             </span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-heading text-slate-900 dark:text-white tracking-tight leading-tight">
               Let's Build <br />
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Something Amazing</span>
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-purple-400 dark:via-indigo-300 dark:to-cyan-400 bg-clip-text text-transparent">
+                Something Amazing
+              </span>
             </h1>
             <p className="mt-6 text-slate-600 dark:text-slate-400 text-lg leading-relaxed max-w-lg">
               Provide your details and our AI Onboarding Specialist will contact you to set up your custom portal, credit allocation, and personalized demo.
@@ -108,7 +110,7 @@ export default function ContactPage() {
 
           <div className="space-y-5 pt-4 border-t border-slate-200 dark:border-slate-800/80">
             <div className="flex items-center gap-4 text-slate-700 dark:text-slate-300">
-              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-purple-950/60 text-blue-600 dark:text-purple-400 border border-transparent dark:border-purple-800/60 flex items-center justify-center">
                 <Mail className="w-5 h-5" />
               </div>
               <div>
@@ -247,7 +249,7 @@ export default function ContactPage() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full mt-4 py-3.5 px-6 rounded-xl bg-[var(--primary)] hover:opacity-90 text-white font-semibold text-sm shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                      className="w-full mt-4 py-3.5 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-purple-600 dark:to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-purple-500 dark:hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-blue-500/20 dark:shadow-purple-600/30 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
                     >
                       {isSubmitting ? (
                         <span>Submitting Request...</span>
@@ -284,9 +286,9 @@ export default function ContactPage() {
                     </p>
                   </div>
                   
-                  <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/60 text-left text-sm space-y-2">
-                    <p className="font-bold text-blue-900 dark:text-blue-300">What happens next?</p>
-                    <p className="text-blue-700 dark:text-blue-400 text-xs leading-relaxed">
+                  <div className="p-4 rounded-2xl bg-blue-50 dark:bg-purple-950/40 border border-blue-100 dark:border-purple-900/60 text-left text-sm space-y-2">
+                    <p className="font-bold text-blue-900 dark:text-purple-300">What happens next?</p>
+                    <p className="text-blue-700 dark:text-purple-300/80 text-xs leading-relaxed">
                       1. Admin reviews your request and provisions your account.
                       <br />
                       2. Your selected plan and credit balance will be assigned directly without requiring payment.

@@ -519,7 +519,16 @@ export class CmsService implements OnModuleInit {
   }
 
   async findBySlug(slug: string, isVisitor = false, visitorIp?: string): Promise<CmsPageDocument> {
-    const page = await this.cmsPageModel.findOne({ slug }).exec();
+    let slugQuery: any = { slug };
+    if (slug === 'about' || slug === 'about-us') {
+      slugQuery = { slug: { $in: ['about', 'about-us'] } };
+    } else if (slug === 'terms' || slug === 'terms-of-service') {
+      slugQuery = { slug: { $in: ['terms', 'terms-of-service'] } };
+    } else if (slug === 'privacy' || slug === 'privacy-policy') {
+      slugQuery = { slug: { $in: ['privacy', 'privacy-policy'] } };
+    }
+
+    const page = await this.cmsPageModel.findOne(slugQuery).exec();
     if (!page) {
       throw new NotFoundException(`CMS Page with slug "${slug}" not found.`);
     }

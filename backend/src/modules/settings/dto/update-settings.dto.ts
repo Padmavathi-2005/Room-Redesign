@@ -254,4 +254,8 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsString()
   supportEmail?: string;
+
+  // 8. Frontend & Homepage Content with Multilingual Translations
+  @IsOptional()
+  homepageSections?: Record<string, any>;
 }

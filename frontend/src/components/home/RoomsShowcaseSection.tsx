@@ -28,7 +28,7 @@ export default function RoomsShowcaseSection() {
   const rightIndex = (currentIndex + 2) % SHOWCASE_IMAGES.length;
 
   return (
-    <section className="relative w-full py-20 bg-[#2563eb]/10 dark:bg-[#2563eb]/20 border-y border-[#2563eb]/15 dark:border-[#2563eb]/30 text-slate-900 dark:text-white selection:bg-blue-600 selection:text-white overflow-hidden">
+    <section className="rooms-showcase-section relative w-full py-20 bg-[#2563eb]/10 dark:bg-[#2563eb]/20 border-y border-[#2563eb]/15 dark:border-[#2563eb]/30 text-slate-900 dark:text-white selection:bg-blue-600 selection:text-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 space-y-12">
 
         {/* Section Header */}

@@ -16,6 +16,8 @@ import {
   ArrowRight,
   AlertCircle,
   RefreshCw,
+  Tag,
+  Percent,
 } from 'lucide-react';
 
 interface PlanDetail {
@@ -23,6 +25,9 @@ interface PlanDetail {
   name: string;
   priceMonthly: number;
   priceAnnual: number;
+  isDiscountActive?: boolean;
+  discountPriceMonthly?: number;
+  discountPriceAnnual?: number;
   credits: number;
   description: string;
   features: string[];
@@ -67,13 +72,62 @@ export default function FullPageCheckout() {
   const searchParams = useSearchParams();
 
   const planParam = (searchParams?.get('plan') || 'starter').toLowerCase();
-  const plan: PlanDetail = PLANS_BY_CODE[planParam] || PLANS_BY_CODE.starter;
-
-  const [isAnnual, setIsAnnual] = useState(false);
+  const [plansMap, setPlansMap] = useState<Record<string, PlanDetail>>(PLANS_BY_CODE);
+  const [isAnnual, setIsAnnual] = useState(searchParams?.get('interval') === 'annual');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const price = isAnnual ? plan.priceAnnual : plan.priceMonthly;
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+        const res = await fetch(`${API_BASE}/subscription/plans`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            const newMap: Record<string, PlanDetail> = { ...PLANS_BY_CODE };
+            json.data.forEach((p: any) => {
+              if (p.code) {
+                newMap[p.code.toLowerCase()] = {
+                  code: p.code.toLowerCase(),
+                  name: p.name,
+                  priceMonthly: p.priceMonthly,
+                  priceAnnual: p.priceAnnual,
+                  isDiscountActive: Boolean(p.isDiscountActive),
+                  discountPriceMonthly: p.discountPriceMonthly,
+                  discountPriceAnnual: p.discountPriceAnnual,
+                  credits: p.credits,
+                  description: p.description,
+                  features: Array.isArray(p.features) && p.features.length > 0 ? p.features : (PLANS_BY_CODE[p.code.toLowerCase()]?.features || []),
+                };
+              }
+            });
+            setPlansMap(newMap);
+          }
+        }
+      } catch (e) {}
+    };
+    fetchPlans();
+  }, []);
+
+  const plan: PlanDetail = plansMap[planParam] || plansMap.starter || PLANS_BY_CODE.starter;
+
+  const hasDiscount = Boolean(
+    plan.isDiscountActive && (
+      isAnnual
+        ? (plan.discountPriceAnnual && plan.discountPriceAnnual > 0 && plan.discountPriceAnnual < plan.priceAnnual)
+        : (plan.discountPriceMonthly && plan.discountPriceMonthly > 0 && plan.discountPriceMonthly < plan.priceMonthly)
+    )
+  );
+
+  const price = hasDiscount
+    ? (isAnnual ? plan.discountPriceAnnual! : plan.discountPriceMonthly!)
+    : (isAnnual ? plan.priceAnnual : plan.priceMonthly);
+
+  const originalPrice = isAnnual ? plan.priceAnnual : plan.priceMonthly;
+  const savingsPerMonth = hasDiscount ? originalPrice - price : 0;
+  const totalCharge = isAnnual ? price * 12 : price;
+  const originalTotalCharge = isAnnual ? originalPrice * 12 : originalPrice;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -253,8 +307,24 @@ export default function FullPageCheckout() {
                 </div>
                 <div className="flex justify-between text-xs font-medium text-slate-600 dark:text-slate-400">
                   <span>Monthly Rate</span>
-                  <span className="font-bold text-slate-900 dark:text-white">${price}.00 / month</span>
+                  {hasDiscount ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="line-through text-slate-400">${originalPrice}.00</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">${price}.00 / month</span>
+                    </div>
+                  ) : (
+                    <span className="font-bold text-slate-900 dark:text-white">${price}.00 / month</span>
+                  )}
                 </div>
+                {hasDiscount && (
+                  <div className="flex justify-between text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                    <span className="flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                      Promotional Discount Applied
+                    </span>
+                    <span className="font-extrabold">-Save ${isAnnual ? (originalPrice - price) * 12 : (originalPrice - price)}.00</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-xs font-medium text-slate-600 dark:text-slate-400">
                   <span>Included AI Credits</span>
                   <span className="font-bold text-primary font-mono">+{plan.credits} Credits / month</span>
@@ -264,11 +334,16 @@ export default function FullPageCheckout() {
                     Total Charge Now
                   </span>
                   <div className="text-right">
+                    {hasDiscount && (
+                      <span className="text-xs line-through text-slate-400 block">
+                        ${originalTotalCharge}.00
+                      </span>
+                    )}
                     <span className="text-2xl font-black text-slate-900 dark:text-white font-heading">
-                      ${isAnnual ? price * 12 : price}.00
+                      ${totalCharge}.00
                     </span>
                     <span className="text-[10px] text-slate-400 block font-medium">
-                      {isAnnual ? `Billed as $${price * 12}/year by Stripe` : 'Billed monthly by Stripe'}
+                      {isAnnual ? `Billed as $${totalCharge}/year by Stripe` : 'Billed monthly by Stripe'}
                     </span>
                   </div>
                 </div>
@@ -334,7 +409,7 @@ export default function FullPageCheckout() {
                   ) : (
                     <>
                       <Lock className="w-4 h-4" />
-                      <span>Proceed to Stripe Checkout (${price}.00)</span>
+                      <span>Proceed to Stripe Checkout (${totalCharge}.00)</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}

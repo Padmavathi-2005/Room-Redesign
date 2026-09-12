@@ -37,9 +37,9 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     id: 'faq-5',
-    question: 'Is there a free trial or free credits to test RoomAI?',
+    question: 'How can I try RoomAI or request a demo?',
     answer:
-      'Yes! You can sign up for a free 7-day trial with complimentary generation credits to test all interior, exterior, and 3D floor plan tools before choosing a subscription.',
+      'You can select any subscription plan to get instant access to our AI generation tools. If you are an enterprise client or contractor looking for a live demonstration, contact our team or request a demo, and our administrators can assist in setting up a demo account.',
   },
   {
     id: 'faq-6',
@@ -63,7 +63,7 @@ export default function FaqSection() {
   };
 
   return (
-    <section className="relative w-full py-20 bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-white selection:bg-blue-600 selection:text-white border-none">
+    <section id="faq" className="faq-section relative w-full py-20 bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-white selection:bg-blue-600 selection:text-white border-none">
       <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-10">
 
         {/* Section Header */}
@@ -108,17 +108,17 @@ export default function FaqSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="bg-white dark:bg-slate-900/90 border border-blue-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/5 dark:shadow-black/40 hover:shadow-xl hover:border-blue-300 dark:hover:border-slate-700 transition-all"
+                className={`faq-accordion-item ${isOpen ? 'faq-item-open' : ''} bg-white dark:bg-slate-900/90 border border-blue-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/5 dark:shadow-black/40 hover:shadow-xl hover:border-blue-300 dark:hover:border-slate-700 transition-all`}
               >
                 <button
                   onClick={() => toggleFaq(faq.id)}
-                  className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none"
+                  className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none cursor-pointer"
                 >
-                  <span className="text-base font-bold text-slate-900 font-heading pr-4">
+                  <span className="faq-question text-base font-bold text-slate-900 font-heading pr-4">
                     {faq.question}
                   </span>
                   <ChevronDown
-                    className={`w-5 h-5 text-blue-600 shrink-0 transition-transform duration-300 ${
+                    className={`faq-chevron w-5 h-5 text-blue-600 shrink-0 transition-transform duration-300 ${
                       isOpen ? 'rotate-180' : ''
                     }`}
                   />
@@ -132,7 +132,7 @@ export default function FaqSection() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
                     >
-                      <div className="px-6 pb-5 pt-1 text-sm text-slate-600 leading-relaxed border-t border-slate-100 font-normal">
+                      <div className="faq-answer px-6 pb-5 pt-1 text-sm text-slate-600 leading-relaxed border-t border-slate-100 font-normal">
                         {faq.answer}
                       </div>
                     </motion.div>

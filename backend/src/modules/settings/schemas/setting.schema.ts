@@ -188,6 +188,10 @@ export class Setting {
 
   @Prop({ default: 'support@roomai.com' })
   supportEmail?: string;
+
+  // 8. Frontend & Homepage Content with Multilingual Translations
+  @Prop({ type: Object, default: {} })
+  homepageSections?: Record<string, any>;
 }
 
 export const SettingSchema = SchemaFactory.createForClass(Setting);

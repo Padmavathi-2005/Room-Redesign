@@ -41,8 +41,34 @@ export class SubscriptionPlanDefinition {
   @Prop({ default: false })
   isPopular: boolean;
 
-  @Prop({ default: true, index: true })
-  isActive: boolean;
+  @Prop({ default: false })
+  isDiscountActive: boolean;
+
+  @Prop({ default: 0 })
+  discountPriceMonthly: number;
+
+  @Prop({ default: 0 })
+  discountPriceAnnual: number;
+
+  @Prop({
+    type: [
+      {
+        languageCode: { type: String, required: true },
+        name: { type: String, default: '' },
+        description: { type: String, default: '' },
+        features: { type: [String], default: [] },
+      },
+    ],
+    default: [],
+  })
+  translations: PlanTranslation[];
+}
+
+export interface PlanTranslation {
+  languageCode: string;
+  name: string;
+  description: string;
+  features: string[];
 }
 
 export const SubscriptionPlanDefinitionSchema = SchemaFactory.createForClass(SubscriptionPlanDefinition);

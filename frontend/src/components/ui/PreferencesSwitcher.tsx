@@ -10,7 +10,7 @@ interface PreferencesSwitcherProps {
   className?: string;
   initialTab?: 'language' | 'currency';
   placement?: 'bottom' | 'top';
-  variant?: 'icon' | 'pill';
+  variant?: 'icon' | 'pill' | 'split';
   onCloseParent?: () => void;
 }
 
@@ -60,12 +60,60 @@ export default function PreferencesSwitcher({
     ] as Currency[];
   }, [currencies]);
 
-
-
   return (
-    <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>
-      {/* TRIGGER BUTTON (PILL FOR FOOTER / ICON FOR COMPACT AREAS) */}
-      {variant === 'pill' ? (
+    <div className={`relative inline-block text-start ${className}`} ref={dropdownRef}>
+      {/* TRIGGER BUTTON: SPLIT (MOBILE DRAWER) / PILL (DESKTOP) / ICON (COMPACT) */}
+      {variant === 'split' ? (
+        <div className="flex items-center gap-1.5" dir="ltr">
+          {/* Language Switcher Pill */}
+          <button
+            type="button"
+            onClick={() => {
+              if (isOpen && activeTab === 'language') {
+                setIsOpen(false);
+              } else {
+                setActiveTab('language');
+                setIsOpen(true);
+              }
+            }}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-primary/60 hover:text-primary shadow-2xs text-xs font-semibold transition-all cursor-pointer select-none ${
+              isOpen && activeTab === 'language' ? 'ring-2 ring-primary/20 border-primary text-primary' : ''
+            }`}
+            title={`Language: ${currentLanguage.name}`}
+            aria-label="Select Language"
+          >
+            <span className="text-xs leading-none">{currentLanguage.flag || '🌐'}</span>
+            <span className="text-[11px] font-bold tracking-wide" suppressHydrationWarning>
+              {currentLanguage.code.toUpperCase()}
+            </span>
+          </button>
+
+          {/* Currency Switcher Pill */}
+          <button
+            type="button"
+            onClick={() => {
+              if (isOpen && activeTab === 'currency') {
+                setIsOpen(false);
+              } else {
+                setActiveTab('currency');
+                setIsOpen(true);
+              }
+            }}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-primary/60 hover:text-primary shadow-2xs text-xs font-semibold transition-all cursor-pointer select-none ${
+              isOpen && activeTab === 'currency' ? 'ring-2 ring-primary/20 border-primary text-primary' : ''
+            }`}
+            title={`Currency: ${selectedCurrency.code} (${selectedCurrency.symbol})`}
+            aria-label="Select Currency"
+          >
+            <span className="text-[11px] font-black text-amber-500 dark:text-amber-400">
+              {selectedCurrency.symbol}
+            </span>
+            <span className="text-[11px] font-bold tracking-wide" suppressHydrationWarning>
+              {selectedCurrency.code}
+            </span>
+          </button>
+        </div>
+      ) : variant === 'pill' ? (
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
@@ -75,10 +123,12 @@ export default function PreferencesSwitcher({
           title={`Language: ${currentLanguage.name} · Currency: ${selectedCurrency.code}`}
           aria-label="Language and Currency Preferences"
         >
-          <Globe className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-          <span className="text-[11px] font-bold tracking-wide" suppressHydrationWarning>{currentLanguage.code.toUpperCase()}</span>
-          <span className="text-slate-300 dark:text-slate-600 text-[10px]">|</span>
-          <span className="text-[11px] font-bold tracking-wide" suppressHydrationWarning>{selectedCurrency.code}</span>
+          <div className="inline-flex items-center gap-1.5" dir="ltr">
+            <Globe className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            <span className="text-[11px] font-bold tracking-wide" suppressHydrationWarning>{currentLanguage.code.toUpperCase()}</span>
+            <span className="text-slate-300 dark:text-slate-600 text-[10px]">|</span>
+            <span className="text-[11px] font-bold tracking-wide" suppressHydrationWarning>{selectedCurrency.code}</span>
+          </div>
         </button>
       ) : (
         <button
@@ -102,42 +152,42 @@ export default function PreferencesSwitcher({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: placement === 'top' ? -6 : 6, scale: 0.98 }}
             transition={{ duration: 0.12 }}
-            className={`absolute right-0 ${
+            className={`preferences-popup-card absolute ltr:right-0 ltr:left-auto rtl:left-0 rtl:right-auto ${
               placement === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
-            } w-56 z-[99] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-2 space-y-2 overflow-hidden`}
+            } w-64 max-w-[calc(100vw-32px)] max-h-[380px] overflow-y-auto z-[9999] bg-white dark:bg-[#0D121F] border border-slate-200/90 dark:border-2 dark:border-[#8B5CF6] rounded-2xl shadow-2xl dark:shadow-[0_0_24px_-2px_rgba(139,92,246,0.4),0_16px_36px_rgba(0,0,0,0.8)] p-2.5 space-y-2 text-start`}
           >
-            {/* TOP COMPACT TABS (JUST ICONS + COMPACT LABEL) */}
-            <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl">
+            {/* TOP COMPACT TABS (MODERN SEGMENTED PILL SWITCHER) */}
+            <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100/90 dark:bg-[#131929] border border-slate-200/80 dark:border-purple-500/30 rounded-xl shadow-inner">
               <button
                 type="button"
                 onClick={() => setActiveTab('language')}
-                className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   activeTab === 'language'
-                    ? 'bg-white dark:bg-slate-900 text-primary shadow-2xs font-extrabold'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    ? 'bg-white text-blue-600 shadow-xs border border-slate-200/80 font-extrabold dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:text-white dark:border-transparent dark:shadow-[0_0_14px_rgba(139,92,246,0.45)]'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-white/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/60 font-semibold'
                 }`}
               >
-                <Globe className="w-3.5 h-3.5" />
+                <Globe className={`w-3.5 h-3.5 transition-colors ${activeTab === 'language' ? 'text-blue-600 dark:text-white' : 'text-slate-400 dark:text-slate-400'}`} />
                 <span>Language</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('currency')}
-                className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   activeTab === 'currency'
-                    ? 'bg-white dark:bg-slate-900 text-primary shadow-2xs font-extrabold'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    ? 'bg-white text-blue-600 shadow-xs border border-slate-200/80 font-extrabold dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:text-white dark:border-transparent dark:shadow-[0_0_14px_rgba(139,92,246,0.45)]'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-white/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/60 font-semibold'
                 }`}
               >
-                <Coins className="w-3.5 h-3.5" />
+                <Coins className={`w-3.5 h-3.5 transition-colors ${activeTab === 'currency' ? 'text-blue-600 dark:text-white' : 'text-slate-400 dark:text-slate-400'}`} />
                 <span>Currency</span>
               </button>
             </div>
 
             {/* TAB CONTENT: LANGUAGE (SIMPLE, NOT BIG, NO REDUNDANT TEXT) */}
             {activeTab === 'language' && (
-              <div className="space-y-0.5 pt-0.5">
+              <div className="space-y-1 pt-0.5">
                 {languages.map((lang) => {
                   const isSelected = currentLanguage.code === lang.code;
                   return (
@@ -149,21 +199,28 @@ export default function PreferencesSwitcher({
                         setIsOpen(false);
                         onCloseParent?.();
                       }}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-2 transition-all cursor-pointer text-xs ${
+                      className={`w-full text-start px-2.5 py-2 rounded-xl flex items-center justify-between gap-2.5 transition-all cursor-pointer text-xs ${
                         isSelected
-                          ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-blue-300 font-bold'
+                          ? 'bg-primary/10 text-primary dark:bg-purple-500/20 dark:text-purple-200 dark:border dark:border-purple-400/40 font-bold shadow-2xs'
                           : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 font-medium'
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm shrink-0 leading-none">{lang.flag}</span>
-                        <span className="truncate font-semibold">{lang.name}</span>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[10px] flex items-center justify-center shrink-0 border border-slate-200/70 dark:border-slate-700" dir="ltr">
+                          {lang.code.toUpperCase()}
+                        </span>
+                        <div className="flex flex-col text-start min-w-0">
+                          <span className="truncate font-bold text-xs">{lang.name}</span>
+                          {lang.nativeName && lang.nativeName !== lang.name && (
+                            <span className="text-[10px] text-slate-400 font-medium truncate">{lang.nativeName}</span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
                         {/* Direction Badge */}
                         <span
-                          className={`text-[8px] font-black uppercase px-1 py-0.2 rounded ${
+                          className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${
                             lang.dir === 'rtl'
                               ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/60'
                               : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
@@ -172,7 +229,7 @@ export default function PreferencesSwitcher({
                           {lang.dir === 'rtl' ? 'RTL' : 'LTR'}
                         </span>
 
-                        {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-primary dark:text-purple-300 shrink-0" />}
                       </div>
                     </button>
                   );
@@ -182,7 +239,7 @@ export default function PreferencesSwitcher({
 
             {/* TAB CONTENT: CURRENCY (SIMPLE, COMPACT SINGLE-LINE) */}
             {activeTab === 'currency' && (
-              <div className="space-y-0.5 pt-0.5">
+              <div className="space-y-1 pt-0.5">
                 {activeCurrencies.map((curr) => {
                   const isSelected = selectedCurrency.code === curr.code;
                   return (
@@ -194,23 +251,25 @@ export default function PreferencesSwitcher({
                         setIsOpen(false);
                         onCloseParent?.();
                       }}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-2 transition-all cursor-pointer text-xs ${
+                      className={`w-full text-start px-2.5 py-2 rounded-xl flex items-center justify-between gap-2.5 transition-all cursor-pointer text-xs ${
                         isSelected
-                          ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-blue-300 font-bold'
+                          ? 'bg-primary/10 text-primary dark:bg-purple-500/20 dark:text-purple-200 dark:border dark:border-purple-400/40 font-bold shadow-2xs'
                           : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 font-medium'
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-5 h-5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-[10px] flex items-center justify-center shrink-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200/70 dark:border-slate-700">
                           {curr.symbol}
                         </span>
-                        <span className="font-bold text-xs">{curr.code}</span>
-                        <span className="text-[11px] text-slate-400 truncate">
-                          {curr.name}
-                        </span>
+                        <div className="flex flex-col text-start min-w-0">
+                          <span className="font-bold text-xs">{curr.code}</span>
+                          <span className="text-[10px] text-slate-400 truncate">
+                            {curr.name}
+                          </span>
+                        </div>
                       </div>
 
-                      {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                      {isSelected && <Check className="w-3.5 h-3.5 text-primary dark:text-purple-300 shrink-0" />}
                     </button>
                   );
                 })}

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
-import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
+import { User, UserDocument, UserRole, SubscriptionPlan } from '../users/schemas/user.schema';
 import { Project, ProjectDocument } from '../projects/schemas/project.schema';
 import { RoomGeneration, RoomDocument } from '../../rooms/schemas/room.schema';
 import { ProductTool, ProductToolDocument } from '../uploads/schemas/product-tool.schema';
@@ -69,6 +69,7 @@ export class AdminService {
           }),
           this.roomModel.countDocuments({
             $or: [{ userId: uId }, { userId: String(uId) }],
+            status: { $ne: 'FAILED' },
           }),
         ]);
 
@@ -93,7 +94,33 @@ export class AdminService {
     }
 
     if (updateData.role) user.role = updateData.role;
-    if (updateData.subscriptionTier) (user as any).subscriptionTier = updateData.subscriptionTier;
+    if (updateData.subscriptionTier) {
+      const tierLower = updateData.subscriptionTier.toLowerCase().trim();
+      let targetPlan = SubscriptionPlan.FREE;
+      let targetTier = 'Free Plan';
+      let targetCode = 'free';
+
+      if (tierLower.includes('pro')) {
+        targetPlan = SubscriptionPlan.PRO;
+        targetTier = 'Pro Plan';
+        targetCode = 'pro';
+      } else if (tierLower.includes('starter')) {
+        targetPlan = SubscriptionPlan.STARTER;
+        targetTier = 'Starter Plan';
+        targetCode = 'starter';
+      }
+
+      user.plan = targetPlan;
+      user.subscriptionTier = targetTier;
+
+      try {
+        const plans = await this.subscriptionService.getPlans(true);
+        const match = plans.find((p) => p.code?.toLowerCase() === targetCode);
+        if (match && (match as any)._id) {
+          (user as any).subscriptionPlanId = (match as any)._id;
+        }
+      } catch (e) {}
+    }
 
     await user.save();
 

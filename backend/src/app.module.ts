@@ -39,6 +39,7 @@ import {
 import { CmsModule } from './modules/cms/cms.module';
 import { ImageProcessingModule } from './image-processing/image-processing.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     CmsModule,
     ImageProcessingModule,
     NotificationsModule,
+    ReviewsModule,
   ],
 })
 export class AppModule {}

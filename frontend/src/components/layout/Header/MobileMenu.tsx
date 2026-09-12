@@ -14,6 +14,7 @@ interface MobileMenuProps {
 }
 
 const PUBLIC_NAV_LINKS = [
+  { label: 'Designs', href: '/designs' },
   { label: 'AI Models', href: '/tools' },
   { label: 'Generate', href: '/generate', requireAuth: true },
   { label: 'Pricing', href: '/pricing' },
@@ -25,18 +26,17 @@ const DASHBOARD_NAV_LINKS = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'My Designs', href: '/designs' },
   { label: 'Projects', href: '/projects' },
-  { label: 'Generate', href: '/generate' },
+  { label: 'AI Tools', href: '/generate' },
   { label: 'Wishlist', href: '/wishlist' },
-  { label: 'Credits & Plans', href: '/billing' },
-  { label: 'Transactions', href: '/transactions' },
+  { label: 'Shopping List', href: '/shopping-list' },
+  { label: 'Credits & Plans', href: '/pricing' },
   { label: 'Profile Settings', href: '/profile' },
 ];
 
 export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const rawPathname = usePathname();
-  const pathname = rawPathname || '';
+  const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
@@ -59,18 +59,50 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
 
   const handleLinkClick = (e: React.MouseEvent, link: any) => {
     toggleMenu();
-    if (link.requireAuth) {
+    const isGenerateLink = link.href === '/generate' || String(link.href).startsWith('/generate');
+
+    if (link.requireAuth || isGenerateLink) {
       if (typeof window !== 'undefined') {
         const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
         if (!token) {
           e.preventDefault();
+          if (isGenerateLink) {
+            router.push('/pricing');
+            return;
+          }
           router.push(`/login?redirect=${encodeURIComponent(link.href)}`);
+          return;
+        }
+
+        if (isGenerateLink) {
+          try {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+              const u = JSON.parse(userStr);
+              if (typeof u?.credits === 'number' && u.credits <= 0) {
+                e.preventDefault();
+                router.push('/pricing');
+                return;
+              }
+            }
+          } catch (err) {}
         }
       }
     }
   };
 
-  const navLinks = DASHBOARD_NAV_LINKS;
+  const isDashboardRoute =
+    pathname !== '/' &&
+    (pathname.startsWith('/dashboard') ||
+     pathname.startsWith('/generate') ||
+     pathname.startsWith('/designs') ||
+     pathname.startsWith('/projects') ||
+     pathname.startsWith('/wishlist') ||
+     pathname.startsWith('/shopping-list') ||
+     pathname.startsWith('/profile') ||
+     pathname.startsWith('/pricing'));
+
+  const navLinks = isDashboardRoute ? DASHBOARD_NAV_LINKS : PUBLIC_NAV_LINKS;
 
   return (
     <div className="lg:hidden">
@@ -152,10 +184,10 @@ export default function MobileMenu({ onOpenSearch }: MobileMenuProps) {
                     </nav>
                   </div>
 
-                  {/* Bottom Theme & Studio Info */}
-                  <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+                  {/* Bottom Theme & Auth Options */}
+                  <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                     <ThemeToggle />
-                    <span className="text-xs font-bold text-slate-500 font-heading">RoomAI</span>
+                    <span className="text-xs font-bold text-slate-500 font-heading">RoomAI Studio</span>
                   </div>
                 </motion.div>
               </>

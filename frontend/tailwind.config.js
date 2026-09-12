@@ -18,6 +18,7 @@ module.exports = {
       colors: {
         primary: 'var(--primary)',
         secondary: 'var(--secondary)',
+        'secondary-lite': 'var(--secondary-lite, color-mix(in srgb, var(--secondary) 14%, transparent))',
         accent: 'var(--accent)',
         brand: {
           50: '#f0f4ff',

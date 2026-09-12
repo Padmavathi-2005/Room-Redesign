@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ProjectCategory {
   id: string;
@@ -160,7 +160,7 @@ export default function BeforeAfterShowcase() {
 
   return (
     <div
-      className="relative w-full max-w-2xl mx-auto py-2 group"
+      className="before-after-showcase relative w-full max-w-2xl mx-auto py-2 group"
       onMouseEnter={() => setIsInteracting(true)}
       onMouseLeave={() => setIsInteracting(false)}
     >
@@ -179,7 +179,7 @@ export default function BeforeAfterShowcase() {
           onTouchStart={() => setIsInteracting(true)}
           onTouchEnd={() => setIsInteracting(false)}
           onTouchMove={handleTouchMove}
-          className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-2xl cursor-ew-resize select-none"
+          className="before-after-frame relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-2xl cursor-ew-resize select-none"
         >
           {/* PREVIOUS PROJECT UNDERNEATH (Prevents any blank gap) */}
           {prevProject && (
@@ -280,15 +280,15 @@ export default function BeforeAfterShowcase() {
             className="absolute top-0 bottom-0 w-1 bg-white shadow-xl z-30 flex items-center justify-center -ml-0.5"
             style={{ left: `${sliderPosition}%` }}
           >
-            <div className="w-8 h-8 rounded-full bg-white text-slate-800 border border-slate-200 shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform">
+            <div className="before-after-handle w-8 h-8 rounded-full bg-white text-slate-800 border border-slate-200 shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform">
               <GripVertical className="w-4 h-4 text-[var(--primary)]" />
             </div>
           </div>
         </div>
 
-        {/* CATEGORY TABS WITH SMOOTH SLIDING ACTIVE PILL */}
-        <div className="pt-1">
-          <div className="relative flex items-center justify-between gap-1 sm:gap-2 p-1.5 bg-slate-200/60 rounded-2xl border border-slate-200/80 overflow-x-auto">
+        {/* DESKTOP CATEGORY TABS (UNTOUCHED FOR CHROME / DESKTOP VIEW) */}
+        <div className="hidden sm:block space-y-2 pt-1">
+          <div className="showcase-category-bar relative flex items-center justify-between gap-1 sm:gap-2 p-1.5 bg-slate-200/60 rounded-2xl border border-slate-200/80 overflow-x-auto">
             {CATEGORIES.map((cat, idx) => {
               const isActive = idx === categoryIndex;
               return (
@@ -312,20 +312,87 @@ export default function BeforeAfterShowcase() {
               );
             })}
           </div>
+
+          {/* SUBTLE PAGINATION INDICATORS (DESKTOP) */}
+          <div className="showcase-dots flex items-center justify-center gap-1.5 pt-1">
+            {CATEGORIES.map((cat, idx) => (
+              <button
+                key={cat.id}
+                onClick={() => selectCategory(idx)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  idx === categoryIndex ? 'w-5 bg-[var(--primary)]' : 'w-1.5 bg-slate-300'
+                }`}
+                aria-label={`Switch to ${cat.name}`}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* SUBTLE PAGINATION INDICATORS */}
-        <div className="flex items-center justify-center gap-1.5 pt-1">
-          {CATEGORIES.map((cat, idx) => (
+        {/* MOBILE COMPACT CAROUSEL WITH PREV/NEXT ARROWS (ZERO SCROLLBAR CLUTTER) */}
+        <div className="block sm:hidden pt-1.5 space-y-2">
+          <div className="showcase-mobile-bar flex items-center justify-between p-2 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-xs">
+            {/* Prev Arrow Button */}
             <button
-              key={cat.id}
-              onClick={() => selectCategory(idx)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                idx === categoryIndex ? 'w-5 bg-[var(--primary)]' : 'w-1.5 bg-slate-300'
-              }`}
-              aria-label={`Switch to ${cat.name}`}
-            />
-          ))}
+              type="button"
+              onClick={() => {
+                const prevIdx = (categoryIndex - 1 + CATEGORIES.length) % CATEGORIES.length;
+                selectCategory(prevIdx);
+              }}
+              className="w-8 h-8 rounded-xl bg-slate-100 active:bg-[var(--primary)] active:text-white hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all shrink-0 cursor-pointer"
+              aria-label="Previous category"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {/* Active Category Display */}
+            <div className="flex-1 px-3 text-center overflow-hidden">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={activeProject.id}
+                  initial={{ opacity: 0, y: direction > 0 ? 6 : -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: direction > 0 ? -6 : 6 }}
+                  transition={{ duration: 0.22 }}
+                  className="space-y-0.5"
+                >
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-[10px] font-extrabold uppercase tracking-wider">
+                    {activeProject.name}
+                  </span>
+                  <p className="text-xs font-bold text-slate-800 truncate">
+                    {activeProject.title}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Next Arrow Button */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextIdx = (categoryIndex + 1) % CATEGORIES.length;
+                selectCategory(nextIdx);
+              }}
+              className="w-8 h-8 rounded-xl bg-slate-100 active:bg-[var(--primary)] active:text-white hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all shrink-0 cursor-pointer"
+              aria-label="Next category"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Dots Indicator (Mobile) */}
+          <div className="flex items-center justify-center gap-1.5">
+            {CATEGORIES.map((cat, idx) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => selectCategory(idx)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  idx === categoryIndex ? 'w-6 bg-[var(--primary)]' : 'w-1.5 bg-slate-300 hover:bg-slate-400'
+                }`}
+                aria-label={`Go to ${cat.name}`}
+              />
+            ))}
+          </div>
         </div>
       </motion.div>
     </div>

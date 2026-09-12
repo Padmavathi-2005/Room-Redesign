@@ -9,6 +9,7 @@ import { AdminSearchProvider, useAdminSearch } from '@/context/AdminSearchContex
 import NotificationCenter from '@/components/ui/NotificationCenter';
 import PreferencesSwitcher from '@/components/ui/PreferencesSwitcher';
 import { useTranslation } from '@/context/LanguageContext';
+import ThemeToggle from '@/components/layout/Header/ThemeToggle';
 
 interface AdminUserProfile {
   name: string;
@@ -111,7 +112,7 @@ function AdminLayoutHeader({
           <Menu className="w-4 h-4" />
         </button>
 
-        <h2 className="text-sm sm:text-base lg:text-lg font-black text-slate-900 dark:text-white truncate font-heading leading-tight">
+        <h2 className="text-sm sm:text-base lg:text-lg font-black text-slate-900 dark:text-white truncate font-sans tracking-tight leading-tight">
           {getHeaderTitle()}
         </h2>
       </div>
@@ -119,14 +120,14 @@ function AdminLayoutHeader({
       <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
         {/* Search Input */}
         {pathname !== '/admin/analytics' && pathname !== '/admin/settings' && (
-          <div className="relative hidden md:block w-48 lg:w-72">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <div className="relative hidden md:block w-48 lg:w-72 group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400 transition-colors pointer-events-none" />
             <input
               type="text"
               placeholder={getSearchPlaceholder()}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[10px] text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400 transition-all shadow-2xs"
+              className="admin-header-search w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-[10px] text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30 placeholder:text-slate-400 transition-all shadow-2xs"
             />
           </div>
         )}
@@ -152,7 +153,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsMobileMenuOpen(false);
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('admin_user') || localStorage.getItem('user');
+      const stored = localStorage.getItem('admin_user');
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -311,7 +312,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F3F5FF] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex relative overflow-hidden">
+    <div className="admin-console-workspace min-h-screen bg-[#F3F5FF] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex relative overflow-hidden">
 
       {/* Mobile Drawer Overlay Backdrop */}
       {isMobileMenuOpen && (
@@ -390,16 +391,21 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Bottom Profile and Sign Out portion */}
-        <div className="p-3 border-t border-indigo-100/80 space-y-2 bg-indigo-50/30">
-          {/* Profile Card */}
-          <div className="flex items-center gap-2.5 p-2 rounded-[10px] bg-white border border-indigo-100 shadow-2xs">
-            <div className="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shrink-0 font-black text-xs shadow-xs">
-              AD
+        <div className="p-3 border-t border-indigo-100/80 dark:border-slate-800 space-y-2 bg-indigo-50/30 dark:bg-slate-900/40">
+          {/* Profile Card with Theme Toggle */}
+          <div className="flex items-center justify-between gap-2.5 p-2 rounded-[10px] bg-white dark:bg-slate-900 border border-indigo-100 dark:border-slate-800 shadow-2xs">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shrink-0 font-black text-xs shadow-xs">
+                AD
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-slate-900 dark:text-white truncate leading-tight font-heading">{adminUser.name}</p>
+                <p className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 truncate mt-0.5">{adminUser.email}</p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-black text-slate-900 truncate leading-tight font-heading">{adminUser.name}</p>
-              <p className="text-[10px] font-semibold text-indigo-600 truncate mt-0.5">{adminUser.email}</p>
-            </div>
+
+            {/* Theme Toggle Button (Light/Dark mode switcher) */}
+            <ThemeToggle size="sm" />
           </div>
 
           {/* Sign Out Button */}

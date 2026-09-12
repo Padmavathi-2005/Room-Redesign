@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 
 export type UserDocument = User & Document;
@@ -26,8 +26,8 @@ export class User {
   @Prop({ required: true, trim: true })
   firstName: string;
 
-  @Prop({ required: true, trim: true })
-  lastName: string;
+  @Prop({ required: false, trim: true, default: '' })
+  lastName?: string;
 
   @Prop({ required: true, unique: true, lowercase: true, trim: true, index: true })
   email: string;
@@ -50,8 +50,11 @@ export class User {
   @Prop({ type: String, enum: SubscriptionPlan, default: SubscriptionPlan.FREE, index: true })
   plan: SubscriptionPlan;
 
-  @Prop({ default: 'FREE' })
+  @Prop({ default: 'Free Plan' })
   subscriptionTier?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'SubscriptionPlanDefinition', default: null, index: true })
+  subscriptionPlanId?: Types.ObjectId;
 
   @Prop({ default: 0 })
   credits: number;

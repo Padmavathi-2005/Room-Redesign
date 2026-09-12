@@ -2,12 +2,132 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException,
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument, SubscriptionPlan } from '../users/schemas/user.schema';
-import { SubscriptionPlanDefinition, SubscriptionPlanDefinitionDocument } from './schemas/subscription-plan.schema';
+import { SubscriptionPlanDefinition, SubscriptionPlanDefinitionDocument, PlanTranslation } from './schemas/subscription-plan.schema';
 import { Setting, SettingDocument } from '../settings/schemas/setting.schema';
 import { CreditLedger, CreditLedgerDocument, CreditTransactionType } from './schemas/credit-ledger.schema';
 import { Invoice, InvoiceDocument } from './schemas/invoice.schema';
 import { NotificationsService } from '../notifications/notifications.service';
 import Stripe from 'stripe';
+
+const CANONICAL_PLAN_TRANSLATIONS: Record<string, PlanTranslation[]> = {
+  free: [
+    {
+      languageCode: 'en',
+      name: 'Free Plan',
+      description: 'Explore RoomAI design tools. Upgrade to receive generation credits.',
+      features: [
+        'Initial Credits 0',
+        'Day Validity Cycle 30',
+        'Standard AI Render Engines',
+        'Access to All Design Categories',
+        'Automatic 30-Day Cycle Renewal',
+      ],
+    },
+    {
+      languageCode: 'ar',
+      name: 'الخطة المجانية',
+      description: 'استكشف أدوات تصميم RoomAI. قم بالترقية إلى خطة مدفوعة للحصول على رصيد التوليد.',
+      features: [
+        'رصيد أولي 0 نقطة',
+        'دورة صلاحية 30 يوماً',
+        'محركات تصيير بالذكاء الاصطناعي قياسية',
+        'الوصول إلى كافة فئات وأقسام التصميم',
+        'تجديد تلقائي لدورة 30 يوماً',
+      ],
+    },
+    {
+      languageCode: 'fr',
+      name: 'Plan Gratuit',
+      description: 'Explorez les outils RoomAI. Passez à un forfait payant pour recevoir des crédits.',
+      features: [
+        'Crédits Initiaux 0',
+        'Cycle de Validité de 30 Jours',
+        'Moteurs de Rendu IA Standard',
+        'Accès à Toutes les Catégories de Design',
+        'Renouvellement Automatique de 30 Jours',
+      ],
+    },
+  ],
+  starter: [
+    {
+      languageCode: 'en',
+      name: 'Starter Plan',
+      description: 'Ideal for homeowners & design enthusiasts starting single-room projects.',
+      features: [
+        'Generation Credits / month 40',
+        'Day Billing Cycle 30',
+        '8K UHD Architectural Quality',
+        'All 12+ AI Design Tools',
+        'Requires Completed Payment',
+      ],
+    },
+    {
+      languageCode: 'ar',
+      name: 'خطة المبتدئين',
+      description: 'مثالية لأصحاب المنازل ومحبي التصميم لبدء مشاريع الغرف الفردية.',
+      features: [
+        'رصيد توليد شهرياً 40 نقطة',
+        'دورة فوترة مدتها 30 يوماً',
+        'جودة معمارية فائقة الدقة 8K UHD',
+        'كافة أدوات التصميم بالذكاء الاصطناعي 12+',
+        'تتطلب إتمام عملية الدفع',
+      ],
+    },
+    {
+      languageCode: 'fr',
+      name: 'Plan Débutant',
+      description: 'Idéal pour les propriétaires et passionnés de design débutant des projets simples.',
+      features: [
+        'Crédits de Génération / mois 40',
+        'Cycle de Facturation de 30 Jours',
+        'Qualité Architecturale 8K UHD',
+        'Tous les 12+ Outils de Design IA',
+        'Paiement Validé Requis',
+      ],
+    },
+  ],
+  pro: [
+    {
+      languageCode: 'en',
+      name: 'Pro Plan',
+      description: 'For professional interior designers & architects needing priority generation.',
+      features: [
+        'Generation Credits / month 100',
+        'Day Billing Cycle 30',
+        'Priority Processing Queue',
+        'Full 8K UHD Architectural Quality',
+        'Multi-Room Project Consistency',
+        'Priority Email & Chat Support',
+      ],
+    },
+    {
+      languageCode: 'ar',
+      name: 'خطة المحترفين',
+      description: 'للمصممين الداخليين والمعماريين المحترفين الذين يحتاجون لأولوية المعالجة والتوليد.',
+      features: [
+        'رصيد توليد شهرياً 100 نقطة',
+        'دورة فوترة مدتها 30 يوماً',
+        'أولوية في طابور المعالجة السريعة',
+        'جودة معمارية فائقة الدقة 8K UHD بالكامل',
+        'تناسق مشاريع الغرف المتعددة',
+        'دعم ذو أولوية عبر البريد والدردشة',
+      ],
+    },
+    {
+      languageCode: 'fr',
+      name: 'Plan Pro',
+      description: 'Pour les designers d’intérieur et architectes ayant besoin d’une génération prioritaire.',
+      features: [
+        'Crédits de Génération / mois 100',
+        'Cycle de Facturation de 30 Jours',
+        'File d’Attente Prioritaire',
+        'Qualité Architecturale Complète 8K UHD',
+        'Cohérence des Projets Multi-Pièces',
+        'Support Prioritaire E-mail et Chat',
+      ],
+    },
+  ],
+};
 
 @Injectable()
 export class SubscriptionService implements OnModuleInit {
@@ -40,16 +160,18 @@ export class SubscriptionService implements OnModuleInit {
             validityDays: 30,
             description: 'Explore RoomAI design tools. Upgrade to receive generation credits.',
             features: [
-              '0 Monthly Credits',
-              'Standard Render Engines',
-              'Access to Basic Design Categories',
-              'Upgrade Anytime',
+              'Initial Credits 0',
+              'Day Validity Cycle 30',
+              'Standard AI Render Engines',
+              'Access to All Design Categories',
+              'Automatic 30-Day Cycle Renewal',
             ],
             accessibleModels: ['interior-design', 'floor-plan-generator', 'exterior-design', 'landscape-design'],
             stripePriceIdMonthly: '',
             stripePriceIdAnnual: '',
             isPopular: false,
             isActive: true,
+            translations: CANONICAL_PLAN_TRANSLATIONS.free,
           },
           {
             name: 'Starter Plan',
@@ -60,17 +182,18 @@ export class SubscriptionService implements OnModuleInit {
             validityDays: 30,
             description: 'Ideal for homeowners & design enthusiasts starting single-room projects.',
             features: [
-              '40 Generation Credits / month',
-              '30-Day Billing Cycle',
+              'Generation Credits / month 40',
+              'Day Billing Cycle 30',
               '8K UHD Architectural Quality',
-              'All AI Design Tools',
-              'Direct Stripe Billing',
+              'All 12+ AI Design Tools',
+              'Requires Completed Payment',
             ],
             accessibleModels: ['interior-design', 'exterior-design', 'floor-plan-generator', 'sketch-to-render', 'landscape-design'],
             stripePriceIdMonthly: process.env.STRIPE_PRICE_STARTER_MONTHLY || 'price_starter_monthly',
             stripePriceIdAnnual: process.env.STRIPE_PRICE_STARTER_ANNUAL || 'price_starter_annual',
             isPopular: true,
             isActive: true,
+            translations: CANONICAL_PLAN_TRANSLATIONS.starter,
           },
           {
             name: 'Pro Plan',
@@ -82,23 +205,37 @@ export class SubscriptionService implements OnModuleInit {
             description: 'For professional interior designers & architects needing priority generation.',
             features: [
               '100 Generation Credits / month',
-              '30-Day Billing Cycle',
+              'Day Billing Cycle 30',
               'Priority Processing Queue',
               'Full 8K UHD Architectural Quality',
               'Multi-Room Project Consistency',
-              'Priority Support',
+              'Priority Email & Chat Support',
             ],
             accessibleModels: ['interior-design', 'exterior-design', 'landscape-design', 'floor-plan-generator', '3d-floor-plan', 'sketch-to-render'],
             stripePriceIdMonthly: process.env.STRIPE_PRICE_PRO_MONTHLY || 'price_pro_monthly',
             stripePriceIdAnnual: process.env.STRIPE_PRICE_PRO_ANNUAL || 'price_pro_annual',
             isPopular: false,
             isActive: true,
+            translations: CANONICAL_PLAN_TRANSLATIONS.pro,
           },
         ];
         await this.planModel.insertMany(defaultPlans);
         console.log('✅ Canonical Subscription Plans seeded successfully!');
       } else {
         console.log(`ℹ️ Subscription plans exist (${count} found). Preserving existing plan definitions.`);
+        // Ensure all existing canonical plans have their translations seeded/updated
+        for (const [code, translations] of Object.entries(CANONICAL_PLAN_TRANSLATIONS)) {
+          await this.planModel.updateOne(
+            {
+              code,
+              $or: [
+                { translations: { $exists: false } },
+                { translations: { $size: 0 } },
+              ],
+            },
+            { $set: { translations } },
+          ).exec();
+        }
       }
 
       // Clean up old mock test credit lots (PLAN $19, BONUS, REFUND) across all users in MongoDB
@@ -118,7 +255,65 @@ export class SubscriptionService implements OnModuleInit {
         description: { $regex: /PLAN \$19|Test Admin Grant/i },
       }).exec();
 
-      console.log('🧹 Cleaned up legacy mock credit test lots from MongoDB!');
+      // Backfill and ensure every user has only ONE active plan and correct subscriptionPlanId
+      const [freePlanDoc, starterPlanDoc, proPlanDoc] = await Promise.all([
+        this.planModel.findOne({ code: 'free' }).exec(),
+        this.planModel.findOne({ code: 'starter' }).exec(),
+        this.planModel.findOne({ code: 'pro' }).exec(),
+      ]);
+
+      if (freePlanDoc) {
+        await this.userModel.updateMany(
+          {
+            $or: [
+              { plan: SubscriptionPlan.FREE },
+              { plan: { $exists: false } },
+              { plan: null },
+              { subscriptionTier: { $regex: /free/i } },
+            ],
+            subscriptionPlanId: { $exists: false },
+          },
+          {
+            $set: {
+              plan: SubscriptionPlan.FREE,
+              subscriptionTier: 'Free Plan',
+              subscriptionPlanId: freePlanDoc._id,
+            },
+          },
+        ).exec();
+      }
+
+      if (starterPlanDoc) {
+        await this.userModel.updateMany(
+          {
+            plan: SubscriptionPlan.STARTER,
+            subscriptionPlanId: { $exists: false },
+          },
+          {
+            $set: {
+              subscriptionPlanId: starterPlanDoc._id,
+              subscriptionTier: 'Starter Plan',
+            },
+          },
+        ).exec();
+      }
+
+      if (proPlanDoc) {
+        await this.userModel.updateMany(
+          {
+            plan: SubscriptionPlan.PRO,
+            subscriptionPlanId: { $exists: false },
+          },
+          {
+            $set: {
+              subscriptionPlanId: proPlanDoc._id,
+              subscriptionTier: 'Pro Plan',
+            },
+          },
+        ).exec();
+      }
+
+      console.log('🧹 Cleaned up legacy mock credit test lots from MongoDB and synchronized user subscriptionPlanIds!');
     } catch (err: any) {
       console.error('Failed to initialize subscription plans & packs:', err.message);
     }
@@ -606,6 +801,7 @@ export class SubscriptionService implements OnModuleInit {
           $set: {
             plan: targetPlan,
             subscriptionTier,
+            subscriptionPlanId: planDef ? planDef._id : undefined,
             stripeCustomerId,
             stripeSubscriptionId,
             subscriptionPeriodStart: periodStart,
@@ -659,6 +855,7 @@ export class SubscriptionService implements OnModuleInit {
           $set: {
             plan: targetPlan,
             subscriptionTier,
+            subscriptionPlanId: planDef ? planDef._id : undefined,
             stripeCustomerId,
             stripeSubscriptionId,
             subscriptionPeriodStart: periodStart,
@@ -780,8 +977,10 @@ export class SubscriptionService implements OnModuleInit {
     const now = new Date();
     const isExpired = !user.subscriptionPeriodEnd || now > new Date(user.subscriptionPeriodEnd);
     if (isExpired) {
+      const freePlan = await this.planModel.findOne({ code: 'free' }).exec();
       user.plan = SubscriptionPlan.FREE;
       user.subscriptionTier = 'Free Plan';
+      if (freePlan) (user as any).subscriptionPlanId = freePlan._id;
       user.subscriptionStatus = 'cancelled';
       user.credits = 0;
       return user.save();
@@ -829,9 +1028,12 @@ export class SubscriptionService implements OnModuleInit {
     const autoRenew = user.autoRenew !== false && !user.cancelAtPeriodEnd;
     const cancelAtPeriodEnd = Boolean(user.cancelAtPeriodEnd);
 
+    const freePlan = isExpired ? await this.planModel.findOne({ code: 'free' }).exec() : null;
+
     return {
       plan: isExpired && user.plan !== SubscriptionPlan.FREE ? SubscriptionPlan.FREE : user.plan,
-      subscriptionTier: user.subscriptionTier || 'Free Plan',
+      subscriptionTier: isExpired && user.plan !== SubscriptionPlan.FREE ? 'Free Plan' : (user.subscriptionTier || 'Free Plan'),
+      subscriptionPlanId: isExpired && user.plan !== SubscriptionPlan.FREE ? freePlan?._id : (user as any).subscriptionPlanId,
       credits: activeCreditsSum,
       subscriptionStatus: user.subscriptionStatus || 'active',
       subscriptionPeriodStart: user.subscriptionPeriodStart,
@@ -1038,18 +1240,34 @@ export class SubscriptionService implements OnModuleInit {
       cancel_url: cancelUrl || 'http://localhost:3000/billing?checkout=cancel',
     };
 
-    if (priceId && priceId.startsWith('price_') && !priceId.includes('mock')) {
+    if (priceId && priceId.startsWith('price_') && !priceId.includes('mock') && !planDef.isDiscountActive) {
       sessionParams.line_items = [{ price: priceId, quantity: 1 }];
     } else {
-      const priceMonthly = billingCycle === 'annual' ? planDef.priceAnnual : planDef.priceMonthly;
-      const unitAmountCents = Math.round((billingCycle === 'annual' ? priceMonthly * 12 : priceMonthly) * 100);
+      let effectivePriceMonthly = planDef.priceMonthly;
+      let effectivePriceAnnual = planDef.priceAnnual;
+
+      if (planDef.isDiscountActive) {
+        if (planDef.discountPriceMonthly > 0 && planDef.discountPriceMonthly < planDef.priceMonthly) {
+          effectivePriceMonthly = planDef.discountPriceMonthly;
+        }
+        if (planDef.discountPriceAnnual > 0 && planDef.discountPriceAnnual < planDef.priceAnnual) {
+          effectivePriceAnnual = planDef.discountPriceAnnual;
+        }
+      }
+
+      const price = billingCycle === 'annual' ? effectivePriceAnnual : effectivePriceMonthly;
+      const unitAmountCents = Math.round((billingCycle === 'annual' ? price * 12 : price) * 100);
+      const planDesc = planDef.isDiscountActive
+        ? `${planDef.name} (${billingCycle} subscription - Promotional Discount Applied)`
+        : `${planDef.name} (${billingCycle} subscription)`;
+
       sessionParams.line_items = [
         {
           price_data: {
             currency: 'usd',
             product_data: {
               name: planDef.name,
-              description: `${planDef.name} (${billingCycle} subscription)`,
+              description: planDesc,
             },
             unit_amount: unitAmountCents,
             recurring: { interval: billingCycle === 'annual' ? 'year' : 'month' },
@@ -1064,6 +1282,41 @@ export class SubscriptionService implements OnModuleInit {
   }
 
   /**
+   * Helper to validate that promotional discount prices are strictly less than original prices
+   */
+  private validatePlanDiscounts(
+    planData: Partial<SubscriptionPlanDefinition>,
+    existingPlan?: SubscriptionPlanDefinition,
+  ) {
+    const isDiscountActive = planData.isDiscountActive ?? existingPlan?.isDiscountActive ?? false;
+    if (!isDiscountActive) return;
+
+    const priceMonthly = planData.priceMonthly ?? existingPlan?.priceMonthly ?? 0;
+    const priceAnnual = planData.priceAnnual ?? existingPlan?.priceAnnual ?? 0;
+
+    const discountMonthly = planData.discountPriceMonthly ?? existingPlan?.discountPriceMonthly ?? 0;
+    const discountAnnual = planData.discountPriceAnnual ?? existingPlan?.discountPriceAnnual ?? 0;
+
+    if (discountMonthly <= 0 && discountAnnual <= 0) {
+      throw new BadRequestException(
+        'At least one discount price (monthly or annual) must be greater than zero when discount is active.',
+      );
+    }
+
+    if (discountMonthly > 0 && priceMonthly > 0 && discountMonthly >= priceMonthly) {
+      throw new BadRequestException(
+        `Monthly discount price ($${discountMonthly}) must be strictly less than the original monthly price ($${priceMonthly}).`,
+      );
+    }
+
+    if (discountAnnual > 0 && priceAnnual > 0 && discountAnnual >= priceAnnual) {
+      throw new BadRequestException(
+        `Annual discount price ($${discountAnnual}) must be strictly less than the original annual price ($${priceAnnual}).`,
+      );
+    }
+  }
+
+  /**
    * Admin plan creation
    */
   async createPlan(planData: Partial<SubscriptionPlanDefinition>): Promise<SubscriptionPlanDefinition> {
@@ -1071,6 +1324,7 @@ export class SubscriptionService implements OnModuleInit {
     if (existing) {
       throw new BadRequestException(`Plan code "${planData.code}" already exists`);
     }
+    this.validatePlanDiscounts(planData);
     const newPlan = new this.planModel({
       ...planData,
       code: planData.code?.toLowerCase(),
@@ -1082,10 +1336,12 @@ export class SubscriptionService implements OnModuleInit {
    * Admin plan update
    */
   async updatePlan(id: string, planData: Partial<SubscriptionPlanDefinition>): Promise<SubscriptionPlanDefinition> {
-    const updated = await this.planModel.findByIdAndUpdate(id, planData, { new: true }).exec();
-    if (!updated) {
+    const existing = await this.planModel.findById(id).exec();
+    if (!existing) {
       throw new NotFoundException('Plan not found');
     }
+    this.validatePlanDiscounts(planData, existing);
+    const updated = await this.planModel.findByIdAndUpdate(id, planData, { new: true }).exec();
     return updated;
   }
 

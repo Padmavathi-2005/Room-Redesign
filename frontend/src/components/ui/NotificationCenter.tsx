@@ -96,7 +96,7 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2.5 rounded-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs border border-slate-200/60 dark:border-slate-700/60"
+        className="notification-bell-btn relative w-9 h-9 rounded-xl bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-primary hover:border-primary/40 transition-all cursor-pointer shadow-2xs border border-slate-200/90 dark:border-slate-800 flex items-center justify-center"
         title="Real-time Notifications"
       >
         <Bell className="w-4 h-4" />
@@ -200,12 +200,12 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-3 w-80 sm:w-96 rounded-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl z-50 overflow-hidden text-left font-sans"
+            className="notification-dropdown-menu absolute ltr:right-0 rtl:left-0 mt-3 w-80 sm:w-96 max-w-[calc(100vw-24px)] rounded-2xl bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-2 dark:border-[var(--primary)] shadow-2xl dark:shadow-[0_0_28px_-4px_color-mix(in_srgb,var(--primary)_45%,transparent),0_16px_40px_-5px_rgba(0,0,0,0.9)] z-50 overflow-hidden text-start font-sans backdrop-blur-2xl"
           >
             {/* Dropdown Header */}
-            <div className="p-4 bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="p-4 bg-slate-50/80 dark:bg-[#0E1424] border-b border-slate-100 dark:border-[var(--primary)]/25 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <Bell className="w-4 h-4 text-indigo-600 dark:text-[var(--primary)]" />
                 <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-sans">
                   {isAdmin ? 'Admin System Notifications' : 'Real-time Notifications'}
                 </h3>
@@ -213,7 +213,7 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer font-sans"
+                  className="text-[10px] font-bold text-indigo-600 dark:text-[var(--primary)] hover:underline flex items-center gap-1 cursor-pointer font-sans"
                 >
                   <CheckCheck className="w-3 h-3" />
                   <span>Mark all read</span>
@@ -222,10 +222,10 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
             </div>
 
             {/* Notifications List */}
-            <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-[var(--primary)]/15">
               {notifications.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 space-y-2">
-                  <Bell className="w-8 h-8 mx-auto opacity-30 text-indigo-500" />
+                  <Bell className="w-8 h-8 mx-auto opacity-30 text-indigo-500 dark:text-[var(--primary)]" />
                   <p className="text-xs font-bold text-slate-700 dark:text-slate-300 font-sans">No notifications yet</p>
                   <p className="text-[10px] text-slate-400 font-sans">Real-time alerts will appear here instantly!</p>
                 </div>
@@ -239,10 +239,10 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
                       className={`p-4 transition-colors cursor-pointer flex items-start gap-3 ${
                         n.isRead
                           ? 'opacity-70 bg-transparent'
-                          : 'bg-indigo-50/40 dark:bg-indigo-950/20'
+                          : 'bg-indigo-50/40 dark:bg-[var(--primary)]/15 dark:hover:bg-[var(--primary)]/25'
                       }`}
                     >
-                      <div className="p-2 rounded-[8px] bg-slate-100 dark:bg-slate-800 shrink-0">
+                      <div className="p-2 rounded-[8px] bg-slate-100 dark:bg-[#131A2E] dark:border dark:border-[var(--primary)]/20 shrink-0">
                         {getIcon(n.type)}
                       </div>
                       <div className="flex-1 space-y-1">
@@ -251,7 +251,7 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
                             {n.title}
                           </h4>
                           {!n.isRead && (
-                            <span className="w-2 h-2 rounded-full bg-indigo-600 shrink-0" />
+                            <span className="w-2 h-2 rounded-full bg-indigo-600 dark:bg-[var(--primary)] dark:shadow-[0_0_8px_var(--primary)] shrink-0" />
                           )}
                         </div>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium font-sans">
@@ -268,14 +268,14 @@ export default function NotificationCenter({ userId, isAdmin = false }: Notifica
             </div>
 
             {/* Dropdown Footer: View All Link */}
-            <div className="p-3 bg-slate-50/90 dark:bg-slate-800/90 border-t border-slate-100 dark:border-slate-800 text-center">
+            <div className="p-3 bg-slate-50/90 dark:bg-[#0E1424] border-t border-slate-100 dark:border-purple-500/25 text-center">
               <Link
                 href={isAdmin ? '/admin/notifications' : '/notifications'}
                 onClick={() => setIsOpen(false)}
-                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors inline-flex items-center gap-1.5 font-sans"
+                className="text-xs font-bold text-indigo-600 dark:text-purple-300 hover:text-indigo-700 dark:hover:text-purple-200 transition-colors inline-flex items-center gap-1.5 font-sans"
               >
                 <span>View All Notifications</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 text-indigo-600 dark:text-purple-400" />
               </Link>
             </div>
           </motion.div>

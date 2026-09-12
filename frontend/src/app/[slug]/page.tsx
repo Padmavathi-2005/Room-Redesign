@@ -12,7 +12,7 @@ interface PageProps {
 
 async function fetchCmsPage(slug: string) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
     const res = await fetch(`${apiUrl}/cms/slug/${slug}`, {
       cache: 'no-store',
     });
@@ -60,9 +60,9 @@ export default async function PublicCmsPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FCFCFD] text-slate-900 flex flex-col relative selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-[#FCFCFD] dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col relative selection:bg-indigo-500 selection:text-white transition-colors duration-300">
       {/* Blueprint background grid */}
-      <div className="fixed inset-0 blueprint-grid pointer-events-none opacity-30 z-0" />
+      <div className="fixed inset-0 blueprint-grid pointer-events-none opacity-30 dark:opacity-15 z-0" />
 
       {/* Main Navigation Header */}
       <Header />
@@ -83,7 +83,7 @@ export default async function PublicCmsPage({ params }: PageProps) {
                   return (
                     <section
                       key={block.id || idx}
-                      className="text-center space-y-6 py-16 px-6 sm:px-14 rounded-[10px] bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-900 text-white shadow-xl relative overflow-hidden border border-indigo-900/50"
+                      className="text-center space-y-6 py-16 px-6 sm:px-14 rounded-[14px] bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-900 text-white shadow-xl relative overflow-hidden border border-indigo-900/50 dark:border-indigo-700/40"
                     >
                       {/* Ambient background accent glows */}
                       <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -124,15 +124,15 @@ export default async function PublicCmsPage({ params }: PageProps) {
                 // 2. RICH TEXT BLOCK
                 if (block.type === 'text') {
                   return (
-                    <section key={block.id || idx} className="bg-white p-8 sm:p-12 rounded-[10px] border border-slate-200/80 shadow-2xs space-y-4">
+                    <section key={block.id || idx} className="bg-white dark:bg-slate-900/80 p-8 sm:p-12 rounded-[14px] border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
                       {block.content?.title && (
-                        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
                           <span className="w-1.5 h-6 rounded-full bg-indigo-600 inline-block" />
                           <span>{block.content.title}</span>
                         </h2>
                       )}
                       <div
-                        className="prose prose-slate max-w-none text-xs sm:text-sm text-slate-650 font-normal leading-relaxed space-y-3"
+                        className="prose prose-slate dark:prose-invert max-w-none text-xs sm:text-sm text-slate-650 dark:text-slate-300 font-normal leading-relaxed space-y-3"
                         dangerouslySetInnerHTML={{ __html: block.content?.body || '' }}
                       />
                     </section>
@@ -145,10 +145,10 @@ export default async function PublicCmsPage({ params }: PageProps) {
                     <section key={block.id || idx} className="space-y-8 text-center">
                       {block.content?.title && (
                         <div className="space-y-2">
-                          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                          <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-900/60">
                             Key Features & Capabilities
                           </span>
-                          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                             {block.content.title}
                           </h2>
                         </div>
@@ -157,13 +157,13 @@ export default async function PublicCmsPage({ params }: PageProps) {
                         {block.content?.items?.map((item: any, i: number) => (
                           <div
                             key={i}
-                            className="p-7 rounded-[10px] bg-white border border-slate-200/80 shadow-2xs text-left space-y-4 hover:border-indigo-300 hover:shadow-md transition-all group"
+                            className="p-7 rounded-[14px] bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-2xs text-left space-y-4 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md transition-all group"
                           >
-                            <div className="w-11 h-11 rounded-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center font-bold group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <div className="w-11 h-11 rounded-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center font-bold group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                               <CheckCircle2 className="w-5 h-5" />
                             </div>
-                            <h3 className="text-base font-black text-slate-900">{item.title}</h3>
-                            <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.description}</p>
+                            <h3 className="text-base font-black text-slate-900 dark:text-white">{item.title}</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">{item.description}</p>
                           </div>
                         ))}
                       </div>
@@ -176,17 +176,18 @@ export default async function PublicCmsPage({ params }: PageProps) {
                   return (
                     <section
                       key={block.id || idx}
-                      className="p-8 sm:p-12 rounded-[10px] bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-xl border border-indigo-700/40 relative overflow-hidden"
+                      className="p-8 sm:p-12 rounded-[16px] bg-gradient-to-r from-indigo-950 via-indigo-900 to-slate-950 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-2xl border border-indigo-700/40 hover:border-indigo-500/60 transition-all duration-500 relative overflow-hidden group/cta"
                     >
                       <div className="space-y-2 relative z-10">
-                        <h3 className="text-xl sm:text-2xl font-black tracking-tight">{block.content?.headline || 'Ready to Get Started?'}</h3>
-                        <p className="text-xs sm:text-sm text-indigo-200 font-medium max-w-xl">{block.content?.subhead || 'Transform floor plans and rooms in seconds.'}</p>
+                        <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white">{block.content?.headline || 'Ready to Get Started?'}</h3>
+                        <p className="text-xs sm:text-sm text-indigo-200/90 font-medium max-w-xl leading-relaxed">{block.content?.subhead || 'Transform floor plans and rooms in seconds.'}</p>
                       </div>
                       <Link
                         href={block.content?.buttonUrl || '/generate'}
-                        className="px-7 py-3.5 rounded-[10px] bg-white text-indigo-900 font-black text-xs shadow-lg hover:bg-slate-100 transition-all text-center shrink-0 hover:scale-[1.02] active:scale-[0.98] cursor-pointer uppercase tracking-wider relative z-10"
+                        className="cta-banner-primary-btn px-8 py-4 rounded-[10px] text-xs uppercase tracking-wider shrink-0 cursor-pointer relative z-10 group"
                       >
-                        {block.content?.buttonText || 'Get Started Now'}
+                        <span>{block.content?.buttonText || 'Get Started Now'}</span>
+                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                       </Link>
                     </section>
                   );
@@ -197,7 +198,7 @@ export default async function PublicCmsPage({ params }: PageProps) {
                   return (
                     <section key={block.id || idx} className="space-y-6">
                       {block.content?.title && (
-                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 text-center tracking-tight">
+                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white text-center tracking-tight">
                           {block.content.title}
                         </h2>
                       )}
@@ -205,13 +206,13 @@ export default async function PublicCmsPage({ params }: PageProps) {
                         {block.content?.items?.map((item: any, i: number) => (
                           <details
                             key={i}
-                            className="group p-5 sm:p-6 rounded-[10px] bg-white border border-slate-200/80 shadow-2xs font-semibold text-xs text-slate-900 [&_summary::-webkit-details-marker]:hidden cursor-pointer hover:border-indigo-200 transition-all"
+                            className="group p-5 sm:p-6 rounded-[14px] bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-2xs font-semibold text-xs text-slate-900 dark:text-white [&_summary::-webkit-details-marker]:hidden cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-500/40 transition-all"
                           >
-                            <summary className="flex items-center justify-between font-extrabold text-sm text-slate-900">
+                            <summary className="flex items-center justify-between font-extrabold text-sm text-slate-900 dark:text-white">
                               <span>{item.question}</span>
-                              <ChevronDown className="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform shrink-0 ml-4" />
+                              <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 group-open:rotate-180 transition-transform shrink-0 ml-4" />
                             </summary>
-                            <p className="mt-4 text-xs sm:text-sm text-slate-650 font-medium leading-relaxed border-t border-slate-100 pt-4">
+                            <p className="mt-4 text-xs sm:text-sm text-slate-650 dark:text-slate-300 font-medium leading-relaxed border-t border-slate-100 dark:border-slate-800 pt-4">
                               {item.answer}
                             </p>
                           </details>
@@ -225,7 +226,7 @@ export default async function PublicCmsPage({ params }: PageProps) {
                 if (block.type === 'image') {
                   return (
                     <section key={block.id || idx} className="space-y-3 text-center">
-                      <div className="overflow-hidden rounded-[10px] border border-slate-200/80 shadow-2xl bg-slate-950">
+                      <div className="overflow-hidden rounded-[14px] border border-slate-200/80 dark:border-slate-800 shadow-2xl bg-slate-950">
                         <img
                           src={block.content?.imageUrl}
                           alt={block.content?.caption || 'RoomAI Showcase'}
@@ -233,8 +234,8 @@ export default async function PublicCmsPage({ params }: PageProps) {
                         />
                       </div>
                       {block.content?.caption && (
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold border border-slate-200">
-                          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700">
+                          <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                           <span>{block.content.caption}</span>
                         </div>
                       )}
@@ -254,9 +255,9 @@ export default async function PublicCmsPage({ params }: PageProps) {
                 return null;
               })
             ) : (
-              <div className="p-12 text-center bg-white rounded-[10px] border border-slate-200/80 text-slate-500">
-                <h1 className="text-2xl font-black text-slate-900">{page.title}</h1>
-                <p className="text-xs text-slate-500 mt-2 font-medium">This custom page is currently empty.</p>
+              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-[14px] border border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+                <h1 className="text-2xl font-black text-slate-900 dark:text-white">{page.title}</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">This custom page is currently empty.</p>
               </div>
             )}
           </div>

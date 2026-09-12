@@ -1,7 +1,7 @@
 import { Injectable, ConflictException, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserDocument, UserRole } from './schemas/user.schema';
+import { User, UserDocument, UserRole, SubscriptionPlan } from './schemas/user.schema';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
@@ -24,9 +24,9 @@ export class UsersService implements OnModuleInit {
       $or: [{ email: 'admin@gmail.com' }, { role: UserRole.ADMIN }],
     });
 
-    // 2. Seed Default User Account: user@yopmail.com (Alex) with 0 initial credits
-    const defaultUserEmail = 'user@yopmail.com';
-    let existingUser = await this.userModel.findOne({
+    // 2. Ensure default demo user exists for immediate login
+    const defaultUserEmail = 'alex@yopmail.com';
+    const existingUser = await this.userModel.findOne({
       $or: [{ email: defaultUserEmail }, { email: 'client@yopmail.com' }, { email: 'test@yopmail.com' }]
     });
 
@@ -35,11 +35,12 @@ export class UsersService implements OnModuleInit {
         email: defaultUserEmail,
         password: '12345678',
         firstName: 'Alex',
-        lastName: '',
+        lastName: 'User',
         role: UserRole.USER,
         isActive: true,
         credits: 0,
-        subscriptionTier: 'FREE',
+        plan: SubscriptionPlan.FREE,
+        subscriptionTier: 'Free Plan',
       });
     } else {
       existingUser.email = defaultUserEmail;
@@ -58,7 +59,8 @@ export class UsersService implements OnModuleInit {
       ...userData,
       email: emailLower,
       credits: 0,
-      subscriptionTier: 'FREE',
+      plan: SubscriptionPlan.FREE,
+      subscriptionTier: 'Free Plan',
     });
     return newUser.save();
   }

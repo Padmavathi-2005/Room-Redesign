@@ -679,34 +679,38 @@ export default function AdminModelsPage() {
           )}
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
+            <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
               {[
                 { id: 'all', label: `${t('admin.models.allModels') || 'All Models'} (${models.length})` },
                 { id: 'interior', label: t('admin.models.interior') || 'Interior' },
                 { id: 'exterior', label: t('admin.models.exterior') || 'Exterior' },
                 { id: 'floorplan', label: t('admin.models.floorplan') || 'Floor Plan' },
                 { id: 'editing', label: t('admin.models.editing') || 'Editing' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setSelectedCategory(tab.id)}
-                  className={`px-4 py-2 text-xs font-bold rounded-[10px] whitespace-nowrap transition-all cursor-pointer ${
-                    selectedCategory === tab.id
-                      ? 'bg-purple-600 text-white shadow-md'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-purple-50 hover:text-purple-700'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+              ].map((tab) => {
+                const isSelected = selectedCategory === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSelectedCategory(tab.id)}
+                    data-selected={isSelected ? 'true' : 'false'}
+                    className={`admin-category-tab px-4 py-2 text-xs font-bold rounded-[10px] whitespace-nowrap transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-2 border-purple-400 dark:border-purple-300 shadow-md shadow-purple-600/30 font-black'
+                        : 'bg-white dark:bg-[#0E131F] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-500/70 hover:text-purple-700 dark:hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-[10px] overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-[#0E131F]/90 border border-slate-200 dark:border-slate-800/90 rounded-[10px] overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left rtl:text-right border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-xs font-extrabold text-slate-800 font-sans">
+                  <tr className="bg-slate-50/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 text-xs font-extrabold text-slate-800 dark:text-slate-200 font-sans">
                     <th className="py-3.5 px-4">{t('admin.models.modelSlug') || 'Model & Slug'}</th>
                     <th className="py-3.5 px-4">{t('admin.models.categoryBadge') || 'Category & Badge'}</th>
                     <th className="py-3.5 px-4">{t('admin.models.credits') || 'Credits'}</th>
@@ -716,16 +720,16 @@ export default function AdminModelsPage() {
                     <th className="py-3.5 px-4 text-right rtl:text-left">{t('admin.models.actions') || 'Actions'}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs text-slate-800 font-medium">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs text-slate-800 dark:text-slate-200 font-medium">
                   {filteredModels.length > 0 ? (
                     filteredModels.map((model) => (
-                      <tr key={model._id || model.slug} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={model._id || model.slug} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                         {/* Model & Slug */}
                         <td className="py-4 px-4">
-                          <div className="font-extrabold text-slate-900 font-heading text-sm">
+                          <div className="font-extrabold text-slate-900 dark:text-white font-heading text-sm">
                             {model.name}
                           </div>
-                          <code className="text-[10px] font-mono text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 mt-1 inline-block">
+                          <code className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.5 rounded border border-purple-150 dark:border-purple-800/70 mt-1 inline-block">
                             {model.slug}
                           </code>
                         </td>
@@ -733,11 +737,11 @@ export default function AdminModelsPage() {
                         {/* Category & Badge */}
                         <td className="py-4 px-4">
                           <div className="flex flex-col gap-1 items-start">
-                            <span className="capitalize font-bold px-2 py-0.5 rounded-md text-[10px] bg-slate-100 text-slate-700">
+                            <span className="capitalize font-bold px-2 py-0.5 rounded-md text-[10px] bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
                               {model.category}
                             </span>
                             {model.badge && (
-                              <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-purple-100 text-purple-800 border border-purple-200">
+                              <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800/70 shadow-2xs">
                                 {model.badge}
                               </span>
                             )}
@@ -746,7 +750,7 @@ export default function AdminModelsPage() {
 
                         {/* Credits */}
                         <td className="py-4 px-4">
-                          <span className="inline-flex items-center gap-1 font-bold text-slate-900 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-[10px] text-xs">
+                          <span className="inline-flex items-center gap-1 font-bold text-slate-900 dark:text-amber-300 px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/70 rounded-[10px] text-xs shadow-2xs">
                             <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
                             {model.creditCost}
                           </span>
@@ -755,7 +759,7 @@ export default function AdminModelsPage() {
                         {/* Original Image thumbnail */}
                         <td className="py-4 px-4">
                           <div className="flex flex-col items-center gap-2">
-                            <div className="w-20 h-14 rounded-[10px] overflow-hidden border border-slate-200 bg-slate-900 relative shadow-xs group">
+                            <div className="w-20 h-14 rounded-[10px] overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 relative shadow-xs group">
                               <img
                                 src={
                                   model.originalImage
@@ -774,12 +778,12 @@ export default function AdminModelsPage() {
                               </span>
                             </div>
 
-                            <label className="px-2.5 py-1 rounded-[10px] bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors">
+                            <label className="px-2.5 py-1 rounded-[10px] bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/70 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs">
                               {uploadingToolId === `${model._id || model.slug}-originalImage` ? (
                                 <span className="animate-pulse">{t('admin.models.uploading') || 'Uploading...'}</span>
                               ) : (
                                 <>
-                                  <Upload className="w-2.5 h-2.5 text-purple-600" />
+                                  <Upload className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
                                   <span>{t('admin.models.upload') || 'Upload'}</span>
                                 </>
                               )}
@@ -799,7 +803,7 @@ export default function AdminModelsPage() {
                         {/* Converted Image thumbnail */}
                         <td className="py-4 px-4">
                           <div className="flex flex-col items-center gap-2">
-                            <div className="w-20 h-14 rounded-[10px] overflow-hidden border border-slate-200 bg-slate-900 relative shadow-xs group">
+                            <div className="w-20 h-14 rounded-[10px] overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 relative shadow-xs group">
                               <img
                                 src={
                                   model.convertedImage
@@ -841,9 +845,47 @@ export default function AdminModelsPage() {
                           </div>
                         </td>
 
-                        {/* Description */}
-                        <td className="py-4 px-4 max-w-xs text-slate-600 text-[11px] leading-relaxed line-clamp-2">
-                          {model.description || 'No description configured.'}
+                        {/* Description & Supported Tags */}
+                        <td className="py-4 px-4 max-w-sm">
+                          <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed line-clamp-2">
+                            {model.description || 'No description configured.'}
+                          </p>
+
+                          {/* Supported Types, Styles or Prompt Template Tags */}
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            {/* Prompt Template Tag / Pill if available */}
+                            {model.defaultPromptTemplate && (
+                              <div
+                                title={`Default Prompt: "${model.defaultPromptTemplate}"`}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50/90 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/80 text-indigo-700 dark:text-indigo-300 text-[10px] font-semibold max-w-[220px] truncate shadow-2xs"
+                              >
+                                <Sparkles className="w-2.5 h-2.5 text-indigo-500 shrink-0" />
+                                <span className="truncate">{model.defaultPromptTemplate}</span>
+                              </div>
+                            )}
+
+                            {/* Supported Styles Tags */}
+                            {model.supportedStyles && model.supportedStyles.length > 0 && (
+                              model.supportedStyles.slice(0, 2).map((style, sIdx) => (
+                                <span
+                                  key={sIdx}
+                                  className="px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 border border-purple-200/70 dark:border-purple-800/70 text-purple-700 dark:text-purple-300 text-[9.5px] font-bold shadow-2xs"
+                                >
+                                  {style}
+                                </span>
+                              ))
+                            )}
+
+                            {/* Supported Room Types Count / Tag */}
+                            {model.supportedRoomTypes && model.supportedRoomTypes.length > 0 && (
+                              <span
+                                title={`Supported: ${model.supportedRoomTypes.join(', ')}`}
+                                className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 text-[9.5px] font-bold shadow-2xs"
+                              >
+                                {model.supportedRoomTypes.length} Rooms
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Actions */}
@@ -851,7 +893,7 @@ export default function AdminModelsPage() {
                           <div className="inline-flex items-center gap-1.5">
                             <button
                               onClick={() => setEditingModel(model)}
-                              className="px-3 py-1.5 rounded-[10px] bg-slate-100 hover:bg-purple-600 hover:text-white text-slate-700 text-xs font-extrabold inline-flex items-center gap-1 transition-all cursor-pointer"
+                              className="px-3 py-1.5 rounded-[10px] bg-slate-100 dark:bg-slate-800/90 hover:bg-purple-600 dark:hover:bg-purple-600 text-slate-700 dark:text-slate-200 hover:text-white dark:hover:text-white text-xs font-extrabold inline-flex items-center gap-1 transition-all cursor-pointer border border-slate-200 dark:border-slate-700/80 shadow-2xs"
                             >
                               <Edit2 className="w-3 h-3" />
                               <span>Edit</span>
@@ -860,7 +902,7 @@ export default function AdminModelsPage() {
                             {/* Dynamic Form Customizer button link */}
                             <button
                               onClick={() => startCustomizing(model)}
-                              className="px-3 py-1.5 rounded-[10px] bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-700 hover:border-purple-600 text-xs font-extrabold inline-flex items-center gap-1.5 transition-all cursor-pointer border border-purple-100"
+                              className="px-3 py-1.5 rounded-[10px] bg-purple-50 dark:bg-purple-950/70 hover:bg-purple-600 dark:hover:bg-purple-600 text-purple-700 dark:text-purple-300 hover:text-white dark:hover:text-white text-xs font-extrabold inline-flex items-center gap-1.5 transition-all cursor-pointer border border-purple-200 dark:border-purple-800/70 hover:border-purple-600 shadow-2xs"
                               title="Customize input fields & options"
                             >
                               <ClipboardList className="w-3.5 h-3.5" />

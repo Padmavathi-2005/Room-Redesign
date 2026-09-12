@@ -1234,6 +1234,30 @@ function GenerateStudioContent() {
 
   const handleSendRatingFeedback = async () => {
     setHasSubmittedRating(true);
+    try {
+      const stored = localStorage.getItem('user_design_reviews');
+      const existingReviews = stored ? JSON.parse(stored) : [];
+      const newReview = {
+        id: `rev-${Date.now()}`,
+        designId: `gen-${Date.now()}`,
+        title: `${selectedRoomType || 'Room'} ${selectedStyle || 'AI'} Redesign`,
+        image: generatedResult || (generatedImagesList.length > 0 ? generatedImagesList[0] : ''),
+        beforeImage: uploadedImage || '',
+        roomType: selectedRoomType || 'Living Room',
+        style: selectedStyle || 'Modern',
+        rating: userStarRating,
+        comment: userStarRating === 5
+          ? 'Outstanding lighting fidelity and photorealistic material textures!'
+          : userStarRating >= 4
+          ? 'Great spatial composition and color harmony.'
+          : 'Decent transformation, looking forward to next variations.',
+        createdAt: new Date().toISOString(),
+        generationUrl: `/generate?tool=${selectedToolId || 'interior-design'}&room=${encodeURIComponent(selectedRoomType || 'Living Room')}&style=${encodeURIComponent(selectedStyle || 'Modern')}`,
+      };
+      if (newReview.image) {
+        localStorage.setItem('user_design_reviews', JSON.stringify([newReview, ...existingReviews]));
+      }
+    } catch (e) {}
     toast.success(
       'Thank you! Your feedback helps us continuously improve AI model quality. Your data remains 100% private.',
       'Rating Submitted!',
@@ -1451,14 +1475,25 @@ function GenerateStudioContent() {
       }
     }
 
-  // Fetch and sync user credits balance on mount so real credit count (e.g. 60) is loaded immediately
+  // Fetch and sync user credits balance on mount so real credit count is loaded immediately
     if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token') || localStorage.getItem('admin_token') || '';
+      if (!token) {
+        router.replace('/pricing');
+        return;
+      }
+
       try {
         const stored = localStorage.getItem('user');
         if (stored) {
           const parsed = JSON.parse(stored);
           if (typeof parsed?.credits === 'number') {
             setUserCurrentCredits(parsed.credits);
+            if (parsed.credits <= 0) {
+              toast.info('You have 0 credits. Please choose a plan or top up to generate redesigns.', 'Credits Required');
+              router.replace('/pricing');
+              return;
+            }
           }
         }
       } catch (e) {}
@@ -1466,7 +1501,6 @@ function GenerateStudioContent() {
       const syncUserCredits = async () => {
         try {
           const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
-          const token = localStorage.getItem('token') || localStorage.getItem('admin_token') || '';
           if (token) {
             const res = await fetch(`${baseUrl}/users/me`, {
               headers: { Authorization: `Bearer ${token}` },
@@ -1476,6 +1510,10 @@ function GenerateStudioContent() {
               const freshCredits = data?.data?.user?.credits ?? data?.credits ?? data?.user?.credits;
               if (typeof freshCredits === 'number') {
                 setUserCurrentCredits(freshCredits);
+                if (freshCredits <= 0) {
+                  toast.info('You have 0 credits. Please choose a plan or top up to generate redesigns.', 'Credits Required');
+                  router.replace('/pricing');
+                }
               }
             }
           }
@@ -1671,9 +1709,10 @@ function GenerateStudioContent() {
       setCreditBlocked(true);
       setIsGenerating(false);
       toast.error(
-        `You need ${reqCredits} credits to generate this render. You currently have ${currentBalance} credits. Generation request was blocked.`,
-        'Insufficient Site Credits',
+        `You need ${reqCredits} credits to generate this render. You currently have ${currentBalance} credits. Redirecting to pricing...`,
+        'Insufficient Credits',
       );
+      router.push('/pricing');
       return; // STOP EXECUTION! DO NOT SEND GENERATION REQUEST!
     }
 
@@ -1884,15 +1923,15 @@ function GenerateStudioContent() {
 
   // SINGLE COMMON BACKGROUND CARD BOX WRAPPING ENTIRE STUDIO
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 sm:p-6 md:p-8 space-y-6 sm:space-y-8 shadow-2xs">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3 sm:p-6 md:p-8 space-y-6 sm:space-y-8 shadow-2xs w-full max-w-full min-w-0 overflow-hidden">
       {/* SLEEK COMPACT TOOL HEADER BAR (TOOL INFO ON LEFT, SWITCH TOOL + SPACE TABS ON RIGHT) */}
-      <div className="relative z-30 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/70 shadow-2xs">
+      <div className="relative z-30 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/70 shadow-2xs min-w-0 w-full">
         {/* LEFT SIDE: Active Tool Icon, Title & Description */}
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0">
             <ActiveToolIcon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div className="flex flex-col min-w-0 text-left">
+          <div className="flex flex-col min-w-0 text-start">
             <div className="flex items-center gap-1.5 flex-wrap">
               <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white font-heading truncate">
                 {getLocalizedToolName(activeToolConfig.id, activeDbTool?.name || activeToolConfig.name)}
@@ -1915,9 +1954,9 @@ function GenerateStudioContent() {
         </div>
 
         {/* RIGHT SIDE: Unified Studio Controls (Space Category Tabs + Switch Tool Button Side-by-Side) */}
-        <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-2xs shrink-0 relative overflow-visible">
+        <div className="flex items-center justify-between lg:justify-end gap-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-2xs w-full lg:w-auto min-w-0 relative">
           {/* Space Category Filter Pills */}
-          <div className="flex items-center gap-1 min-w-max overflow-x-auto [scrollbar-width:none]">
+          <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden min-w-0 flex-1 lg:flex-initial py-0.5">
             {(
               [
                 { id: 'interiors', label: t.generate?.interiors || 'Interiors' },
@@ -1970,7 +2009,7 @@ function GenerateStudioContent() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 z-[9999] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-2 space-y-1 max-h-96 overflow-y-auto"
+                  className="absolute ltr:right-0 rtl:left-0 lg:ltr:right-0 lg:rtl:left-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-32px)] z-[9999] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-2 space-y-1 max-h-96 overflow-y-auto"
                 >
                   <div className="px-2 py-1.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 font-heading">
@@ -2010,7 +2049,7 @@ function GenerateStudioContent() {
                             handleSelectTool(tItem.id);
                             setIsToolPickerOpen(false);
                           }}
-                          className={`w-full text-left p-2 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-heading ${
+                          className={`w-full text-start p-2 rounded-lg flex items-center gap-2.5 transition-all cursor-pointer font-heading ${
                             isSelected
                               ? 'bg-primary text-white shadow-2xs font-extrabold'
                               : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold'
@@ -2043,10 +2082,10 @@ function GenerateStudioContent() {
       </div>
 
       {/* MAIN STUDIO TWO-COLUMN LAYOUT (INSIDE SINGLE COMMON BACKGROUND) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-1">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start pt-1 w-full min-w-0">
 
         {/* LEFT COLUMN: AI Render Interactive Viewer */}
-        <div className="lg:col-span-7 space-y-5">
+        <div className="lg:col-span-7 space-y-5 min-w-0 w-full">
 
           {/* BONUS CREDITS HIGHLIGHT ANNOUNCEMENT BANNER */}
           {highlightCredits && (
@@ -2196,10 +2235,11 @@ function GenerateStudioContent() {
 
                 <div
                   ref={sliderContainerRef}
+                  dir="ltr"
                   className={`relative w-full rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 select-none shadow-md group flex items-center justify-center transition-all duration-300 ${
                     studioFitMode === 'cover'
-                      ? 'h-[460px] sm:h-[560px] md:h-[600px]'
-                      : 'min-h-[460px] sm:min-h-[520px] md:min-h-[560px] max-h-[75vh]'
+                      ? 'h-[320px] xs:h-[380px] sm:h-[500px] md:h-[600px]'
+                      : 'min-h-[300px] xs:min-h-[360px] sm:min-h-[480px] md:min-h-[560px] max-h-[75vh]'
                   }`}
                   style={
                     studioFitMode === 'contain'
@@ -2288,12 +2328,12 @@ function GenerateStudioContent() {
                 />
 
                 {/* STATUS BADGES */}
-                <div className="absolute top-4 left-4 px-3 py-1 bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-extrabold rounded-lg pointer-events-none z-20">
+                <div className="absolute top-3 sm:top-4 start-3 sm:start-4 px-2.5 sm:px-3 py-1 bg-slate-900/80 backdrop-blur-md text-white text-[10px] sm:text-[11px] font-extrabold rounded-lg pointer-events-none z-20">
                   {uploadedImage
                     ? (t.generate?.beforeUpload || 'Before (Your Upload)')
                     : (t.generate?.beforeSample || 'Before (Sample)')}
                 </div>
-                <div className="absolute top-4 right-4 px-3 py-1 bg-primary text-white font-extrabold text-[11px] rounded-lg shadow-md pointer-events-none flex items-center gap-1 z-10 max-w-[220px]">
+                <div className="absolute top-3 sm:top-4 end-3 sm:end-4 px-2.5 sm:px-3 py-1 bg-primary text-white font-extrabold text-[10px] sm:text-[11px] rounded-lg shadow-md pointer-events-none flex items-center gap-1 z-10 max-w-[180px] sm:max-w-[220px]">
                   <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300 shrink-0" />
                   <span className="truncate">
                     {generatedResult
@@ -2323,9 +2363,9 @@ function GenerateStudioContent() {
             );
           })()}
 
-          {/* 4 PRESET SAMPLE PREVIEW CARDS GALLERY (POPULATES EMPTY LEFT COLUMN SPACE BEFORE GENERATION) */}
+          {/* 4 PRESET SAMPLE PREVIEW CARDS GALLERY (HIDDEN ON MOBILE VIEW AS REQUESTED) */}
           {!generatedResult && !isGenerating && (
-            <div className="p-4 rounded-[10px] bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
+            <div className="hidden md:block p-4 rounded-[10px] bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -2625,13 +2665,13 @@ function GenerateStudioContent() {
                                       <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium">
                                         Generation was not started and no external generation request was sent.
                                       </p>
-                                      <a
-                                        href="/billing"
+                                      <Link
+                                        href="/pricing"
                                         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold text-xs shadow-sm hover:opacity-95 transition-all cursor-pointer font-heading"
                                       >
                                         <CreditCard className="w-4 h-4" />
-                                        <span>Buy Credits</span>
-                                      </a>
+                                        <span>View Pricing &amp; Plans</span>
+                                      </Link>
                                     </div>
                                   ) : status === 'failed' ? (
                                     <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 space-y-2.5">
@@ -2753,7 +2793,7 @@ function GenerateStudioContent() {
         </div>
 
         {/* RIGHT COLUMN: Start Redesigning Your Space Form (WHITE THEME AS REQUESTED) */}
-        <div className="lg:col-span-5 space-y-5">
+        <div className="lg:col-span-5 space-y-5 min-w-0 w-full">
 
 
 
@@ -3632,7 +3672,7 @@ function GenerateStudioContent() {
                   <label className="text-xs font-bold text-slate-800 font-heading">
                     {t.generate?.budgetLevel || 'Budget Level'}
                   </label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {BUDGET_LEVELS.map((b) => (
                       <button
                         key={b.slug}

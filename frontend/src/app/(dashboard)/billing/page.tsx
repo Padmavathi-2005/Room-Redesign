@@ -17,11 +17,13 @@ import {
   Check,
   AlertCircle,
   Receipt,
+  ArrowRight,
+  PauseCircle,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useCurrency } from '@/context/CurrencyContext';
-import { useTranslation } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { CreditTokenIcon } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 
@@ -48,6 +50,13 @@ interface SubscriptionData {
   creditLots?: CreditLot[];
 }
 
+export interface PlanTranslation {
+  languageCode: string;
+  name: string;
+  description: string;
+  features: string[];
+}
+
 interface DatabasePlan {
   name: string;
   code: string;
@@ -56,6 +65,7 @@ interface DatabasePlan {
   credits: number;
   description: string;
   features?: string[];
+  translations?: PlanTranslation[];
 }
 
 
@@ -96,7 +106,7 @@ export default function BillingPage() {
   const { formatPrice } = useCurrency();
   const { toast } = useToast();
   const { settings } = useSettings();
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useLanguage();
 
   const [token, setToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -170,12 +180,15 @@ export default function BillingPage() {
             const parsed = JSON.parse(storedUserStr);
             const updatedUser = {
               ...parsed,
-              plan: u.plan ? u.plan.toUpperCase() : parsed.plan,
+              plan: u.plan ? u.plan.toLowerCase() : parsed.plan,
+              subscriptionTier: u.subscriptionTier || parsed.subscriptionTier,
+              subscriptionPlanId: u.subscriptionPlanId || parsed.subscriptionPlanId,
               credits: u.credits ?? parsed.credits,
             };
             localStorage.setItem('user', JSON.stringify(updatedUser));
             setCurrentUser(updatedUser);
             window.dispatchEvent(new Event('storage'));
+            window.dispatchEvent(new Event('user-updated'));
             window.dispatchEvent(new Event('user-credits-updated'));
           } catch (e) {}
         }
@@ -338,8 +351,36 @@ export default function BillingPage() {
 
   const creditsRemaining = subscription?.credits ?? currentUser?.credits ?? 0;
 
+  const getLocalizedPlan = (plan: DatabasePlan) => {
+    const langCode = currentLanguage?.code || 'en';
+    const translation = plan.translations?.find((tr) => tr.languageCode === langCode);
+    return {
+      name: translation?.name || plan.name,
+      description: translation?.description || plan.description,
+      features: (translation?.features && translation.features.length > 0) ? translation.features : (plan.features || []),
+    };
+  };
+
+  const formatLocalizedDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return t?.billing?.cards?.notApplicable || 'N/A';
+    try {
+      const locale = currentLanguage?.code === 'ar' ? 'ar-EG' : currentLanguage?.code === 'fr' ? 'fr-FR' : 'en-US';
+      return new Date(dateStr).toLocaleDateString(locale, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return new Date(dateStr).toLocaleDateString();
+    }
+  };
+
+  const activePlanDef = plans.find((p) => p.code.toLowerCase() === activePlanCode.toLowerCase());
+  const localizedActivePlan = activePlanDef ? getLocalizedPlan(activePlanDef) : null;
+  const activePlanDisplayName = localizedActivePlan?.name || (activePlanCode.charAt(0).toUpperCase() + activePlanCode.slice(1) + ' Plan');
+
   return (
-    <div className="space-y-8 max-w-6xl mx-auto py-6 px-4 text-left font-sans animate-in fade-in duration-300">
+    <div className="space-y-8 max-w-6xl mx-auto py-6 px-4 text-start font-sans animate-in fade-in duration-300">
       {/* VERIFYING SESSION — slim top banner only, toast handles full message */}
       {isVerifyingSession && (
         <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-xs font-semibold flex items-center gap-2.5">
@@ -383,42 +424,42 @@ export default function BillingPage() {
       {/* PAGE HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-5">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-extrabold uppercase tracking-wider border border-primary/20 mb-2">
-            <Sparkles className="w-3 h-3 text-primary" />
-            {t?.billing?.headerBadge || 'AI Credits & Billing Center'}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-100/90 dark:bg-purple-950/70 text-purple-700 dark:text-purple-200 text-[11px] font-extrabold uppercase tracking-wider border border-purple-300/80 dark:border-purple-500/50 dark:shadow-[0_0_15px_rgba(168,85,247,0.35)] mb-2.5 backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-300" />
+            <span>{t?.billing?.headerBadge || 'AI Credits & Billing Center'}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 font-heading tracking-tight">
-            {t?.billing?.title || 'Subscription Plans & Credits'}
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-heading tracking-tight">
+            {t?.billing?.title || 'Credits, Payments & Invoices'}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-            {t?.billing?.subtitle || 'Server-authoritative subscription status, plan upgrades, and generation credits balance.'}
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1.5 max-w-2xl leading-relaxed">
+            {t?.billing?.subtitle || 'Server-authoritative subscription status, audit credit ledger, and verified Stripe invoices.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => router.push('/checkout?plan=starter')}
-            className="px-4 py-2.5 rounded-2xl bg-primary hover:opacity-90 text-white text-xs font-bold shadow-md flex items-center gap-2 transition-all cursor-pointer font-heading"
+            className="billing-header-upgrade-btn group px-4 sm:px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:via-indigo-500 hover:to-purple-500 text-white text-xs font-black tracking-wide uppercase shadow-lg shadow-purple-600/30 hover:shadow-xl hover:shadow-purple-600/50 border border-purple-400/40 hover:border-purple-300/80 flex items-center gap-2 transition-all duration-200 cursor-pointer hover:scale-[1.03] active:scale-[0.98]"
           >
-            <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-            <span>{t?.billing?.upgradePlan || 'Upgrade Plan'}</span>
+            <Zap className="w-4 h-4 text-amber-300 fill-amber-300 group-hover:rotate-12 group-hover:scale-110 transition-transform duration-200" />
+            <span className="font-sans">{t?.billing?.upgradePlan || 'Upgrade Plan'}</span>
           </button>
           <Link
             href="/transactions"
-            className="px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer font-heading shadow-xs"
+            className="billing-header-action-btn btn-transactions group px-4 py-2.5 rounded-2xl bg-white dark:bg-[#0D121F]/90 border border-slate-200/90 dark:border-slate-700/80 hover:border-emerald-500/80 dark:hover:border-emerald-500/80 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-slate-700 dark:text-slate-100 hover:text-emerald-700 dark:hover:text-emerald-300 text-xs font-extrabold transition-all duration-200 flex items-center gap-2 cursor-pointer shadow-xs hover:shadow-md hover:shadow-emerald-500/20 hover:-translate-y-0.5"
           >
-            <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>{t?.transactionsPage?.title || 'Transactions'}</span>
+            <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-200" />
+            <span className="font-sans">{t?.transactionsPage?.title || 'Transactions'}</span>
           </Link>
           {subscription?.stripeCustomerId && (
             <button
               onClick={handleOpenStripePortal}
               disabled={actionLoading === 'portal'}
-              className="px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer font-heading"
+              className="billing-header-action-btn btn-portal group px-4 py-2.5 rounded-2xl bg-white dark:bg-[#0D121F]/90 border border-slate-200/90 dark:border-slate-700/80 hover:border-indigo-500/80 dark:hover:border-indigo-500/80 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-slate-700 dark:text-slate-100 hover:text-indigo-700 dark:hover:text-indigo-300 text-xs font-extrabold transition-all duration-200 flex items-center gap-2 cursor-pointer shadow-xs hover:shadow-md hover:shadow-indigo-500/20 hover:-translate-y-0.5 disabled:opacity-50"
             >
-              <CreditCard className="w-4 h-4 text-primary" />
-              <span>{t?.billing?.stripePortal || 'Stripe Portal'}</span>
-              <ExternalLink className="w-3 h-3 text-slate-400" />
+              <CreditCard className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-200" />
+              <span className="font-sans">{t?.billing?.stripePortal || 'Stripe Portal'}</span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
             </button>
           )}
         </div>
@@ -428,35 +469,40 @@ export default function BillingPage() {
       <div className="space-y-8 animate-in fade-in duration-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* CARD 1: ACTIVE PLAN */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
+            <div className="billing-stat-card billing-stat-plan p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 hover:!border-purple-500/80 dark:hover:!border-[#A855F7] hover:shadow-xl dark:hover:shadow-[0_0_28px_-2px_rgba(168,85,247,0.5),0_16px_36px_rgba(0,0,0,0.8)] hover:-translate-y-1 space-y-4 transition-all duration-300 group cursor-default">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-300 font-heading">
                   {t?.billing?.cards?.currentPlan || 'Current Plan'}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-extrabold uppercase tracking-wider border border-primary/20">
+                <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-200 text-[10px] font-extrabold uppercase tracking-wider border border-purple-300/80 dark:border-purple-400/50 dark:shadow-[0_0_14px_rgba(168,85,247,0.4)] group-hover:scale-105 transition-transform duration-200">
                   {activePlanCode.toUpperCase()}
                 </span>
               </div>
               <div>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-slate-100 font-heading capitalize">
-                  {(t?.billing?.cards?.planSuffix || '{plan} Plan').replace('{plan}', activePlanCode.charAt(0).toUpperCase() + activePlanCode.slice(1))}
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-slate-100 font-heading group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors duration-200">
+                  {activePlanDisplayName}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {t?.billing?.cards?.status || 'Status'}: <span className="font-bold text-emerald-600 capitalize">{subscription?.subscriptionStatus || t?.billing?.cards?.active || 'Active'}</span>
+                  {t?.billing?.cards?.status || 'Status'}:{' '}
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {subscription?.subscriptionStatus === 'active' || !subscription?.subscriptionStatus
+                      ? (t?.profilePage?.activeStatus || t?.billing?.cards?.active || 'Active')
+                      : subscription.subscriptionStatus}
+                  </span>
                 </p>
               </div>
             </div>
 
             {/* CARD 2: AVAILABLE CREDITS */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
+            <div className="billing-stat-card billing-stat-credits p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 hover:!border-amber-500/80 dark:hover:!border-[#F59E0B] hover:shadow-xl dark:hover:shadow-[0_0_28px_-2px_rgba(245,158,11,0.5),0_16px_36px_rgba(0,0,0,0.8)] hover:-translate-y-1 space-y-4 transition-all duration-300 group cursor-default">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-300 font-heading">
                   {t?.billing?.cards?.creditBalance || 'Credit Balance'}
                 </span>
                 <CreditTokenIcon size="sm" />
               </div>
               <div>
-                <div className="flex items-center gap-1.5 text-2xl font-black text-slate-900 dark:text-slate-100 font-heading">
+                <div className="flex items-center gap-1.5 text-2xl font-black text-slate-900 dark:text-slate-100 font-heading group-hover:text-amber-500 dark:group-hover:text-amber-300 transition-colors duration-200">
                   <CreditTokenIcon size="sm" />
                   <span>{creditsRemaining}</span>
                 </div>
@@ -467,18 +513,16 @@ export default function BillingPage() {
             </div>
 
             {/* CARD 3: BILLING CYCLE */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
+            <div className="billing-stat-card billing-stat-renewal p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 hover:!border-indigo-500/80 dark:hover:!border-[#818CF8] hover:shadow-xl dark:hover:shadow-[0_0_28px_-2px_rgba(129,140,248,0.5),0_16px_36px_rgba(0,0,0,0.8)] hover:-translate-y-1 space-y-4 transition-all duration-300 group cursor-default">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 font-heading">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-300 font-heading">
                   {t?.billing?.cards?.nextRenewal || 'Next Renewal'}
                 </span>
-                <Calendar className="w-4 h-4 text-primary" />
+                <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform duration-200" />
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 font-heading">
-                  {subscription?.subscriptionPeriodEnd
-                    ? new Date(subscription.subscriptionPeriodEnd).toLocaleDateString(undefined, { dateStyle: 'medium' })
-                    : (t?.billing?.cards?.notApplicable || 'N/A')}
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 font-heading group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors duration-200">
+                  {formatLocalizedDate(subscription?.subscriptionPeriodEnd)}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   {(t?.billing?.cards?.daysRemaining || '{count} days remaining').replace('{count}', String(subscription?.daysRemaining ?? 0))}
@@ -489,115 +533,206 @@ export default function BillingPage() {
 
 
           {/* PRICING CARDS GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <section id="pricing" className="subscription-plans-section w-full">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4 items-stretch">
             {plans.map((plan) => {
+              const isPopular = Boolean(
+                (plan as any).popular ||
+                (plan as any).isPopular ||
+                plan.code?.toLowerCase() === 'starter'
+              );
               const isCurrent = activePlanCode.toLowerCase() === plan.code.toLowerCase();
               const price = isAnnual ? plan.priceAnnual : plan.priceMonthly;
+              const loc = getLocalizedPlan(plan);
+
+              const planRanks: Record<string, number> = { free: 0, starter: 1, pro: 2 };
+              const userRank = planRanks[activePlanCode.toLowerCase()] ?? 0;
+              const thisRank = planRanks[plan.code.toLowerCase()] ?? 0;
+              const isUpgrade = userRank >= 0 && thisRank > userRank;
+              const planShortName = loc.name.replace(' Plan', '');
 
               return (
                 <div
                   key={plan.code}
-                  className={`p-6 rounded-3xl border transition-all duration-300 flex flex-col justify-between space-y-6 ${
-                    isCurrent
-                      ? 'bg-white dark:bg-slate-900 border-primary shadow-xl ring-2 ring-primary/30'
-                      : 'bg-white/80 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-primary/40'
+                  data-popular={isPopular ? 'true' : 'false'}
+                  data-plan={plan.code.toLowerCase()}
+                  style={
+                    isPopular
+                      ? {
+                          border: '2px solid #8B5CF6',
+                          borderColor: '#8B5CF6',
+                          backgroundColor: '#0D121F',
+                          boxShadow: '0 0 25px -2px rgba(139, 92, 246, 0.55), 0 16px 36px rgba(0, 0, 0, 0.8)',
+                        }
+                      : undefined
+                  }
+                  className={`relative p-6 sm:p-7 rounded-3xl transition-all duration-300 flex flex-col justify-between space-y-6 ${
+                    isPopular
+                      ? 'popular-pricing-card billing-popular-card bg-white dark:bg-[#0D121F]/98 backdrop-blur-2xl !border-2 !border-[#8B5CF6] dark:!border-[#8B5CF6] scale-105 z-10 !shadow-[0_0_25px_-2px_rgba(139,92,246,0.55),0_16px_36px_rgba(0,0,0,0.8)] dark:!shadow-[0_0_25px_-2px_rgba(139,92,246,0.55),0_16px_36px_rgba(0,0,0,0.8)]'
+                      : `pricing-plan-card plan-card-${plan.code.toLowerCase()} bg-white/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 hover:!border-[#8B5CF6] dark:hover:!border-[#8B5CF6] shadow-xl shadow-slate-200/50 dark:shadow-black/40 hover:shadow-2xl hover:scale-[1.02] cursor-pointer`
                   }`}
                 >
+                  {/* Floating Most Popular Badge */}
+                  {isPopular && (
+                    <div className="popular-pricing-badge absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[11px] font-extrabold uppercase tracking-wider rounded-full shadow-md z-20 flex items-center gap-1.5 whitespace-nowrap">
+                      <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />
+                      <span>Most Popular</span>
+                    </div>
+                  )}
+
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-extrabold text-slate-900 dark:text-slate-100 font-heading">
-                        {plan.name}
+                      <h3 className="text-xl font-extrabold text-slate-900 dark:text-white font-heading">
+                        {loc.name}
                       </h3>
                       {isCurrent && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-extrabold uppercase tracking-wider">
+                        <span className="px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
                           {t?.billing?.pricingSection?.currentPlanBadge || 'Current Plan'}
                         </span>
                       )}
                     </div>
 
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                      {plan.description}
+                      {loc.description}
                     </p>
 
-                    <div className="pt-2">
-                      <span className="text-3xl font-black text-slate-900 dark:text-slate-100 font-heading">
+                    {/* Price */}
+                    <div className="pt-2 flex items-baseline gap-1.5">
+                      <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-heading tracking-tight" dir="ltr">
                         {formatPrice(price)}
                       </span>
-                      <span className="text-xs font-semibold text-slate-400"> {t?.billing?.pricingSection?.perMonth || '/ month'}</span>
+                      <span className="text-xs font-semibold text-slate-400">
+                        {t?.billing?.pricingSection?.perMonth || '/ month'}
+                      </span>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                      {(plan.features || []).map((feat, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
-                          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                    {/* Sleek Modern Credit Token Badge (Like Home Page) */}
+                    <div className="p-3 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-300/60 dark:border-amber-700/50 flex items-center justify-start gap-3 shadow-xs">
+                      <div className="p-1.5 rounded-xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center shrink-0">
+                        <CreditTokenIcon size="sm" />
+                      </div>
+                      <div className="text-left">
+                        <div className="text-xs font-black text-slate-900 dark:text-white font-heading tracking-tight">
+                          {plan.credits || 0} Generation Credits
+                        </div>
+                        <div className="text-[9px] font-extrabold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                          AI Tokens Allocated
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+                      {(loc.features || []).map((feat: string, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2.5 text-xs font-medium text-slate-600 dark:text-slate-300">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 stroke-[2.5]" />
                           <span>{feat}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <button
-                    disabled={isCurrent}
-                    onClick={() => handleSelectPlan(plan.code)}
-                    className={`w-full py-3 px-4 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
-                      isCurrent
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
-                        : 'bg-primary hover:opacity-90 text-white shadow-md shadow-primary/20'
-                    }`}
-                  >
-                    {isCurrent ? (t?.billing?.pricingSection?.activePlanBtn || 'Active Plan') : (t?.billing?.pricingSection?.upgradeToBtn || 'Upgrade to {name}').replace('{name}', plan.name)}
-                  </button>
+                  {/* Dynamic CTA Button Matching Home Page */}
+                  <div className="pt-4">
+                    {(() => {
+                      if (isCurrent) {
+                        return (
+                          <button
+                            disabled
+                            className="w-full py-3.5 px-6 rounded-2xl text-xs font-extrabold tracking-wide uppercase bg-primary text-white shadow-lg shadow-primary/25 border border-primary/30 cursor-default flex items-center justify-center gap-2"
+                          >
+                            <Check className="w-4 h-4 shrink-0 stroke-[2.5]" />
+                            <span>{t?.billing?.pricingSection?.currentPlanBadge || 'Current Plan'}</span>
+                          </button>
+                        );
+                      }
+
+                      if (plan.code.toLowerCase() === 'free') {
+                        return (
+                          <button
+                            onClick={() => handleSelectPlan(plan.code)}
+                            className="w-full py-3.5 px-6 rounded-2xl text-xs font-extrabold tracking-wide uppercase transition-all duration-200 focus:outline-none cursor-pointer border-2 border-primary text-primary bg-white dark:bg-slate-900 hover:bg-primary/5 dark:hover:bg-primary/10 shadow-xs hover:shadow-md hover:scale-[1.01] flex items-center justify-center gap-2"
+                          >
+                            <span>Select {loc.name}</span>
+                          </button>
+                        );
+                      }
+
+                      if (isUpgrade) {
+                        return (
+                          <button
+                            onClick={() => handleSelectPlan(plan.code)}
+                            className="w-full py-3.5 px-6 rounded-2xl text-xs font-extrabold tracking-wide uppercase transition-all duration-200 focus:outline-none cursor-pointer bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-[1.02] flex items-center justify-center gap-2"
+                          >
+                            <span>Upgrade to {planShortName}</span>
+                            <ArrowRight className="w-4 h-4 shrink-0 stroke-[2.5]" />
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <button
+                          onClick={() => handleSelectPlan(plan.code)}
+                          className="w-full py-3.5 px-6 rounded-2xl text-xs font-extrabold tracking-wide uppercase transition-all duration-200 focus:outline-none cursor-pointer bg-primary hover:opacity-90 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-[1.02] flex items-center justify-center gap-2"
+                        >
+                          <span>Select {loc.name}</span>
+                          <ArrowRight className="w-4 h-4 shrink-0 stroke-[2.5]" />
+                        </button>
+                      );
+                    })()}
+                  </div>
                 </div>
               );
             })}
-          </div>
+            </div>
+          </section>
 
-          {/* AUTO-RENEWAL & SUBSCRIPTION MANAGEMENT BANNER (MOVED TO END OF PAGE AS REQUESTED) */}
+          {/* AUTO-RENEWAL & SUBSCRIPTION MANAGEMENT BANNER (PREMIUM INTERACTIVE CARD) */}
           {activePlanCode !== 'free' && (
-            <div className="mt-8 p-6 rounded-[10px] bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/90 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 border border-blue-200/80 dark:border-indigo-500/30 text-slate-900 dark:text-white shadow-sm space-y-4 font-sans">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1.5 max-w-xl">
-                  <div className="flex items-center gap-2">
+            <div className="billing-autorenew-banner group relative mt-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-blue-50/70 via-purple-50/50 to-indigo-50/70 dark:bg-[#0D121F]/98 backdrop-blur-2xl border border-slate-200/90 dark:border-purple-500/30 hover:border-purple-400/80 dark:hover:border-[#8B5CF6] text-slate-900 dark:text-white shadow-md hover:shadow-2xl dark:shadow-[0_0_20px_-4px_rgba(0,0,0,0.6)] dark:hover:shadow-[0_0_30px_-4px_rgba(139,92,246,0.45),0_16px_40px_rgba(0,0,0,0.85)] transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+              {/* Corner Ambient Glow Light Flare */}
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-60 h-60 rounded-full bg-purple-500/10 dark:bg-purple-600/15 blur-3xl pointer-events-none group-hover:bg-purple-500/25 group-hover:scale-125 transition-all duration-500" />
+
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-3 max-w-2xl">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <span
-                      className={`px-3 py-0.5 rounded-full text-[10px] uppercase font-black tracking-wider border flex items-center gap-1.5 ${
+                      className={`px-3 py-1 rounded-full text-[10px] uppercase font-black tracking-wider border flex items-center gap-1.5 transition-all duration-200 ${
                         subscription?.cancelAtPeriodEnd || subscription?.autoRenew === false
-                          ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/40'
-                          : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/40'
+                          ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                          : 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
                       }`}
                     >
                       {subscription?.cancelAtPeriodEnd || subscription?.autoRenew === false ? (
                         <>
-                          <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                          <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                           <span>{t?.billing?.autoRenew?.pausedBadge || 'Auto-Renewal Paused'}</span>
                         </>
                       ) : (
                         <>
-                          <RefreshCw className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          <RefreshCw className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:rotate-180 transition-transform duration-700" />
                           <span>{t?.billing?.autoRenew?.activeBadge || 'Auto-Renewal Active'}</span>
                         </>
                       )}
                     </span>
 
-                    <span className="text-xs font-bold text-blue-700 dark:text-slate-300 bg-blue-100/80 dark:bg-white/10 px-2.5 py-0.5 rounded-full capitalize border border-blue-200/60 dark:border-transparent">
-                      {(t?.billing?.cards?.planSuffix || '{plan} Plan').replace('{plan}', activePlanCode.charAt(0).toUpperCase() + activePlanCode.slice(1))}
+                    <span className="text-xs font-extrabold text-purple-700 dark:text-purple-300 bg-purple-100/90 dark:bg-purple-950/70 px-3 py-1 rounded-full border border-purple-200/80 dark:border-purple-500/40 shadow-xs">
+                      {activePlanDisplayName}
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white">
+                  <h3 className="text-xl sm:text-2xl font-black font-heading text-slate-900 dark:text-white tracking-tight group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors duration-200">
                     {subscription?.cancelAtPeriodEnd || subscription?.autoRenew === false
                       ? (t?.billing?.autoRenew?.pausedTitle || 'Subscription Scheduled for Expiry')
                       : (t?.billing?.autoRenew?.activeTitle || 'Automatic Subscription Renewal')}
                   </h3>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
                     {subscription?.cancelAtPeriodEnd || subscription?.autoRenew === false ? (
                       <>
                         {(t?.billing?.autoRenew?.pausedDesc || 'Auto-renewal is currently paused. Your remaining credits and full plan features stay active until {date}, and your payment method will not be charged.')
                           .split('{date}')[0]}
                         <strong className="text-amber-700 dark:text-amber-300 font-mono">
-                          {subscription?.subscriptionPeriodEnd
-                            ? new Date(subscription.subscriptionPeriodEnd).toLocaleDateString(undefined, { dateStyle: 'medium' })
-                            : (t?.billing?.cancelModal?.dateFallback || 'period end')}
+                          {formatLocalizedDate(subscription?.subscriptionPeriodEnd)}
                         </strong>
                         {(t?.billing?.autoRenew?.pausedDesc || 'Auto-renewal is currently paused. Your remaining credits and full plan features stay active until {date}, and your payment method will not be charged.')
                           .split('{date}')[1] || ''}
@@ -607,9 +742,7 @@ export default function BillingPage() {
                         {(t?.billing?.autoRenew?.activeDesc || 'Your subscription will automatically renew on {date}. You can pause or turn off auto-renewal anytime without losing remaining credits.')
                           .split('{date}')[0]}
                         <strong className="text-emerald-700 dark:text-emerald-300 font-mono">
-                          {subscription?.subscriptionPeriodEnd
-                            ? new Date(subscription.subscriptionPeriodEnd).toLocaleDateString(undefined, { dateStyle: 'medium' })
-                            : (t?.billing?.cancelModal?.dateFallback || 'next billing date')}
+                          {formatLocalizedDate(subscription?.subscriptionPeriodEnd)}
                         </strong>
                         {(t?.billing?.autoRenew?.activeDesc || 'Your subscription will automatically renew on {date}. You can pause or turn off auto-renewal anytime without losing remaining credits.')
                           .split('{date}')[1] || ''}
@@ -624,7 +757,7 @@ export default function BillingPage() {
                       type="button"
                       disabled={isAutoRenewUpdating}
                       onClick={handleResumeAutoRenew}
-                      className="px-4 py-2.5 rounded-[10px] bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                      className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 hover:shadow-[0_0_24px_rgba(16,185,129,0.5)] transition-all duration-200 flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                     >
                       {isAutoRenewUpdating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                       <span>{t?.billing?.autoRenew?.reactivate || 'Reactivate Auto-Renewal'}</span>
@@ -634,8 +767,9 @@ export default function BillingPage() {
                       type="button"
                       disabled={isAutoRenewUpdating}
                       onClick={() => setIsCancelModalOpen(true)}
-                      className="px-4 py-2.5 rounded-[10px] bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+                      className="px-5 py-3 rounded-2xl bg-white hover:bg-rose-50/80 dark:bg-slate-800/80 dark:hover:bg-rose-950/40 text-slate-700 hover:text-rose-600 dark:text-slate-200 dark:hover:text-rose-300 border border-slate-300/80 hover:border-rose-400 dark:border-slate-700 dark:hover:border-rose-500/50 text-xs font-extrabold transition-all duration-200 flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-[0_0_16px_rgba(244,63,94,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                     >
+                      <PauseCircle className="w-4 h-4 text-slate-400 group-hover:text-rose-500 transition-colors" />
                       <span>{t?.billing?.autoRenew?.cancel || 'Cancel Auto-Renewal'}</span>
                     </button>
                   )}
@@ -656,7 +790,7 @@ export default function BillingPage() {
         showCloseButton={true}
       >
         {upgradePlanModal && (
-          <div className="space-y-6 text-left font-sans">
+          <div className="space-y-6 text-start font-sans">
             {/* Current vs Upgraded Side-by-Side Comparison */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
@@ -747,7 +881,7 @@ export default function BillingPage() {
 
             {/* NEED CREDITS RIGHT NOW ALTERNATIVE CALLOUT */}
             <div className="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <div className="space-y-0.5 text-left">
+              <div className="space-y-0.5 text-start">
                 <p className="font-extrabold text-amber-950 dark:text-amber-200 font-sans">
                   {t?.billing?.upgradeModal?.boosterCalloutTitle || "Just need extra credits for today's project?"}
                 </p>
@@ -804,7 +938,7 @@ export default function BillingPage() {
         title={t?.billing?.cancelModal?.title || 'Pause Subscription Auto-Renewal?'}
         maxWidth="md"
       >
-        <div className="space-y-5 text-slate-700 dark:text-slate-200 text-xs font-medium text-left">
+        <div className="space-y-5 text-slate-700 dark:text-slate-200 text-xs font-medium text-start">
           <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 flex items-start gap-3">
             <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
@@ -812,10 +946,8 @@ export default function BillingPage() {
               <p className="mt-1 text-xs leading-relaxed">
                 {(t?.billing?.cancelModal?.noLossDesc || 'Turning off auto-renewal stops upcoming charges. Your remaining {credits} credits and full {plan} Plan features will remain 100% active until {date}.')
                   .replace('{credits}', String(creditsRemaining))
-                  .replace('{plan}', activePlanCode.charAt(0).toUpperCase() + activePlanCode.slice(1))
-                  .replace('{date}', subscription?.subscriptionPeriodEnd
-                    ? new Date(subscription.subscriptionPeriodEnd).toLocaleDateString(undefined, { dateStyle: 'medium' })
-                    : (t?.billing?.cancelModal?.dateFallback || 'your billing period ends'))}
+                  .replace('{plan}', activePlanDisplayName)
+                  .replace('{date}', formatLocalizedDate(subscription?.subscriptionPeriodEnd))}
               </p>
             </div>
           </div>

@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Heart } from 'lucide-react';
+
 import Logo from './Logo';
 import DesktopMenu from './DesktopMenu';
 import MobileMenu from './MobileMenu';
@@ -12,7 +14,6 @@ import ProfileDropdown from './ProfileDropdown';
 import SearchModal from './SearchModal';
 import ThemeToggle from './ThemeToggle';
 import NotificationCenter from '@/components/ui/NotificationCenter';
-import { useTranslation } from '@/context/LanguageContext';
 
 interface UserProfileData {
   name: string;
@@ -27,9 +28,7 @@ interface UserProfileData {
 
 export default function Header() {
   const router = useRouter();
-  const rawPathname = usePathname();
-  const pathname = rawPathname || '';
-  const { t } = useTranslation();
+  const pathname = usePathname();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -38,6 +37,23 @@ export default function Header() {
   const [user, setUser] = useState<UserProfileData | null>(null);
 
   const headerRef = useRef<HTMLDivElement>(null);
+  const isAppRoute = Boolean(
+    pathname?.startsWith('/generate') ||
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/projects') ||
+    pathname?.startsWith('/designs') ||
+    pathname?.startsWith('/pricing') ||
+    pathname?.startsWith('/profile') ||
+    pathname?.startsWith('/wishlist') ||
+    pathname?.startsWith('/shopping-list') ||
+    pathname?.startsWith('/checkout') ||
+    pathname?.startsWith('/billing') ||
+    pathname?.startsWith('/settings') ||
+    pathname?.startsWith('/notifications') ||
+    pathname?.startsWith('/ai-tools')
+  );
+
+  const isAppDashboard = Boolean((user && pathname !== '/') || isAppRoute);
 
   // Observe modal status on body & DOM
   useEffect(() => {
@@ -115,10 +131,26 @@ export default function Header() {
         if (res.ok) {
           const data = await res.json();
           const freshCredits = data.credits ?? parsed.credits ?? 0;
-          if (freshCredits !== parsed.credits) {
-            const updatedLocalUser = { ...parsed, credits: freshCredits };
+          const freshPlan = data.plan ? String(data.plan).toLowerCase() : parsed.plan;
+          const freshTier = data.subscriptionTier || parsed.subscriptionTier;
+          const freshPlanId = data.subscriptionPlanId || parsed.subscriptionPlanId;
+
+          if (
+            freshCredits !== parsed.credits ||
+            freshPlan !== parsed.plan ||
+            freshTier !== parsed.subscriptionTier ||
+            freshPlanId !== parsed.subscriptionPlanId
+          ) {
+            const updatedLocalUser = {
+              ...parsed,
+              credits: freshCredits,
+              plan: freshPlan,
+              subscriptionTier: freshTier,
+              subscriptionPlanId: freshPlanId,
+            };
             localStorage.setItem('user', JSON.stringify(updatedLocalUser));
-            setUser((prev) => (prev ? { ...prev, credits: freshCredits } : null));
+            setUser((prev) => (prev ? { ...prev, credits: freshCredits, plan: freshPlan, subscriptionTier: freshTier, subscriptionPlanId: freshPlanId } : null));
+            window.dispatchEvent(new Event('user-updated'));
           }
         } else if (res.status === 401) {
           // Token is invalid or expired! Clean up stale auth state immediately
@@ -160,18 +192,44 @@ export default function Header() {
     };
   }, [checkAuthUser, pathname]);
 
+  const isScrolledRef = useRef(false);
+
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
+      const scrollPos = Math.max(
+        window.scrollY || 0,
+        window.pageYOffset || 0,
+        document.documentElement?.scrollTop || 0,
+        document.body?.scrollTop || 0
+      );
+      const nextScrolled = scrollPos > 15;
+      if (nextScrolled !== isScrolledRef.current) {
+        isScrolledRef.current = nextScrolled;
+        setIsScrolled(nextScrolled);
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    handleScroll();
+    const interval = setInterval(handleScroll, 100);
+    window.addEventListener('scroll', handleScroll, { capture: true, passive: true });
+    document.addEventListener('scroll', handleScroll, { capture: true, passive: true });
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('scroll', handleScroll, { capture: true });
+      document.removeEventListener('scroll', handleScroll, { capture: true });
+    };
   }, []);
+
+  // Reset any lingering modal states on route navigation
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.removeAttribute('data-modal-open');
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      setIsModalActive(false);
+    }
+  }, [pathname]);
 
   const handleSignOut = () => {
     if (typeof window !== 'undefined') {
@@ -193,27 +251,95 @@ export default function Header() {
     return null;
   }
 
+  // 1. DASHBOARD & USER APP PAGES: ATTACHED NORMAL NAVBAR (NO BOTTOM LINE)
+  if (isAppDashboard) {
+    return (
+      <>
+        <header
+          id="global-header"
+          ref={headerRef}
+          className="header-dashboard fixed top-0 left-0 right-0 w-full z-50 bg-white/95 dark:bg-[#0D121F]/95 shadow-sm dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-xl pointer-events-auto border-none"
+        >
+          <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 h-[64px] flex items-center justify-between">
+            {/* LEFT SIDE: RoomAI Brand Logo */}
+            <div className="shrink-0 flex items-center gap-3">
+              <Logo />
+            </div>
+
+            {/* CENTER: Desktop Navigation Menu */}
+            <div className="hidden md:flex flex-1 justify-center">
+              <DesktopMenu />
+            </div>
+
+            {/* RIGHT SIDE: User Actions & Profile */}
+            <div className="hidden lg:flex items-center gap-4 xl:gap-5 shrink-0">
+              {user && <NotificationCenter userId={(user as any)?._id || (user as any)?.id} />}
+              <ThemeToggle />
+
+              {user ? (
+                <ProfileDropdown user={user} onSignOut={handleSignOut} />
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/login"
+                    className="btn-sign-in text-xs font-semibold px-4 py-2 rounded-xl text-slate-700 dark:text-slate-200 hover:text-primary transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="btn-get-started text-xs font-semibold px-5 py-2 rounded-[10px] bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white shadow-md shadow-purple-500/20 hover:shadow-lg transition-all whitespace-nowrap"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* MOBILE MENU CONTROLS */}
+            <div className="flex items-center gap-2 md:hidden">
+              <SearchButton onClick={() => setIsSearchOpen(true)} />
+              <MobileMenu onOpenSearch={() => setIsSearchOpen(true)} />
+            </div>
+          </div>
+        </header>
+
+        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      </>
+    );
+  }
+
+  // 2. PUBLIC HOMEPAGE, LOGIN, SIGNUP: FLOATING CARD-FEEL CAPSULE NAVBAR
   return (
     <>
       <header
         id="global-header"
         ref={headerRef}
-        className="fixed top-0 left-0 right-0 w-full z-50 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/90 dark:border-slate-800 shadow-xs backdrop-blur-xl pointer-events-auto"
+        style={{
+          top: isScrolled ? '10px' : '16px',
+          transition: 'top 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+        className="fixed left-0 right-0 z-50 w-full px-4 sm:px-6 lg:px-8 flex justify-center pointer-events-none"
       >
-        <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-4 lg:px-6 h-[64px] flex items-center justify-between">
-          {/* LEFT SIDE: RoomAI Brand Logo */}
-          <div className="shrink-0 flex items-center gap-3">
-            <Logo />
-          </div>
+        <div
+          id="header-capsule"
+          style={{
+            height: isScrolled ? '64px' : '74px',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+          className={`header-capsule-card pointer-events-auto relative w-full max-w-7xl px-4 sm:px-8 lg:px-10 flex items-center justify-between rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/60 dark:border-2 dark:border-[var(--primary)] backdrop-blur-xl ${
+            isScrolled
+              ? 'shadow-[0_6px_20px_-2px_rgba(37,99,235,0.08),0_2px_8px_-1px_rgba(99,102,241,0.05)] dark:shadow-[0_0_24px_-2px_var(--primary),0_8px_25px_-2px_rgba(0,0,0,0.8)]'
+              : 'shadow-[0_4px_16px_-2px_rgba(37,99,235,0.05),0_2px_6px_-1px_rgba(99,102,241,0.03)] dark:shadow-[0_0_20px_-3px_var(--primary),0_4px_16px_-2px_rgba(0,0,0,0.6)]'
+          }`}
+        >
+          <Logo />
 
-          {/* CENTER: Desktop Navigation Menu */}
-          <div className="hidden md:flex flex-1 justify-center">
-            <DesktopMenu />
-          </div>
+          <DesktopMenu />
 
-          {/* RIGHT SIDE: User Actions & Profile */}
-          <div className="hidden lg:flex items-center gap-2.5 xl:gap-3.5 shrink-0">
+          <div className="hidden lg:flex items-center gap-4 xl:gap-5">
             {user && <NotificationCenter userId={(user as any)?._id || (user as any)?.id} />}
+
             <ThemeToggle />
 
             {user ? (
@@ -222,22 +348,21 @@ export default function Header() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/login"
-                  className="text-xs font-semibold px-4 py-2 rounded-xl text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                  className="btn-sign-in text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-primary transition-colors px-3 py-2"
                 >
-                  {t('nav.signIn')}
+                  Sign In
                 </Link>
                 <Link
-                  href="/signup"
-                  className="text-xs font-semibold px-5 py-2 rounded-[10px] bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white shadow-md shadow-purple-500/20 hover:shadow-lg transition-all whitespace-nowrap"
+                  href="/login?mode=signup"
+                  className="btn-get-started px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white text-xs font-extrabold shadow-md shadow-purple-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  {t('nav.getStarted')}
+                  Get Started
                 </Link>
               </div>
             )}
           </div>
 
-          {/* MOBILE MENU CONTROLS */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <SearchButton onClick={() => setIsSearchOpen(true)} />
             <MobileMenu onOpenSearch={() => setIsSearchOpen(true)} />
           </div>

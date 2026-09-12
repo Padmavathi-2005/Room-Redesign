@@ -2,11 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldAlert, Plus, Edit2, Trash2, CheckCircle2, AlertCircle, ChevronRight, Save } from 'lucide-react';
+import { ShieldAlert, Plus, Edit2, Trash2, CheckCircle2, AlertCircle, ChevronRight, Save, Tag, Percent, Sparkles } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useAdminSearch } from '@/context/AdminSearchContext';
 import AdminModal from '@/components/admin/AdminModal';
+
+export interface PlanTranslation {
+  languageCode: string;
+  name: string;
+  description: string;
+  features: string[];
+}
 
 interface DatabasePlan {
   _id?: string;
@@ -22,6 +29,10 @@ interface DatabasePlan {
   stripePriceIdAnnual: string;
   isPopular: boolean;
   isActive: boolean;
+  isDiscountActive?: boolean;
+  discountPriceMonthly?: number;
+  discountPriceAnnual?: number;
+  translations?: PlanTranslation[];
   usersCount?: number;
   totalPurchasedCount?: number;
 }
@@ -101,7 +112,22 @@ export default function AdminPlansPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Form Fields
+  // Multi-language Form State
+  interface PlanFormTranslation {
+    languageCode: string;
+    name: string;
+    description: string;
+    features: string;
+  }
+
+  const [formTranslations, setFormTranslations] = useState<Record<'en' | 'fr' | 'ar', PlanFormTranslation>>({
+    en: { languageCode: 'en', name: '', description: '', features: '' },
+    fr: { languageCode: 'fr', name: '', description: '', features: '' },
+    ar: { languageCode: 'ar', name: '', description: '', features: '' },
+  });
+  const [activeLangTab, setActiveLangTab] = useState<'en' | 'fr' | 'ar'>('en');
+
+  // Form Fields (Common)
   const [formName, setFormName] = useState('');
   const [formCode, setFormCode] = useState('');
   const [formPriceMonthly, setFormPriceMonthly] = useState(19);
@@ -114,6 +140,9 @@ export default function AdminPlansPage() {
   const [formStripePriceAnnual, setFormStripePriceAnnual] = useState('');
   const [formIsPopular, setFormIsPopular] = useState(false);
   const [formIsActive, setFormIsActive] = useState(true);
+  const [formIsDiscountActive, setFormIsDiscountActive] = useState(false);
+  const [formDiscountPriceMonthly, setFormDiscountPriceMonthly] = useState<number | ''>('');
+  const [formDiscountPriceAnnual, setFormDiscountPriceAnnual] = useState<number | ''>('');
 
   const fetchProfileAndPlans = async (authToken: string) => {
     try {
@@ -277,6 +306,15 @@ export default function AdminPlansPage() {
     setFormStripePriceAnnual('');
     setFormIsPopular(false);
     setFormIsActive(true);
+    setFormIsDiscountActive(false);
+    setFormDiscountPriceMonthly('');
+    setFormDiscountPriceAnnual('');
+    setFormTranslations({
+      en: { languageCode: 'en', name: '', description: '', features: '' },
+      fr: { languageCode: 'fr', name: '', description: '', features: '' },
+      ar: { languageCode: 'ar', name: '', description: '', features: '' },
+    });
+    setActiveLangTab('en');
     setIsFormOpen(true);
   };
 
@@ -294,6 +332,35 @@ export default function AdminPlansPage() {
     setFormStripePriceAnnual(plan.stripePriceIdAnnual || '');
     setFormIsPopular(plan.isPopular || false);
     setFormIsActive(plan.isActive !== false);
+    setFormIsDiscountActive(Boolean(plan.isDiscountActive));
+    setFormDiscountPriceMonthly(plan.discountPriceMonthly && plan.discountPriceMonthly > 0 ? plan.discountPriceMonthly : '');
+    setFormDiscountPriceAnnual(plan.discountPriceAnnual && plan.discountPriceAnnual > 0 ? plan.discountPriceAnnual : '');
+
+    const enTr = plan.translations?.find((t) => t.languageCode === 'en');
+    const frTr = plan.translations?.find((t) => t.languageCode === 'fr');
+    const arTr = plan.translations?.find((t) => t.languageCode === 'ar');
+
+    setFormTranslations({
+      en: {
+        languageCode: 'en',
+        name: enTr?.name || plan.name || '',
+        description: enTr?.description || plan.description || '',
+        features: enTr?.features?.join('\n') || (plan.features ? plan.features.join('\n') : ''),
+      },
+      fr: {
+        languageCode: 'fr',
+        name: frTr?.name || '',
+        description: frTr?.description || '',
+        features: frTr?.features?.join('\n') || '',
+      },
+      ar: {
+        languageCode: 'ar',
+        name: arTr?.name || '',
+        description: arTr?.description || '',
+        features: arTr?.features?.join('\n') || '',
+      },
+    });
+    setActiveLangTab('en');
     setIsFormOpen(true);
   };
 
@@ -305,19 +372,76 @@ export default function AdminPlansPage() {
     setSuccess(null);
     setActionLoading(true);
 
+    // Validation: Discounted price must be strictly less than the listed original price
+    if (formIsDiscountActive) {
+      const discMonthly = formDiscountPriceMonthly !== '' ? Number(formDiscountPriceMonthly) : 0;
+      const discAnnual = formDiscountPriceAnnual !== '' ? Number(formDiscountPriceAnnual) : 0;
+      const origMonthly = Number(formPriceMonthly);
+      const origAnnual = Number(formPriceAnnual);
+
+      if (discMonthly <= 0 && discAnnual <= 0) {
+        setError('When promotional discount is active, please enter at least one discounted price (monthly or annual) greater than $0.');
+        setActionLoading(false);
+        return;
+      }
+
+      if (discMonthly > 0 && origMonthly > 0 && discMonthly >= origMonthly) {
+        setError(`Monthly discount price ($${discMonthly.toFixed(2)}) must be strictly less than the listed original monthly price ($${origMonthly.toFixed(2)}).`);
+        setActionLoading(false);
+        return;
+      }
+
+      if (discAnnual > 0 && origAnnual > 0 && discAnnual >= origAnnual) {
+        setError(`Annual discount price ($${discAnnual.toFixed(2)}) must be strictly less than the listed original annual price ($${origAnnual.toFixed(2)}).`);
+        setActionLoading(false);
+        return;
+      }
+    }
+
+    const enName = formTranslations.en.name.trim() || formName.trim();
+    const enDesc = formTranslations.en.description.trim() || formDescription.trim();
+    const enFeats = formTranslations.en.features
+      ? formTranslations.en.features.split('\n').map((f) => f.trim()).filter(Boolean)
+      : formFeatures.split('\n').map((f) => f.trim()).filter(Boolean);
+
+    const translationsPayload: PlanTranslation[] = [
+      {
+        languageCode: 'en',
+        name: enName,
+        description: enDesc,
+        features: enFeats,
+      },
+      {
+        languageCode: 'fr',
+        name: formTranslations.fr.name.trim(),
+        description: formTranslations.fr.description.trim(),
+        features: formTranslations.fr.features.split('\n').map((f) => f.trim()).filter(Boolean),
+      },
+      {
+        languageCode: 'ar',
+        name: formTranslations.ar.name.trim(),
+        description: formTranslations.ar.description.trim(),
+        features: formTranslations.ar.features.split('\n').map((f) => f.trim()).filter(Boolean),
+      },
+    ].filter((t) => t.name || t.description || t.features.length > 0);
+
     const planData = {
-      name: formName,
+      name: enName,
       code: formCode,
       priceMonthly: Number(formPriceMonthly),
       priceAnnual: Number(formPriceAnnual),
       credits: Number(formCredits),
-      description: formDescription,
-      features: formFeatures.split('\n').map(f => f.trim()).filter(Boolean),
+      description: enDesc,
+      features: enFeats,
       accessibleModels: formAccessibleModels,
       stripePriceIdMonthly: formStripePriceMonthly,
       stripePriceIdAnnual: formStripePriceAnnual,
       isPopular: formIsPopular,
       isActive: formIsActive,
+      isDiscountActive: formIsDiscountActive,
+      discountPriceMonthly: formIsDiscountActive && formDiscountPriceMonthly !== '' ? Number(formDiscountPriceMonthly) : 0,
+      discountPriceAnnual: formIsDiscountActive && formDiscountPriceAnnual !== '' ? Number(formDiscountPriceAnnual) : 0,
+      translations: translationsPayload,
     };
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
@@ -463,19 +587,134 @@ export default function AdminPlansPage() {
         title={editPlanId ? 'Edit Plan Definition' : 'Create Subscription Plan'}
       >
         <form onSubmit={handleSubmit} className="space-y-6 text-xs font-bold text-slate-600 font-sans">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label htmlFor="planName" className="text-slate-700 font-black">Plan Display Name</label>
-              <input
-                id="planName"
-                type="text"
-                required
-                placeholder="e.g. Standard Pro"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-medium"
-              />
+          {/* MULTI-LANGUAGE TRANSLATIONS TABS */}
+          <div className="space-y-3 pb-3 border-b border-slate-200">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-700 font-sans">
+                Plan Translations & Localized Details
+              </label>
+              <span className="text-[11px] text-slate-400 font-medium">
+                Switch tabs to view and edit text for each language
+              </span>
             </div>
+
+            <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setActiveLangTab('en')}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  activeLangTab === 'en'
+                    ? 'bg-white text-indigo-600 shadow-xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>🇺🇸 English</span>
+                {formTranslations.en.name && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveLangTab('fr')}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  activeLangTab === 'fr'
+                    ? 'bg-white text-indigo-600 shadow-xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>🇫🇷 Français</span>
+                {formTranslations.fr.name && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveLangTab('ar')}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  activeLangTab === 'ar'
+                    ? 'bg-white text-indigo-600 shadow-xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>🇸🇦 العربية</span>
+                {formTranslations.ar.name && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+              </button>
+            </div>
+
+            {/* ACTIVE LANGUAGE FIELDS */}
+            <div className="space-y-3.5 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-800">
+                  {activeLangTab === 'en' ? 'English (Primary Default)' : activeLangTab === 'fr' ? 'Français' : 'العربية (Arabic RTL)'} Content
+                </span>
+                <span className="text-[10px] uppercase font-bold text-slate-400">
+                  {activeLangTab === 'ar' ? 'Direction: Right-to-Left' : 'Direction: Left-to-Right'}
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-slate-700 font-bold block text-left">
+                  Plan Display Name ({activeLangTab.toUpperCase()})
+                </label>
+                <input
+                  type="text"
+                  required={activeLangTab === 'en'}
+                  dir={activeLangTab === 'ar' ? 'rtl' : 'ltr'}
+                  placeholder={activeLangTab === 'en' ? 'e.g. Starter Plan' : activeLangTab === 'ar' ? 'مثال: خطة المبتدئين' : 'ex. Plan Débutant'}
+                  value={formTranslations[activeLangTab].name}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormTranslations(prev => ({
+                      ...prev,
+                      [activeLangTab]: { ...prev[activeLangTab], name: val },
+                    }));
+                    if (activeLangTab === 'en') setFormName(val);
+                  }}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl transition-all font-semibold text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-slate-700 font-bold block text-left">
+                  Plan Description / Tagline ({activeLangTab.toUpperCase()})
+                </label>
+                <textarea
+                  rows={2}
+                  dir={activeLangTab === 'ar' ? 'rtl' : 'ltr'}
+                  placeholder={activeLangTab === 'en' ? 'Short description shown on pricing cards...' : activeLangTab === 'ar' ? 'وصف موجز يظهر في بطاقات الأسعار...' : 'Description courte affichée sur les cartes...'}
+                  value={formTranslations[activeLangTab].description}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormTranslations(prev => ({
+                      ...prev,
+                      [activeLangTab]: { ...prev[activeLangTab], description: val },
+                    }));
+                    if (activeLangTab === 'en') setFormDescription(val);
+                  }}
+                  className="w-full px-4 py-2 bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl transition-all font-medium text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-slate-700 font-bold block text-left">
+                  Features Bullet List ({activeLangTab.toUpperCase()} - 1 per line)
+                </label>
+                <textarea
+                  rows={4}
+                  dir={activeLangTab === 'ar' ? 'rtl' : 'ltr'}
+                  placeholder={activeLangTab === 'en' ? '40 Generation Credits / month\n30-Day Billing Cycle\n8K UHD Architectural Quality' : activeLangTab === 'ar' ? '40 رصيد توليد شهرياً\nدورة فوترة مدتها 30 يوماً\nجودة معمارية فائقة الدقة 8K' : '40 Crédits de Génération / mois\nCycle de Facturation de 30 Jours\nQualité Architecturale 8K UHD'}
+                  value={formTranslations[activeLangTab].features}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormTranslations(prev => ({
+                      ...prev,
+                      [activeLangTab]: { ...prev[activeLangTab], features: val },
+                    }));
+                    if (activeLangTab === 'en') setFormFeatures(val);
+                  }}
+                  className="w-full px-4 py-2 bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 text-slate-900 rounded-xl transition-all font-medium text-xs leading-relaxed font-mono"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label htmlFor="planCode" className="text-slate-700 font-black">System Identifier Code</label>
               <input
@@ -488,15 +727,15 @@ export default function AdminPlansPage() {
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-mono text-xs"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label htmlFor="priceMonthly" className="text-slate-700 font-black">Monthly Price ($)</label>
               <input id="priceMonthly" type="number" step="0.01" min="0" required
                 value={formPriceMonthly} onChange={(e) => setFormPriceMonthly(Number(e.target.value))}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-medium" />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label htmlFor="priceAnnual" className="text-slate-700 font-black">Annual Billed ($/mo)</label>
               <input id="priceAnnual" type="number" step="0.01" min="0" required
@@ -511,18 +750,162 @@ export default function AdminPlansPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="description" className="text-slate-700 font-black">Plan Short Tagline / Summary</label>
-            <input id="description" type="text" placeholder="Short description shown on pricing cards..."
-              value={formDescription} onChange={(e) => setFormDescription(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-medium" />
-          </div>
+          {/* Promotional Discount Pricing Configuration Card */}
+          <div className="p-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-indigo-600/10 text-indigo-600">
+                  <Tag className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider font-heading">
+                    Promotional Discount Pricing
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Discounted price will be strictly charged at Stripe checkout and displayed on pricing cards.
+                  </p>
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <label htmlFor="features" className="text-slate-700 font-black">Features Bullet List (1 per line)</label>
-            <textarea id="features" rows={3} placeholder="200 AI Credits / mo&#10;Full HD Quality&#10;Commercial Rights"
-              value={formFeatures} onChange={(e) => setFormFeatures(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-900 rounded-2xl transition-all font-medium" />
+              {/* Discount Active Switch */}
+              <label className="relative inline-flex items-center cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={formIsDiscountActive}
+                  onChange={(e) => setFormIsDiscountActive(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                <span className="ml-2.5 text-xs font-extrabold text-slate-700">
+                  {formIsDiscountActive ? (
+                    <span className="text-emerald-700 font-black">Discount Active</span>
+                  ) : (
+                    <span className="text-slate-400 font-semibold">Disabled</span>
+                  )}
+                </span>
+              </label>
+            </div>
+
+            {formIsDiscountActive && (
+              <div className="pt-3 border-t border-indigo-100/70 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Monthly Discount Input */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="discountPriceMonthly" className="text-[11px] font-black text-slate-800">
+                        Discounted Monthly Price ($)
+                      </label>
+                      <span className="text-[10px] text-slate-400 font-semibold">
+                        Original: ${Number(formPriceMonthly).toFixed(2)}
+                      </span>
+                    </div>
+                    <input
+                      id="discountPriceMonthly"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={formPriceMonthly > 0 ? formPriceMonthly - 0.01 : undefined}
+                      placeholder="e.g. 14.00"
+                      value={formDiscountPriceMonthly}
+                      onChange={(e) => setFormDiscountPriceMonthly(e.target.value === '' ? '' : Number(e.target.value))}
+                      className={`w-full px-3.5 py-2.5 bg-white border rounded-xl transition-all font-medium text-xs ${
+                        formDiscountPriceMonthly !== '' && Number(formDiscountPriceMonthly) >= Number(formPriceMonthly)
+                          ? 'border-red-400 focus:border-red-500 text-red-700 focus:ring-1 focus:ring-red-400'
+                          : 'border-slate-200 focus:border-indigo-500 text-slate-900'
+                      }`}
+                    />
+                    {/* Live Validation Pill */}
+                    {formDiscountPriceMonthly !== '' && Number(formDiscountPriceMonthly) >= Number(formPriceMonthly) ? (
+                      <p className="text-[10px] text-red-600 font-bold flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        Must be strictly less than original price (${Number(formPriceMonthly).toFixed(2)})
+                      </p>
+                    ) : formDiscountPriceMonthly !== '' && Number(formDiscountPriceMonthly) > 0 ? (
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold mt-1">
+                        <Percent className="w-2.5 h-2.5" />
+                        <span>
+                          Save ${(Number(formPriceMonthly) - Number(formDiscountPriceMonthly)).toFixed(2)}/mo (
+                          {Math.round(((Number(formPriceMonthly) - Number(formDiscountPriceMonthly)) / Number(formPriceMonthly)) * 100)}% OFF)
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Annual Discount Input */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="discountPriceAnnual" className="text-[11px] font-black text-slate-800">
+                        Discounted Annual Billed ($/mo)
+                      </label>
+                      <span className="text-[10px] text-slate-400 font-semibold">
+                        Original: ${Number(formPriceAnnual).toFixed(2)}
+                      </span>
+                    </div>
+                    <input
+                      id="discountPriceAnnual"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={formPriceAnnual > 0 ? formPriceAnnual - 0.01 : undefined}
+                      placeholder="e.g. 11.00"
+                      value={formDiscountPriceAnnual}
+                      onChange={(e) => setFormDiscountPriceAnnual(e.target.value === '' ? '' : Number(e.target.value))}
+                      className={`w-full px-3.5 py-2.5 bg-white border rounded-xl transition-all font-medium text-xs ${
+                        formDiscountPriceAnnual !== '' && Number(formDiscountPriceAnnual) >= Number(formPriceAnnual)
+                          ? 'border-red-400 focus:border-red-500 text-red-700 focus:ring-1 focus:ring-red-400'
+                          : 'border-slate-200 focus:border-indigo-500 text-slate-900'
+                      }`}
+                    />
+                    {/* Live Validation Pill */}
+                    {formDiscountPriceAnnual !== '' && Number(formDiscountPriceAnnual) >= Number(formPriceAnnual) ? (
+                      <p className="text-[10px] text-red-600 font-bold flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        Must be strictly less than original annual price (${Number(formPriceAnnual).toFixed(2)})
+                      </p>
+                    ) : formDiscountPriceAnnual !== '' && Number(formDiscountPriceAnnual) > 0 ? (
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold mt-1">
+                        <Percent className="w-2.5 h-2.5" />
+                        <span>
+                          Save ${(Number(formPriceAnnual) - Number(formDiscountPriceAnnual)).toFixed(2)}/mo (
+                          {Math.round(((Number(formPriceAnnual) - Number(formDiscountPriceAnnual)) / Number(formPriceAnnual)) * 100)}% OFF)
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Customer Checkout Preview Box */}
+                <div className="p-3 rounded-xl bg-white/80 border border-indigo-100 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-600 font-semibold flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    Customer view preview:
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-slate-800">
+                      Monthly: {formDiscountPriceMonthly && Number(formDiscountPriceMonthly) > 0 && Number(formDiscountPriceMonthly) < Number(formPriceMonthly) ? (
+                        <span>
+                          <span className="line-through text-slate-400 mr-1">${Number(formPriceMonthly).toFixed(2)}</span>
+                          <span className="text-emerald-700 font-black">${Number(formDiscountPriceMonthly).toFixed(2)}</span>
+                        </span>
+                      ) : (
+                        `$${Number(formPriceMonthly).toFixed(2)}`
+                      )}
+                    </span>
+                    <span className="text-slate-300">|</span>
+                    <span className="font-bold text-slate-800">
+                      Annual: {formDiscountPriceAnnual && Number(formDiscountPriceAnnual) > 0 && Number(formDiscountPriceAnnual) < Number(formPriceAnnual) ? (
+                        <span>
+                          <span className="line-through text-slate-400 mr-1">${Number(formPriceAnnual).toFixed(2)}</span>
+                          <span className="text-emerald-700 font-black">${Number(formDiscountPriceAnnual).toFixed(2)}</span>
+                        </span>
+                      ) : (
+                        `$${Number(formPriceAnnual).toFixed(2)}`
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Accessible AI Models Checkboxes */}
@@ -622,18 +1005,71 @@ export default function AdminPlansPage() {
                   return (
                     <tr key={p._id} className="hover:bg-slate-50/50 transition-colors align-middle">
                       <td className="py-4 pl-6 pr-4">
-                        <div className="flex items-center gap-2 whitespace-nowrap">
-                          <span className="font-extrabold text-slate-950 font-heading text-sm">{p.name}</span>
-                          {p.isPopular && (
-                            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] font-black uppercase tracking-wider shrink-0 whitespace-nowrap font-sans">
-                              Popular
-                            </span>
-                          )}
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <span className="font-extrabold text-slate-950 font-heading text-sm">{p.name}</span>
+                            {p.isPopular && (
+                              <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] font-black uppercase tracking-wider shrink-0 whitespace-nowrap font-sans">
+                                Popular
+                              </span>
+                            )}
+                            {p.isDiscountActive && (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-black uppercase tracking-wider shrink-0 whitespace-nowrap font-sans inline-flex items-center gap-1">
+                                <Tag className="w-2.5 h-2.5" />
+                                Promo Active
+                              </span>
+                            )}
+                          </div>
+                          {/* Available Translations Badges */}
+                          <div className="flex items-center gap-1">
+                            {['en', 'fr', 'ar'].map((lc) => {
+                              const hasTr = p.translations?.some((tr) => tr.languageCode === lc && tr.name);
+                              return (
+                                <span
+                                  key={lc}
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase border ${
+                                    hasTr
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-slate-50 text-slate-400 border-slate-200'
+                                  }`}
+                                  title={hasTr ? `${lc.toUpperCase()} translation configured` : `${lc.toUpperCase()} missing`}
+                                >
+                                  {lc.toUpperCase()}
+                                </span>
+                              );
+                            })}
+                          </div>
                         </div>
                       </td>
                       <td className="py-4 px-4 font-mono text-[11px] text-slate-700 font-bold">{p.code}</td>
-                      <td className="py-4 px-4 font-black text-slate-900">{formatPrice(p.priceMonthly)}</td>
-                      <td className="py-4 px-4 font-black text-slate-900">{formatPrice(p.priceAnnual)}</td>
+                      <td className="py-4 px-4 font-black text-slate-900">
+                        {p.isDiscountActive && p.discountPriceMonthly && p.discountPriceMonthly > 0 ? (
+                          <div className="flex flex-col">
+                            <span className="text-emerald-700 font-black text-xs">
+                              {formatPrice(p.discountPriceMonthly)}
+                            </span>
+                            <span className="line-through text-slate-400 text-[10px] font-normal">
+                              {formatPrice(p.priceMonthly)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span>{formatPrice(p.priceMonthly)}</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 font-black text-slate-900">
+                        {p.isDiscountActive && p.discountPriceAnnual && p.discountPriceAnnual > 0 ? (
+                          <div className="flex flex-col">
+                            <span className="text-emerald-700 font-black text-xs">
+                              {formatPrice(p.discountPriceAnnual)}
+                            </span>
+                            <span className="line-through text-slate-400 text-[10px] font-normal">
+                              {formatPrice(p.priceAnnual)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span>{formatPrice(p.priceAnnual)}</span>
+                        )}
+                      </td>
                       <td className="py-4 px-4 text-indigo-700 font-black">{p.credits}</td>
                       <td className="py-4 px-4">
                         <div className="flex flex-col gap-1">

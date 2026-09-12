@@ -2,8 +2,10 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, GripVertical, ArrowRight } from 'lucide-react';
+import { Sparkles, GripVertical, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { useSettings, getHomepageText } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ToolOption {
   id: string;
@@ -69,7 +71,33 @@ export default function ExploreToolsSection() {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  const activeTool = TOOLS_DATA.find((tool) => tool.id === activeTabId) || TOOLS_DATA[0];
+  const { settings } = useSettings();
+  const { language } = useLanguage();
+
+  const badgeText = getHomepageText(settings, 'exploreTools', 'badge', language, 'AI Design Suite');
+  const titleText = getHomepageText(settings, 'exploreTools', 'title', language, 'Explore RoomAI AI Home Design Tools');
+  const subtitleText = getHomepageText(
+    settings,
+    'exploreTools',
+    'subtitle',
+    language,
+    'Professional-grade home design tools trusted by designers and homeowners worldwide. AI assistance makes creating interiors, exteriors, landscapes, and floor plans faster and easier.'
+  );
+
+  const activeToolIndex = TOOLS_DATA.findIndex((tool) => tool.id === activeTabId);
+  const activeTool = TOOLS_DATA[activeToolIndex] || TOOLS_DATA[0];
+
+  const handlePrevTool = () => {
+    const prevIdx = (activeToolIndex - 1 + TOOLS_DATA.length) % TOOLS_DATA.length;
+    setActiveTabId(TOOLS_DATA[prevIdx].id);
+    setSliderPos(50);
+  };
+
+  const handleNextTool = () => {
+    const nextIdx = (activeToolIndex + 1) % TOOLS_DATA.length;
+    setActiveTabId(TOOLS_DATA[nextIdx].id);
+    setSliderPos(50);
+  };
 
   // Manual Mouse Drag / Move Handler (NO AUTO-MOVING)
   const handleMove = useCallback((clientX: number) => {
@@ -107,43 +135,43 @@ export default function ExploreToolsSection() {
   };
 
   return (
-    <section className="relative w-full py-20 bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-white selection:bg-blue-600 selection:text-white border-none">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+    <section className="relative w-full py-16 sm:py-20 bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-white selection:bg-[var(--primary)] selection:text-white border-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10">
 
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-3 mb-10">
+        <div className="text-center max-w-3xl mx-auto space-y-3 mb-8 sm:mb-10">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/80 border border-blue-100 dark:border-blue-800 text-xs font-semibold text-blue-700 dark:text-blue-300"
+            className="section-pill-badge inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-xs font-bold text-[var(--primary)] shadow-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span>AI Design Suite</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{badgeText}</span>
           </motion.div>
 
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-heading"
+            className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white font-heading whitespace-pre-line"
           >
-            Explore RoomAI AI Home Design Tools
+            {titleText}
           </motion.h2>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-sm sm:text-base text-slate-600 leading-relaxed"
+            className="text-xs sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed px-2"
           >
-            Professional-grade home design tools trusted by designers and homeowners worldwide. AI assistance makes creating interiors, exteriors, landscapes, and floor plans faster and easier.
+            {subtitleText}
           </motion.p>
         </div>
 
-        {/* 4 Category Tabs */}
-        <div className="flex items-center justify-center gap-2 mb-10 overflow-x-auto pb-2">
-          <div className="inline-flex items-center gap-2 p-1.5 bg-slate-200/60 rounded-2xl border border-slate-200/80">
+        {/* DESKTOP VIEW (>= sm screens): 4 Category Tabs - 100% PRESERVED FOR CHROME */}
+        <div className="hidden sm:flex items-center justify-center gap-2 mb-10 overflow-x-auto pb-2">
+          <div className="explore-tabs-container inline-flex items-center gap-2 p-1.5 bg-slate-200/60 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700">
             {TOOLS_DATA.map((tool) => {
               const isActive = tool.id === activeTabId;
               return (
@@ -153,16 +181,87 @@ export default function ExploreToolsSection() {
                     setActiveTabId(tool.id);
                     setSliderPos(50);
                   }}
-                  className={`px-5 py-2.5 text-xs font-bold rounded-2xl transition-all duration-200 whitespace-nowrap ${
+                  style={
                     isActive
-                      ? 'bg-[var(--primary)] text-white shadow-md'
-: 'text-slate-700 hover:text-slate-900 hover:bg-white/60'
+                      ? {
+                          borderColor: 'var(--primary)',
+                          boxShadow: '0 0 18px -1px color-mix(in srgb, var(--primary) 55%, transparent)',
+                        }
+                      : undefined
+                  }
+                  className={`explore-tab-btn inline-flex items-center justify-center px-5 py-2.5 text-xs font-bold rounded-2xl transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                    isActive
+                      ? 'explore-tab-active bg-white dark:bg-white/[0.06] text-[var(--primary)] dark:text-white border-[1.5px] border-[var(--primary)]'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/[0.06] border-[1.5px] border-slate-300/40 dark:border-white/[0.07]'
                   }`}
                 >
-                  {tool.tabLabel}
+                  <span>{tool.tabLabel}</span>
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* MOBILE VIEW (< sm screens): Compact Tool Switcher with Prev/Next Arrows & Dots */}
+        <div className="block sm:hidden mb-6 space-y-2.5">
+          <div className="flex items-center justify-between p-2 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <button
+              type="button"
+              onClick={handlePrevTool}
+              className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 active:bg-[var(--primary)] active:text-white hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-all shrink-0 cursor-pointer"
+              aria-label="Previous tool"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="flex-1 px-3 text-center overflow-hidden">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={activeTool.id}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.18 }}
+                  className="space-y-0.5"
+                >
+                  <span className="mobile-tool-badge inline-block px-2.5 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-[9px] font-extrabold uppercase tracking-wider">
+                    {activeToolIndex + 1} of {TOOLS_DATA.length}
+                  </span>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {activeTool.tabLabel}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleNextTool}
+              className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 active:bg-[var(--primary)] active:text-white hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-all shrink-0 cursor-pointer"
+              aria-label="Next tool"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Dots Indicator */}
+          <div className="flex items-center justify-center gap-1.5">
+            {TOOLS_DATA.map((tool, idx) => (
+              <button
+                key={tool.id}
+                type="button"
+                onClick={() => {
+                  setActiveTabId(tool.id);
+                  setSliderPos(50);
+                }}
+                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                  idx === activeToolIndex
+                    ? 'w-6 bg-[var(--primary)]'
+                    : 'w-1.5 bg-slate-300 dark:bg-slate-700'
+                }`}
+                aria-label={`Go to ${tool.tabLabel}`}
+              />
+            ))}
           </div>
         </div>
 
@@ -172,7 +271,7 @@ export default function ExploreToolsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative bg-white/95 border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-6 sm:p-10 overflow-hidden"
+          className="explore-tools-card relative bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-black/40 p-4 sm:p-8 lg:p-10 overflow-hidden"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -181,28 +280,29 @@ export default function ExploreToolsSection() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.3 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center"
             >
               {/* LEFT COLUMN: Tool Description & Tags */}
-              <div className="lg:col-span-6 space-y-5 text-left">
-                <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-2xl text-xs font-bold uppercase tracking-wider">
-                  {activeTool.badge}
+              <div className="lg:col-span-6 space-y-4 sm:space-y-5 text-left">
+                <span className="tool-active-badge inline-flex items-center gap-2 px-3.5 py-1.5 bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 rounded-2xl text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4 shrink-0 text-[var(--primary)] dark:text-white" />
+                  <span>{activeTool.badge}</span>
                 </span>
 
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-heading">
+                <h3 className="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-white font-heading">
                   {activeTool.title}
                 </h3>
 
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                   {activeTool.description}
                 </p>
 
                 {/* 3 Feature Tags */}
-                <div className="flex flex-wrap gap-2 pt-1">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-1">
                   {activeTool.tags.map((tag, idx) => (
                     <span
                       key={idx}
-                      className="px-3 py-1.5 bg-slate-100 border border-slate-200/80 rounded-2xl text-xs font-semibold text-slate-700"
+                      className="explore-tool-tag px-2.5 py-1 sm:px-3 sm:py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-2xl text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-300"
                     >
                       {tag}
                     </span>
@@ -211,7 +311,7 @@ export default function ExploreToolsSection() {
 
                 <div className="pt-2">
                   <Link href={`/generate?tool=${activeTool.id}`}>
-                    <button className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-[var(--primary)] hover:opacity-90 rounded-2xl shadow-md transition-all">
+                    <button className="explore-try-btn inline-flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold text-white bg-[var(--primary)] hover:opacity-90 active:scale-95 rounded-2xl shadow-md transition-all cursor-pointer">
                       <span>Try {activeTool.tabLabel}</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
@@ -230,7 +330,7 @@ export default function ExploreToolsSection() {
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleMouseUp}
-                  className="relative aspect-[4/3] sm:aspect-[16/11] w-full rounded-2xl overflow-hidden bg-slate-200 border border-slate-200/80 shadow-lg cursor-ew-resize select-none"
+                  className="relative aspect-[4/3] sm:aspect-[16/11] w-full rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-lg cursor-ew-resize select-none"
                 >
                   {/* AFTER IMAGE (FULL UNDERNEATH LAYER) */}
                   <div className="absolute inset-0 w-full h-full">
@@ -269,8 +369,8 @@ export default function ExploreToolsSection() {
                     className="absolute top-0 bottom-0 w-1 bg-white shadow-2xl z-20 flex items-center justify-center -ml-0.5"
                     style={{ left: `${sliderPos}%` }}
                   >
-                    <div className="w-9 h-9 rounded-full bg-white text-slate-800 border border-slate-200 shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform">
-                      <GripVertical className="w-4 h-4 text-[var(--primary)]" />
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white text-slate-800 border border-slate-200 shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform">
+                      <GripVertical className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--primary)]" />
                     </div>
                   </div>
                 </div>

@@ -131,6 +131,8 @@ export class SubscriptionController {
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
           email: user.email,
           plan: user.plan,
+          subscriptionTier: user.subscriptionTier,
+          subscriptionPlanId: (user as any).subscriptionPlanId,
           credits: user.credits,
         },
         subscription: status,

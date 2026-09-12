@@ -551,20 +551,20 @@ export default function UserProjectsDashboardPage() {
                       return (
                         <>
                           {/* HEADER ROW WITH TITLE, ADD ROOM & CLOSE ICON */}
-                          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                            <h3 className="text-base font-extrabold text-slate-900 dark:text-white font-heading flex items-center gap-2">
+                          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-purple-500/20">
+                            <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white font-heading flex items-center gap-2.5">
                               <span>{t('projects.roomsStudio')}</span>
-                              <span className="px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-xs font-mono font-bold text-purple-600 dark:text-purple-400">
+                              <span className="px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-500/25 text-xs font-mono font-extrabold text-purple-700 dark:text-purple-200 border border-purple-200/60 dark:border-purple-400/35 shadow-2xs">
                                 {projRooms.length}
                               </span>
                             </h3>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2.5">
                               <Link
                                 href={`/generate?projectId=${pId}`}
-                                className="text-xs font-extrabold text-purple-600 hover:underline flex items-center gap-1 font-heading"
+                                className="px-3.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/90 dark:bg-purple-500/20 dark:hover:bg-purple-600 dark:text-purple-200 dark:hover:text-white dark:border-purple-400/40 dark:hover:border-transparent dark:shadow-[0_0_14px_rgba(168,85,247,0.35)] transition-all flex items-center gap-1.5 text-xs font-extrabold font-heading shadow-2xs"
                               >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-4 h-4 stroke-[2.5]" />
                                 <span>{t('projects.addRoom')}</span>
                               </Link>
 
@@ -572,9 +572,9 @@ export default function UserProjectsDashboardPage() {
                                 type="button"
                                 onClick={() => setSelectedProjectForCanvas(null)}
                                 aria-label={t('projects.closeDrawer')}
-                                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer ml-1"
+                                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-200/90 dark:bg-[#151D2E] dark:hover:bg-purple-600 dark:text-slate-200 dark:hover:text-white dark:border dark:border-slate-700/80 dark:hover:border-purple-400/50 dark:shadow-[0_0_10px_rgba(0,0,0,0.4)] transition-all cursor-pointer"
                               >
-                                <X className="w-4 h-4" />
+                                <X className="w-4 h-4 stroke-[2.5]" />
                               </button>
                             </div>
                           </div>

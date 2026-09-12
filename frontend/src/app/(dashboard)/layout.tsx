@@ -76,21 +76,55 @@ export default function DashboardLayout({
     });
   };
 
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Prefetch login route for instant 0ms SPA redirect
+    // Prefetch login & pricing routes for instant 0ms SPA redirect
     try {
       router.prefetch('/login');
+      router.prefetch('/pricing');
     } catch {}
 
     const checkAuth = () => {
+      const isPricingPage = pathname === '/pricing' || pathname.startsWith('/pricing');
       const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
-      if (!token) {
+      const userHasToken = Boolean(token);
+      setIsLoggedIn(userHasToken);
+
+      // 1. Pricing page is publicly accessible for everyone to see and select plans
+      if (isPricingPage) {
+        setIsAuthenticated(true);
+        return;
+      }
+
+      // 2. Unauthenticated user: if attempting to visit generate or studio, redirect to pricing
+      if (!userHasToken) {
         setIsAuthenticated(false);
+        if (pathname === '/generate' || pathname.startsWith('/generate')) {
+          router.replace('/pricing');
+          return;
+        }
         router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
         return;
       }
+
+      // 3. Authenticated user visiting /generate: if user has 0 credits, redirect to pricing
+      if (pathname === '/generate' || pathname.startsWith('/generate')) {
+        try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const parsedUser = JSON.parse(userStr);
+            if (typeof parsedUser?.credits === 'number' && parsedUser.credits <= 0) {
+              setIsAuthenticated(false);
+              router.replace('/pricing');
+              return;
+            }
+          }
+        } catch (e) {}
+      }
+
       setIsAuthenticated(true);
     };
 
@@ -107,21 +141,23 @@ export default function DashboardLayout({
     };
   }, [router, pathname]);
 
+  const isPricingRoute = pathname === '/pricing' || pathname.startsWith('/pricing');
+
   if (!isMounted || isAuthenticated === false || isAuthenticated === null) {
     return <PremiumAppLoader size="md" fullScreen />;
   }
 
   return (
-    <div id="dashboard-layout-root" className="bg-[#F3F5FF] dark:bg-[#0B0F17] min-h-screen text-slate-900 dark:text-slate-100 selection:bg-purple-600 selection:text-white transition-colors duration-300 relative pt-[72px]">
+    <div id="dashboard-layout-root" className="bg-[#F3F5FF] dark:bg-[#0B0F17] min-h-screen text-slate-900 dark:text-slate-100 selection:bg-primary selection:text-white transition-colors duration-300 relative pt-[64px] overflow-x-clip w-full max-w-full">
 
-      <div className={`max-w-[1720px] mx-auto flex items-start gap-5 px-3 sm:px-4 lg:px-6 pt-2 sm:pt-3 pb-6 ${isFocusMode ? 'w-full max-w-full' : ''}`}>
-        {/* Persistent Left Sidebar Navigation */}
-        {!isFocusMode && (
-          <SidebarNav className="hidden lg:flex" />
+      <div className={`w-full max-w-[1720px] mx-auto flex items-start gap-4 lg:gap-5 px-4 sm:px-5 lg:px-6 pt-4 sm:pt-5 lg:pt-6 pb-8 min-w-0 ${isFocusMode ? 'max-w-full' : ''}`}>
+        {/* Persistent Left Sidebar Navigation (hidden for guests viewing pricing) */}
+        {!isFocusMode && (!isPricingRoute || isLoggedIn) && (
+          <SidebarNav className="hidden lg:flex shrink-0" />
         )}
 
         {/* Dynamic Workspace Content Area */}
-        <main className="flex-1 min-w-0 space-y-6">
+        <main className="flex-1 min-w-0 w-full space-y-6">
           {children}
 
           {/* Minimal Clean Dashboard Workspace Footer */}

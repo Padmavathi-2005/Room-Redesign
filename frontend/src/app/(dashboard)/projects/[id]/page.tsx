@@ -460,10 +460,9 @@ export default function ProjectDetailPage() {
             <button
               type="button"
               onClick={() => setIsRoomModalOpen(true)}
-              className="text-xs font-extrabold hover:underline flex items-center gap-1 font-heading cursor-pointer"
-              style={themeColors.primaryTextStyle}
+              className="px-3.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/90 dark:bg-purple-500/20 dark:hover:bg-purple-600 dark:text-purple-200 dark:hover:text-white dark:border-purple-400/40 dark:hover:border-transparent dark:shadow-[0_0_14px_rgba(168,85,247,0.35)] transition-all flex items-center gap-1.5 text-xs font-extrabold font-heading shadow-2xs cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>{t('projects.addRoom')}</span>
             </button>
           </div>
@@ -584,9 +583,9 @@ export default function ProjectDetailPage() {
                   type="button"
                   onClick={() => setIsRoomModalOpen(false)}
                   aria-label={t('common.close')}
-                  className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                  className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-200/80 dark:bg-[#1E273D] dark:hover:bg-purple-600 dark:text-slate-200 dark:hover:text-white dark:border dark:border-slate-700/80 dark:hover:border-purple-400/50 flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 stroke-[2.5]" />
                 </button>
               </div>
 

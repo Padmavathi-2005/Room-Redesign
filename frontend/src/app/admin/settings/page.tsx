@@ -28,12 +28,76 @@ import {
   Image,
   Globe,
   Link as LinkIcon,
+  LayoutTemplate,
+  Languages,
+  Layers,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
-import { useSettings } from '@/context/SettingsContext';
+import { useSettings, DEFAULT_HOMEPAGE_SECTIONS } from '@/context/SettingsContext';
 import { useToast } from '@/context/ToastContext';
 import { CreditTokenIcon } from '@/components/ui';
 
-type TabType = 'branding' | 'oauth' | 'ai-engine' | 'stripe' | 'tax' | 'storage' | 'smtp' | 'economy' | 'credit-packs';
+type TabType = 'branding' | 'frontend' | 'oauth' | 'ai-engine' | 'stripe' | 'tax' | 'storage' | 'smtp' | 'economy' | 'credit-packs';
+
+const HOMEPAGE_SECTIONS_LIST = [
+  { id: 'hero', label: 'Hero Section', desc: 'Main headline, badge, subtitle, and CTA trial buttons' },
+  { id: 'video', label: 'Video Showcase', desc: 'Platform demo video heading, badge, and description' },
+  { id: 'whyChoose', label: 'Why Choose Us', desc: 'Core advantages, architecture precision highlights' },
+  { id: 'whoBenefits', label: 'Who Benefits', desc: 'Target personas, designers, architects, homeowners' },
+  { id: 'exploreTools', label: 'Explore Tools', desc: 'AI Studio Suite feature redesign tool showcase' },
+  { id: 'howItWorks', label: 'How It Works', desc: 'Step-by-step 3-stage visual workflow guide' },
+  { id: 'ctaBanner', label: 'Call To Action Banner', desc: 'Bottom conversion banner with headline and CTA button' },
+];
+
+const HOMEPAGE_LANGUAGES = [
+  { code: 'en', label: 'English', dir: 'ltr' },
+  { code: 'ar', label: 'Arabic (العربية)', dir: 'rtl' },
+  { code: 'fr', label: 'French (Français)', dir: 'ltr' },
+  { code: 'hi', label: 'Hindi (हिन्दी)', dir: 'ltr' },
+];
+
+const SECTION_FIELDS_CONFIG: Record<string, { key: string; label: string; placeholder: string; multiline?: boolean }[]> = {
+  hero: [
+    { key: 'badge', label: 'Hero Badge Label', placeholder: 'e.g. Trusted Construction ERP' },
+    { key: 'title', label: 'Hero Main Title / Headline', placeholder: 'e.g. Build Better. Manage Smarter. Deliver Faster.', multiline: true },
+    { key: 'subtitle', label: 'Hero Subtitle / Description', placeholder: 'The only digital craftsmanship platform designed to unite your field and office...', multiline: true },
+    { key: 'primaryCta', label: 'Primary CTA Button Text', placeholder: 'e.g. Start Free Trial' },
+    { key: 'secondaryCta', label: 'Secondary CTA Button Text', placeholder: 'e.g. Book a Demo' },
+  ],
+  video: [
+    { key: 'badge', label: 'Video Section Badge', placeholder: 'e.g. Platform Demonstration' },
+    { key: 'title', label: 'Video Showcase Title', placeholder: 'e.g. Experience the Power of RoomAI' },
+    { key: 'subtitle', label: 'Video Showcase Subtitle', placeholder: 'Watch how our AI-driven design studio transforms...', multiline: true },
+  ],
+  whyChoose: [
+    { key: 'badge', label: 'Why Choose Us Badge', placeholder: 'e.g. Core Advantages' },
+    { key: 'title', label: 'Why Choose Us Title', placeholder: 'e.g. Why Choose RoomAI for Your Spaces' },
+    { key: 'subtitle', label: 'Why Choose Us Subtitle', placeholder: 'Architectural precision meets cutting-edge generative AI...', multiline: true },
+  ],
+  whoBenefits: [
+    { key: 'badge', label: 'Target Audience Badge', placeholder: 'e.g. Target Audiences' },
+    { key: 'title', label: 'Who Benefits Title', placeholder: 'e.g. Who Benefits From Our Digital Platform' },
+    { key: 'subtitle', label: 'Who Benefits Subtitle', placeholder: 'Empowering interior designers, architects, real estate developers...', multiline: true },
+  ],
+  exploreTools: [
+    { key: 'badge', label: 'Tools Showcase Badge', placeholder: 'e.g. AI Studio Suite' },
+    { key: 'title', label: 'Explore Tools Title', placeholder: 'e.g. Explore Powerful Architectural Redesign Tools' },
+    { key: 'subtitle', label: 'Explore Tools Subtitle', placeholder: 'From interior revamps to exterior transformations...', multiline: true },
+  ],
+  howItWorks: [
+    { key: 'badge', label: 'Workflow Badge', placeholder: 'e.g. Workflow' },
+    { key: 'title', label: 'How It Works Title', placeholder: 'e.g. How It Works in 3 Simple Steps' },
+    { key: 'subtitle', label: 'How It Works Subtitle', placeholder: 'Transform any space with photorealistic precision effortlessly...', multiline: true },
+  ],
+  ctaBanner: [
+    { key: 'badge', label: 'Call To Action Badge', placeholder: 'e.g. Start Your Journey' },
+    { key: 'title', label: 'Call To Action Title', placeholder: 'e.g. Start Smarter Home Design with RoomAI Today' },
+    { key: 'subtitle', label: 'Call To Action Subtitle', placeholder: 'Join thousands of designers, architects, and homeowners...', multiline: true },
+    { key: 'primaryCta', label: 'CTA Button Text', placeholder: 'e.g. Get Started Free' },
+  ],
+};
 
 export default function AdminSettingsPage() {
   const router = useRouter();
@@ -45,6 +109,82 @@ export default function AdminSettingsPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [showMaskedKeys, setShowMaskedKeys] = useState<{ [key: string]: boolean }>({});
+
+  // 10. Frontend & Homepage Settings State
+  const [homepageSections, setHomepageSections] = useState<Record<string, any>>(DEFAULT_HOMEPAGE_SECTIONS);
+  const [activeHomeSection, setActiveHomeSection] = useState<string>('hero');
+  const [activeHomeLang, setActiveHomeLang] = useState<string>('en');
+
+  // Section pills mouse drag-to-scroll handlers
+  const sectionScrollRef = React.useRef<HTMLDivElement>(null);
+  const [isDragScrolling, setIsDragScrolling] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragScrollLeft, setDragScrollLeft] = useState(0);
+  const [dragMoved, setDragMoved] = useState(false);
+
+  const handleSectionMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!sectionScrollRef.current) return;
+    setIsDragScrolling(true);
+    setDragStartX(e.pageX - sectionScrollRef.current.offsetLeft);
+    setDragScrollLeft(sectionScrollRef.current.scrollLeft);
+    setDragMoved(false);
+  };
+
+  const handleSectionMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragScrolling || !sectionScrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - sectionScrollRef.current.offsetLeft;
+    const walk = (x - dragStartX) * 1.5;
+    if (Math.abs(walk) > 4) {
+      setDragMoved(true);
+    }
+    sectionScrollRef.current.scrollLeft = dragScrollLeft - walk;
+  };
+
+  const handleSectionMouseUpOrLeave = () => {
+    setIsDragScrolling(false);
+  };
+
+  const scrollSections = (dir: 'left' | 'right') => {
+    if (sectionScrollRef.current) {
+      sectionScrollRef.current.scrollBy({ left: dir === 'left' ? -240 : 240, behavior: 'smooth' });
+    }
+  };
+
+  // Language custom dropdown state
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const langDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(e.target as Node)) {
+        setLangDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const handleUpdateHomeField = (sectionKey: string, langKey: string, fieldKey: string, value: string) => {
+    setHomepageSections((prev) => {
+      const section = prev[sectionKey] || { translations: {} };
+      const translations = section.translations || {};
+      const langData = translations[langKey] || {};
+      return {
+        ...prev,
+        [sectionKey]: {
+          ...section,
+          translations: {
+            ...translations,
+            [langKey]: {
+              ...langData,
+              [fieldKey]: value,
+            },
+          },
+        },
+      };
+    });
+  };
 
   // 1. Branding & Visual System State
   const [appName, setAppName] = useState('RoomAI');
@@ -390,6 +530,11 @@ export default function AdminSettingsPage() {
       setEnableWatermark(s.enableWatermark ?? false);
       setMaintenanceMode(s.maintenanceMode ?? false);
       setSupportEmail(s.supportEmail || 'support@roomai.com');
+      if (s.homepageSections && Object.keys(s.homepageSections).length > 0) {
+        setHomepageSections(s.homepageSections);
+      } else {
+        setHomepageSections(DEFAULT_HOMEPAGE_SECTIONS);
+      }
     }
   }, [isThemeLoading, settings]);
 
@@ -489,6 +634,7 @@ export default function AdminSettingsPage() {
           maxRoomsPerProject,
           enableWatermark,
           supportEmail,
+          homepageSections,
         } as any),
       });
       const msg = 'Admin Settings & System Configurations saved successfully to database!';
@@ -528,8 +674,20 @@ export default function AdminSettingsPage() {
     );
   }
 
+  const SectionHeaderSaveButton = () => (
+    <button
+      type="submit"
+      disabled={isSaving}
+      className="px-4 py-2 rounded-xl bg-primary hover:opacity-90 text-white flex items-center justify-center gap-2 text-xs font-bold shadow-xs disabled:opacity-50 transition-all cursor-pointer shrink-0"
+    >
+      <Save className="w-3.5 h-3.5" />
+      <span>{isSaving ? 'Saving...' : 'Save Settings'}</span>
+    </button>
+  );
+
   const tabs = [
     { id: 'branding', label: 'Branding & Visuals', icon: Palette, color: 'text-indigo-600' },
+    { id: 'frontend', label: 'Frontend & Homepage', icon: LayoutTemplate, color: 'text-primary' },
     { id: 'oauth', label: 'Social Login & OAuth', icon: KeyRound, color: 'text-purple-600' },
     { id: 'ai-engine', label: 'AI Models & Tokens', icon: Wand2, color: 'text-cyan-600' },
     { id: 'stripe', label: 'Payment Settings', icon: CreditCard, color: 'text-emerald-600' },
@@ -542,31 +700,6 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-              <Settings className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-slate-900 tracking-tight">System Settings & Configurations</h1>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Centralized control panel for OAuth keys, AI providers, payments, email servers, and platform defaults.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={handleSubmit}
-          disabled={isSaving}
-          className="px-5 py-2.5 rounded-2xl bg-primary hover:opacity-90 text-white flex items-center justify-center gap-2 text-xs font-extrabold shadow-sm disabled:opacity-50 transition-all cursor-pointer shrink-0"
-        >
-          <Save className="w-4 h-4" />
-          <span>{isSaving ? 'Saving Configurations...' : 'Save All Settings'}</span>
-        </button>
-      </div>
 
       {/* Banner Alerts */}
       {success && (
@@ -597,13 +730,13 @@ export default function AdminSettingsPage() {
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id as TabType)}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs transition-all duration-150 font-bold text-left cursor-pointer ${
+                className={`w-full group flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs transition-all duration-150 font-bold text-left cursor-pointer ${
                   isActive
                     ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    : 'text-slate-600 hover:text-secondary hover:bg-secondary-lite'
                 }`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : t.color}`} />
+                <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-secondary'}`} />
                 <span className="truncate">{t.label}</span>
               </button>
             );
@@ -612,12 +745,17 @@ export default function AdminSettingsPage() {
 
         {/* Right Columns: Module Settings Panel */}
         <div className="lg:col-span-3">
-          <form onSubmit={handleSubmit} className="bg-white border border-slate-200/80 p-6 sm:p-8 rounded-2xl shadow-2xs space-y-6">
+          <form onSubmit={handleSubmit} autoComplete="off" className="bg-white border border-slate-200/80 p-6 sm:p-8 rounded-2xl shadow-2xs space-y-6">
+            {/* Hidden dummy credentials trap to intercept browser login autofill */}
+            <div style={{ display: 'none', position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1 }}>
+              <input type="text" name="fake_username_remember" tabIndex={-1} autoComplete="username" />
+              <input type="password" name="fake_password_remember" tabIndex={-1} autoComplete="current-password" />
+            </div>
             
             {/* MODULE 1: BRANDING & VISUALS */}
             {activeTab === 'branding' && (
               <div className="space-y-6 text-xs font-semibold text-slate-600">
-                <div className="border-b border-slate-150 pb-4 flex items-center justify-between">
+                <div className="border-b border-slate-150 pb-4 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                       <Palette className="w-5 h-5 text-indigo-600" />
@@ -625,6 +763,7 @@ export default function AdminSettingsPage() {
                     </h3>
                     <p className="text-xs text-slate-500 font-medium mt-0.5">Customize application title, color palette, border radius, and glass opacity.</p>
                   </div>
+                  <SectionHeaderSaveButton />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -833,7 +972,12 @@ export default function AdminSettingsPage() {
                     <div className="flex items-center gap-3">
                       <div
                         className="w-8 h-8 rounded-2xl flex items-center justify-center text-white font-bold text-xs shadow-xs"
-                        style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+                        style={{
+                          background:
+                            activeTheme === 'dark'
+                              ? `linear-gradient(135deg, ${secondaryColor}, ${primaryColor})`
+                              : `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+                        }}
                       >
                         <Sparkles className="w-4 h-4" />
                       </div>
@@ -845,7 +989,9 @@ export default function AdminSettingsPage() {
                     <button
                       type="button"
                       className="px-3 py-1.5 rounded-2xl text-white text-[10px] font-bold shadow-xs"
-                      style={{ backgroundColor: primaryColor }}
+                      style={{
+                        backgroundColor: activeTheme === 'dark' ? secondaryColor : primaryColor,
+                      }}
                     >
                       Action
                     </button>
@@ -854,15 +1000,271 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
+            {/* MODULE: FRONTEND & HOMEPAGE CMS */}
+            {activeTab === 'frontend' && (
+              <div className="space-y-6 text-xs font-semibold text-slate-600">
+                {/* Module Header */}
+                <div className="border-b border-slate-150 pb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <LayoutTemplate className="w-5 h-5 text-primary" />
+                      <span>Frontend & Homepage</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Manage content and translations for homepage sections.
+                    </p>
+                  </div>
+                  <SectionHeaderSaveButton />
+                </div>
+
+                {/* Section Selector Pills (Single Row with Mouse Drag & Move Scroll, Pure Text) */}
+                <div className="relative flex items-center group">
+                  <button
+                    type="button"
+                    onClick={() => scrollSections('left')}
+                    className="hidden sm:flex items-center justify-center w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-secondary hover:bg-secondary-lite hover:border-secondary/30 shadow-2xs shrink-0 mr-1.5 transition-all cursor-pointer opacity-70 hover:opacity-100"
+                    title="Scroll Left"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <div
+                    ref={sectionScrollRef}
+                    onMouseDown={handleSectionMouseDown}
+                    onMouseMove={handleSectionMouseMove}
+                    onMouseUp={handleSectionMouseUpOrLeave}
+                    onMouseLeave={handleSectionMouseUpOrLeave}
+                    className="flex items-center gap-2 overflow-x-auto py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-none cursor-grab active:cursor-grabbing flex-1"
+                  >
+                    {HOMEPAGE_SECTIONS_LIST.map((sec) => {
+                      const isSelected = activeHomeSection === sec.id;
+                      return (
+                        <button
+                          key={sec.id}
+                          type="button"
+                          onClick={() => {
+                            if (!dragMoved) {
+                              setActiveHomeSection(sec.id);
+                            }
+                          }}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 select-none whitespace-nowrap cursor-pointer ${
+                            isSelected
+                              ? 'bg-primary text-white shadow-sm ring-2 ring-primary/20'
+                              : 'bg-slate-100/90 text-slate-700 hover:bg-secondary-lite hover:text-secondary hover:ring-1 hover:ring-secondary/30'
+                          }`}
+                        >
+                          <span>{sec.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => scrollSections('right')}
+                    className="hidden sm:flex items-center justify-center w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-secondary hover:bg-secondary-lite hover:border-secondary/30 shadow-2xs shrink-0 ml-1.5 transition-all cursor-pointer opacity-70 hover:opacity-100"
+                    title="Scroll Right"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Target Language Dropdown Bar (Clean Name Dropdown, No Symbols) */}
+                <div className="flex flex-wrap items-center gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5 shrink-0">
+                    <Languages className="w-4 h-4 text-primary" />
+                    <span>Target Language:</span>
+                  </label>
+
+                  {/* Custom Dropdown */}
+                  <div className="relative" ref={langDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setLangDropdownOpen((prev) => !prev)}
+                      className="inline-flex items-center justify-between gap-2.5 min-w-[140px] px-3.5 py-2 bg-white border border-slate-200 hover:border-secondary/40 hover:bg-secondary-lite hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
+                    >
+                      <span>{HOMEPAGE_LANGUAGES.find((l) => l.code === activeHomeLang)?.label || 'English'}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${langDropdownOpen ? 'rotate-180 text-primary' : ''}`} />
+                    </button>
+
+                    {langDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-1.5 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                        {HOMEPAGE_LANGUAGES.map((lang) => {
+                          const isSelected = activeHomeLang === lang.code;
+                          return (
+                            <button
+                              key={lang.code}
+                              type="button"
+                              onClick={() => {
+                                setActiveHomeLang(lang.code);
+                                setLangDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer text-left ${
+                                isSelected
+                                  ? 'bg-primary text-white shadow-xs'
+                                  : 'text-slate-700 hover:bg-secondary-lite hover:text-secondary'
+                              }`}
+                            >
+                              <span>{lang.label}</span>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-white shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {activeHomeLang === 'ar' && (
+                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100/70 border border-emerald-300 px-2.5 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      RTL Mode Active (يمين إلى يسار)
+                    </span>
+                  )}
+                </div>
+
+                {/* Section Form Fields */}
+                <div className="space-y-4 pt-2">
+                  {(SECTION_FIELDS_CONFIG[activeHomeSection] || []).map((field) => {
+                    const currentVal =
+                      homepageSections?.[activeHomeSection]?.translations?.[activeHomeLang]?.[field.key] ?? '';
+                    const enRef =
+                      homepageSections?.[activeHomeSection]?.translations?.['en']?.[field.key] ?? '';
+                    const isAr = activeHomeLang === 'ar';
+
+                    return (
+                      <div key={field.key} className="space-y-1.5 p-4 rounded-2xl bg-slate-50/70 border border-slate-200/80">
+                        <div className="flex items-center justify-between">
+                          <label className="text-slate-800 font-bold block text-xs">
+                            {field.label}
+                          </label>
+                          <span className="text-[10px] font-mono text-slate-400 bg-slate-200/60 px-1.5 py-0.5 rounded">
+                            {activeHomeSection}.{field.key}
+                          </span>
+                        </div>
+
+                        {/* English Reference Helper (shown when editing non-EN languages) */}
+                        {activeHomeLang !== 'en' && enRef && (
+                          <div className="text-[11px] bg-white border border-slate-200/60 rounded-xl p-2.5 text-slate-500 font-medium">
+                            <span className="font-bold text-slate-700 block text-[10px] uppercase tracking-wider mb-0.5">
+                              English Reference:
+                            </span>
+                            <span className="italic text-slate-600">"{enRef}"</span>
+                          </div>
+                        )}
+
+                        {field.multiline ? (
+                          <textarea
+                            rows={3}
+                            dir={isAr ? 'rtl' : 'ltr'}
+                            value={currentVal}
+                            onChange={(e) =>
+                              handleUpdateHomeField(activeHomeSection, activeHomeLang, field.key, e.target.value)
+                            }
+                            placeholder={field.placeholder}
+                            className={`w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-900 rounded-xl font-medium text-xs leading-relaxed ${
+                              isAr ? 'text-right' : 'text-left'
+                            }`}
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            dir={isAr ? 'rtl' : 'ltr'}
+                            value={currentVal}
+                            onChange={(e) =>
+                              handleUpdateHomeField(activeHomeSection, activeHomeLang, field.key, e.target.value)
+                            }
+                            placeholder={field.placeholder}
+                            className={`w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-900 rounded-xl font-medium text-xs ${
+                              isAr ? 'text-right' : 'text-left'
+                            }`}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Live Section Preview Card */}
+                <div className="pt-4 border-t border-slate-150 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-primary" />
+                      <span>Live Component Preview ({activeHomeLang.toUpperCase()})</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      Simulated rendering for current section & language
+                    </span>
+                  </div>
+
+                  {(() => {
+                    const secData = homepageSections?.[activeHomeSection]?.translations?.[activeHomeLang] || {};
+                    const enData = homepageSections?.[activeHomeSection]?.translations?.['en'] || {};
+                    const isAr = activeHomeLang === 'ar';
+                    const badge = secData.badge || enData.badge || 'Section Badge';
+                    const title = secData.title || enData.title || 'Section Headline';
+                    const subtitle = secData.subtitle || enData.subtitle || 'Section description text goes here.';
+                    const primaryCta = secData.primaryCta || enData.primaryCta;
+                    const secondaryCta = secData.secondaryCta || enData.secondaryCta;
+
+                    return (
+                      <div
+                        dir={isAr ? 'rtl' : 'ltr'}
+                        className={`p-6 rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-md border border-slate-800 space-y-4 ${
+                          isAr ? 'text-right' : 'text-left'
+                        }`}
+                      >
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-white text-[11px] font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                          <span>{badge}</span>
+                        </div>
+
+                        <h4 className="text-lg sm:text-xl font-black tracking-tight leading-snug">
+                          {title}
+                        </h4>
+
+                        <p className="text-xs text-slate-300 font-normal leading-relaxed max-w-2xl">
+                          {subtitle}
+                        </p>
+
+                        {(primaryCta || secondaryCta) && (
+                          <div className={`flex flex-wrap gap-3 pt-1 ${isAr ? 'justify-start flex-row-reverse' : 'justify-start'}`}>
+                            {primaryCta && (
+                              <button
+                                type="button"
+                                className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:opacity-90 cursor-default"
+                              >
+                                {primaryCta}
+                              </button>
+                            )}
+                            {secondaryCta && (
+                              <button
+                                type="button"
+                                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs cursor-default"
+                              >
+                                {secondaryCta}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
             {/* MODULE 2: SOCIAL LOGIN & OAUTH */}
             {activeTab === 'oauth' && (
               <div className="space-y-6 text-xs font-semibold text-slate-600">
-                <div className="border-b border-slate-150 pb-4">
-                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <KeyRound className="w-5 h-5 text-purple-600" />
-                    <span>Social Login & OAuth Credentials</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Configure single sign-on parameters for Google Cloud & Apple Developer authentication.</p>
+                <div className="border-b border-slate-150 pb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <KeyRound className="w-5 h-5 text-purple-600" />
+                      <span>Social Login & OAuth Credentials</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Configure single sign-on parameters for Google Cloud & Apple Developer authentication.</p>
+                  </div>
+                  <SectionHeaderSaveButton />
                 </div>
 
                 {/* Google SSO */}
@@ -888,6 +1290,10 @@ export default function AdminSettingsPage() {
                       <label className="text-slate-800 font-bold block">Google Client ID</label>
                       <input
                         type="text"
+                        name="oauth_google_client_id_val"
+                        autoComplete="one-time-code"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
                         placeholder="...apps.googleusercontent.com"
                         value={googleClientId}
                         onChange={(e) => setGoogleClientId(e.target.value)}
@@ -895,9 +1301,23 @@ export default function AdminSettingsPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-slate-800 font-bold block">Google Client Secret</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-slate-800 font-bold block">Google Client Secret</label>
+                        <button
+                          type="button"
+                          onClick={() => toggleShowMask('googleSecret')}
+                          className="reveal-secret-btn text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                        >
+                          {showMaskedKeys['googleSecret'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          <span>{showMaskedKeys['googleSecret'] ? 'Mask Secret' : 'Reveal Secret'}</span>
+                        </button>
+                      </div>
                       <input
-                        type="password"
+                        type={showMaskedKeys['googleSecret'] ? 'text' : 'password'}
+                        name="oauth_google_client_secret_val"
+                        autoComplete="one-time-code"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
                         placeholder="GOCSPX-..."
                         value={googleClientSecret}
                         onChange={(e) => setGoogleClientSecret(e.target.value)}
@@ -985,14 +1405,17 @@ export default function AdminSettingsPage() {
             {/* MODULE 3: AI MODEL ENGINE & API TOKENS */}
             {activeTab === 'ai-engine' && (
               <div className="space-y-6 text-xs font-semibold text-slate-600">
-                <div className="border-b border-slate-150 pb-4">
-                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <Wand2 className="w-5 h-5 text-indigo-600" />
-                    <span>AI Model Engine & Generation API Key</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    Configure the primary AI Engine API key used for room redesigns, AI renders, and transformations.
-                  </p>
+                <div className="border-b border-slate-150 pb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <Wand2 className="w-5 h-5 text-indigo-600" />
+                      <span>AI Model Engine & Generation API Key</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Configure the primary AI Engine API key used for room redesigns, AI renders, and transformations.
+                    </p>
+                  </div>
+                  <SectionHeaderSaveButton />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1032,7 +1455,7 @@ export default function AdminSettingsPage() {
                     <button
                       type="button"
                       onClick={() => toggleShowMask('manus')}
-                      className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                      className="reveal-secret-btn text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px] font-bold cursor-pointer"
                     >
                       {showMaskedKeys['manus'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       <span>{showMaskedKeys['manus'] ? 'Mask Key' : 'Reveal Key'}</span>
@@ -1057,7 +1480,7 @@ export default function AdminSettingsPage() {
                     <button
                       type="button"
                       onClick={() => toggleShowMask('roomwhiz')}
-                      className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                      className="reveal-secret-btn text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px] font-bold cursor-pointer"
                     >
                       {showMaskedKeys['roomwhiz'] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       <span>{showMaskedKeys['roomwhiz'] ? 'Mask Key' : 'Reveal Key'}</span>
@@ -1078,12 +1501,15 @@ export default function AdminSettingsPage() {
             {/* MODULE 4: STRIPE & PAYPAL PAYMENT GATEWAYS */}
             {activeTab === 'stripe' && (
               <div className="space-y-6 text-xs font-semibold text-slate-600">
-                <div className="border-b border-slate-150 pb-4">
-                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-emerald-600" />
-                    <span>Payment Gateways (Stripe & PayPal)</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Configure API credentials, webhook signatures, and sandbox test modes for Stripe and PayPal.</p>
+                <div className="border-b border-slate-150 pb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <CreditCard className="w-5 h-5 text-emerald-600" />
+                      <span>Payment Gateways (Stripe & PayPal)</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Configure API credentials, webhook signatures, and sandbox test modes for Stripe and PayPal.</p>
+                  </div>
+                  <SectionHeaderSaveButton />
                 </div>
 
                 {/* Section A: Stripe Configuration */}
@@ -1241,7 +1667,7 @@ export default function AdminSettingsPage() {
             {/* MODULE: DEDICATED TAX TAB */}
             {activeTab === 'tax' && (
               <div className="space-y-6 text-xs font-semibold text-slate-600">
-                <div className="border-b border-slate-150 pb-4 flex items-center justify-between">
+                <div className="border-b border-slate-150 pb-4 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-base font-black text-slate-900 flex items-center gap-2 font-heading">
                       <Percent className="w-5 h-5 text-purple-600" />
@@ -1251,13 +1677,16 @@ export default function AdminSettingsPage() {
                       Configure tax names, rates, and enable/disable states. Enabled taxes apply automatically to checkout totals.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAddTaxRow}
-                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" /> Add Tax Rule
-                  </button>
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleAddTaxRow}
+                      className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> Add Tax Rule
+                    </button>
+                    <SectionHeaderSaveButton />
+                  </div>
                 </div>
 
                 <div className="space-y-4 p-5 rounded-2xl bg-purple-50/40 border border-purple-200/80">
@@ -1330,12 +1759,15 @@ export default function AdminSettingsPage() {
             {/* MODULE 5: CLOUD STORAGE */}
             {activeTab === 'storage' && (
               <div className="space-y-6 text-xs font-semibold text-slate-600">
-                <div className="border-b border-slate-150 pb-4">
-                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <Cloud className="w-5 h-5 text-blue-600" />
-                    <span>Cloud Storage & Media Delivery</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Select image file storage destination and set Cloudinary or AWS S3 credentials.</p>
+                <div className="border-b border-slate-150 pb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <Cloud className="w-5 h-5 text-blue-600" />
+                      <span>Cloud Storage & Media Delivery</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Select image file storage destination and set Cloudinary or AWS S3 credentials.</p>
+                  </div>
+                  <SectionHeaderSaveButton />
                 </div>
 
                 <div className="space-y-1.5">
@@ -1422,12 +1854,15 @@ export default function AdminSettingsPage() {
             {/* MODULE 6: EMAIL & SMTP */}
             {activeTab === 'smtp' && (
               <div className="space-y-6 text-xs font-semibold text-slate-600">
-                <div className="border-b border-slate-150 pb-4">
-                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <Mail className="w-5 h-5 text-amber-600" />
-                    <span>Email & SMTP Notification Server</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Configure transactional mail server parameters for welcome emails and password resets.</p>
+                <div className="border-b border-slate-150 pb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <Mail className="w-5 h-5 text-amber-600" />
+                      <span>Email & SMTP Notification Server</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Configure transactional mail server parameters for welcome emails and password resets.</p>
+                  </div>
+                  <SectionHeaderSaveButton />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1504,12 +1939,15 @@ export default function AdminSettingsPage() {
             {/* MODULE 7: CREDIT ECONOMY & SYSTEM TOGGLES */}
             {activeTab === 'economy' && (
               <div className="space-y-6 text-xs font-semibold text-slate-600">
-                <div className="border-b border-slate-150 pb-4">
-                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <Sliders className="w-5 h-5 text-rose-600" />
-                    <span>Credit Economy & System Toggles</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">Control signup reward credits, credit cost per render, project limits, and emergency maintenance mode.</p>
+                <div className="border-b border-slate-150 pb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <Sliders className="w-5 h-5 text-rose-600" />
+                      <span>Credit Economy & System Toggles</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Control signup reward credits, credit cost per render, project limits, and emergency maintenance mode.</p>
+                  </div>
+                  <SectionHeaderSaveButton />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1900,7 +2338,7 @@ export default function AdminSettingsPage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-2 text-xs font-black shadow-sm disabled:opacity-50 transition-all cursor-pointer"
+                className="px-6 py-3 rounded-2xl bg-primary hover:opacity-90 text-white flex items-center gap-2 text-xs font-black shadow-sm disabled:opacity-50 transition-all cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 <span>{isSaving ? 'Saving Configurations...' : 'Save Settings'}</span>
